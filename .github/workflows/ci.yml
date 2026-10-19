@@ -1,0 +1,39 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    name: Build + smoke test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cài toolchain RISC-V + QEMU
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential bc perl python3 \
+            gcc-riscv64-linux-gnu binutils-riscv64-linux-gnu \
+            qemu-system-misc clang-format
+
+      - name: Build một lệnh
+        run: make -j"$(nproc)" kernel/kernel fs.img
+
+      # Không chạy `make fmt` trên CI: .clang-format upstream dùng tuỳ chọn
+      # ReflowComments: Never (enum) chỉ có ở clang-format >= 19, còn
+      # ubuntu-24.04 có clang-format 18. Format là khuyến nghị, không bắt buộc.
+
+      - name: Smoke test (boot + shell, CPUS=1/4)
+        run: python3 tests/runner.py --tag ci --results-dir results/local/ci
+
+      - name: Upload log khi fail
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: results/local/ci/
+          if-no-files-found: ignore

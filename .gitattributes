@@ -1,0 +1,14 @@
+# Chuẩn hoá line ending cho môi trường Linux/WSL.
+* text=auto eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+*.mk text eol=lf
+*.md text eol=lf
+*.ps1 text eol=crlf
+Makefile text eol=lf
+
+# File nhị phân không xử lý text.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.img binary

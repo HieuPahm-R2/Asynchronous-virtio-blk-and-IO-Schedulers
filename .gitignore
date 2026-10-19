@@ -1,0 +1,21 @@
+*~
+_*
+*.o
+*.d
+*.asm
+*.sym
+*.img
+/mkfs/mkfs
+/kernel/kernel
+/user/usys.S
+.gdbinit
+TAGS
+
+# --- ET4290 project ---
+__pycache__/
+*.pyc
+.venv/
+venv/
+results/local/
+.DS_Store
+Thumbs.db
