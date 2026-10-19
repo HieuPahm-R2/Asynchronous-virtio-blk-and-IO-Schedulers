@@ -3,6 +3,9 @@
 .editorconfig
 .gdbinit.tmpl-riscv
 .gitignore
+LICENSE
+Makefile
+README
 kernel/bio.c
 kernel/buf.h
 kernel/console.c
@@ -48,10 +51,7 @@ kernel/virtio.h
 kernel/virtio_disk.c
 kernel/vm.c
 kernel/vm.h
-LICENSE
-Makefile
 mkfs/mkfs.c
-README
 test-xv6.py
 user/cat.c
 user/dorphan.c

@@ -12,7 +12,7 @@ nhóm — trạng thái ghi theo thực tế, không lấy kế hoạch làm th�
 | 2 · 20/10 | Cài môi trường, clone tag, tạo công cụ nhóm | Version log; ba máy boot; URL repo/Jira/FigJam | 🟡 máy dev đã sẵn sàng (`make env-check`) |
 | 3 · 21/10 | Đọc đường I/O và khóa, thử baseline | Bản đồ file/hàm; request outstanding & giới hạn descriptor | 🟡 có bản đồ ban đầu (`docs/architecture.md`), baseline đã chạy |
 | 4 · 22/10 | Thiết kế lifecycle, policy, ownership | Sơ đồ kiến trúc/state/sequence; quyết định lock/API sơ bộ | 🟡 có bản nháp (`docs/architecture.md`) |
-| 5 · 23/10 | Baseline regression, chuẩn bị phép đo | Log CPUS=1/4; test matrix; format dữ liệu thô | 🟡 baseline stock đã ghi vào `results/baseline/` |
+| 5 · 23/10 | Baseline regression, chuẩn bị phép đo | Log CPUS=1/4; test matrix; format dữ liệu thô | ✅ baseline sạch 6/6 PASS tại `results/baseline/2026-10-19_222935/` |
 | 6 · 24/10 | Review thiết kế, chia nhỏ sprint 2 | Backlog assignee/estimate/DoD; PR ghi chú; rủi ro | ⏳ cần họp nhóm |
 | 7 · 25/10 | Review, retrospective, báo cáo tuần | Báo cáo thực tế, commit/log/issue links, TODO tuần 2 | ⏳ |
 
@@ -26,7 +26,8 @@ nhóm — trạng thái ghi theo thực tế, không lấy kế hoạch làm th�
 3. Có bản đồ bread/bwrite → driver → interrupt → wakeup, mô tả cả đường
    descriptor hết. 🟡 `docs/architecture.md` mục 1.
 4. Có baseline stock usertests và grind theo protocol đã ghi; lỗi phải có
-   issue + log. 🟡 `results/baseline/<ts>/` + `docs/baseline.md`.
+   issue + log. ✅ `results/baseline/2026-10-19_222935/` (6/6 PASS, `dirty: false`),
+   tổng hợp `docs/baseline.md`; `grind` mới 60 giây ×2 (smoke), R09 vẫn còn nợ.
 5. Có request lifecycle, ownership, chính sách ordering và quyết định
    async kernel/user cần chốt. 🟡 lifecycle + ownership trong
    `docs/architecture.md`; async kernel/user ⏳ chờ GV.

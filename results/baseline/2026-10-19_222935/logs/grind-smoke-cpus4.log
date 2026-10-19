@@ -1,0 +1,15 @@
+# case: grind-smoke-cpus4
+# cpus: 4
+# status: PASS
+# duration_s: 63.27
+# reason: -
+# note: stock grind 60s, fail nếu panic (không phải PASS tuyệt đối)
+# --- serial console ---
+
+xv6 kernel is booting
+
+hart 3 starting
+hart 2 starting
+hart 1 starting
+init: starting sh
+$ grind

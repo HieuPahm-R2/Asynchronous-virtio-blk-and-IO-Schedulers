@@ -1,13 +1,28 @@
 # ET4290 — Asynchronous virtio-blk và I/O schedulers trên xv6-riscv
 
-Đề tài **26128**: xây dựng đường I/O có hàng đợi cho xv6-riscv —
+Đề tài **26128** (nhóm 3 người): xây dựng đường I/O có hàng đợi cho xv6-riscv —
 nhiều request outstanding, ba chính sách lập lịch **FCFS / SCAN / deadline**,
 **gộp request** và **API đọc bất đồng bộ** — kèm test tự động, benchmark và
 demo chuyển policy khi hệ thống đang chạy.
 
-**Project base**: source xv6-riscv đã pin, môi trường phát triển tái
+Repo này là **base dự án**: source xv6-riscv đã pin, môi trường phát triển tái
 lập được, harness test/baseline và khung tài liệu. Kernel **chưa** được sửa
 so với stock — đó là việc của tuần 2 trở đi.
+
+> Tài liệu kế hoạch gốc: [`docs/plan/01_Bao_cao_ke_hoach_26128.pdf`](docs/plan/01_Bao_cao_ke_hoach_26128.pdf)
+
+## Trạng thái hiện tại
+
+| Hạng mục | Trạng thái |
+| --- | --- |
+| Source xv6-riscv pin theo commit | ✅ `.xv6-commit` (pin tạm, chờ tag giảng viên) |
+| Môi trường WSL2 Ubuntu 24.04 + toolchain RISC-V + QEMU | ✅ đã cài, kiểm tra bằng `make env-check` |
+| Build một lệnh (`make`) / boot (`make qemu`) | ✅ |
+| Test harness một lệnh (`make test`), PASS/FAIL từng ca | ✅ khung + case stock |
+| Baseline stock (`usertests -q`, `grind`) lưu bằng chứng | ✅ [6/6 PASS](results/baseline/2026-10-19_222935/summary.md) — xem [`docs/baseline.md`](docs/baseline.md) |
+| Build lại được từ clone mới | ✅ đã kiểm tra (clone → `make` → boot smoke PASS) |
+| Sơ đồ kiến trúc I/O hiện tại + lifecycle request đề xuất | ✅ [`docs/architecture.md`](docs/architecture.md) |
+| Tag/commit xv6 chính thức của giảng viên | ⏳ **pending** — đổi bằng `scripts/update-xv6.sh` |
 
 ## Bắt đầu nhanh
 
@@ -26,9 +41,10 @@ Sau đó mở terminal WSL và làm việc trong repo:
 ```bash
 wsl -d Ubuntu-24.04
 cd /mnt/e/ET4290          # đường dẫn repo của bạn
-make env-check            # kiểm tra toolchain + build + boot (~15 giây)
+make env-check            # kiểm tra toolchain + build + boot (~10 giây)
 make qemu                 # boot xv6 (Ctrl-A rồi X để thoát)
-make test                 # chạy test suite, in PASS/FAIL từng ca
+make test-fast            # smoke test nhanh (~8 giây)
+make test                 # suite đầy đủ hơn (~18 phút trên QEMU TCG)
 ```
 
 ### Linux / VM (Ubuntu 24.04)
@@ -91,11 +107,16 @@ Xem ghi chú trong [`docs/architecture.md`](docs/architecture.md).
 | `make qemu-gdb` | boot chờ `gdb-multiarch` |
 | `make env-check` | kiểm tra toolchain + build + boot smoke |
 | `make test` | suite mặc định (trừ tag `slow`/`stress`) |
-| `make test-fast` | chỉ smoke test boot/shell (~10 giây) |
+| `make test-fast` | chỉ smoke test boot/shell (~8 giây) |
 | `make test-slow` | usertests đầy đủ (rất lâu, chạy có chủ đích) |
 | `make list-tests` | liệt kê test case |
 | `make baseline` | build sạch + đo baseline stock → `results/baseline/<ts>/` |
-| `make fmt` | clang-format kernel/user |
+| `make fmt` | clang-format kernel/user (cần clang-format ≥ 19) |
+
+Thời gian tham khảo trên máy dev WSL2 (QEMU TCG): `make test-fast` ~8 giây;
+`make test` ~18 phút (chủ yếu là `usertests -q` trên CPUS=1/4);
+`make baseline` ~19,4 phút. Dùng `make test-fast` khi code hằng ngày và
+`make test` trước khi commit lớn/PR. Chi tiết: [`docs/testing.md`](docs/testing.md).
 
 ## Viết thêm test case
 
@@ -117,6 +138,14 @@ CASES = [{
 `make list-tests` để xem; `python3 tests/runner.py --case my-test --verbose`.
 Chi tiết oracle/ma trận test: [`docs/testing.md`](docs/testing.md).
 
+## Việc cần chốt với giảng viên (từ kế hoạch)
+
+- [ ] Tag/commit xv6 chính thức (đang dùng pin tạm ở trên)
+- [ ] Quy đổi tuần học phần ↔ tuần làm việc, ngày/giờ nộp tuần 10, lịch demo
+- [ ] API đọc bất đồng bộ: syscall user-space hay API kernel + chương trình minh hoạ?
+- [ ] Định nghĩa SCAN giảng viên mong đợi (SCAN vs LOOK), phạm vi merging được chấp nhận
+- [ ] Trọng số rubric (Functionality/Testing/Measurement) — không tự suy ra
+- [ ] Jira/Trello + FigJam URL và quyền đọc của giảng viên
 
 ## Nhóm
 
@@ -126,3 +155,4 @@ Chi tiết oracle/ma trận test: [`docs/testing.md`](docs/testing.md).
 | Phạm Qúy Lợi | 20233501 | request queue, FCFS/SCAN/deadline, chuyển policy |
 | Phạm Trung Hiếu | 20233402 | async API, buffer lifetime, merging, counters |
 
+Repo cần **private** và chia sẻ với giảng viên; giữ `main` luôn build được.

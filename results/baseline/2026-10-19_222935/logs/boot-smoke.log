@@ -1,0 +1,14 @@
+# case: boot-smoke
+# cpus: 1
+# status: PASS
+# duration_s: 3.50
+# reason: -
+# note: boot xv6 + shell nhận lệnh
+# --- serial console ---
+
+xv6 kernel is booting
+
+init: starting sh
+$ echo BOOT_OK
+BOOT_OK
+$ 

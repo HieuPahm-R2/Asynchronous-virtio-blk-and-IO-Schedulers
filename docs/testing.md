@@ -36,6 +36,18 @@ tuần. Nguồn yêu cầu: kế hoạch 26128 (mục 2, 9) và spec học phầ
 Mục tiêu ≥ 30 case có assertion thật: khoảng T2 9–12, T3 6–8, T4 6–8,
 T5 2–3, T6 2–4, còn lại T1.
 
+### Thời gian chạy thực tế (máy dev WSL2, QEMU TCG — số baseline tuần 1)
+
+| Lệnh | Case | Thời gian | Ghi chú |
+| --- | ---: | ---: | --- |
+| `make test-fast` | 2 | ~8 giây | smoke boot/shell, dùng khi code hằng ngày |
+| `make test` | 5 | ~18 phút | gồm `usertests -q` CPUS=1/4 (~9 + ~8 phút) |
+| `make baseline` | 6 | ~19,4 phút | build sạch + usertests -q + grind 60s ×2 |
+| `make test-slow` | +2 | ~30–40 phút | `usertests` đầy đủ, chạy có chủ đích |
+
+Số liệu chi tiết: `results/baseline/2026-10-19_222935/summary.md`. Nếu QEMU có
+KVM (Linux VM), thời gian giảm đáng kể; phải ghi lại khi đổi môi trường đo.
+
 ## 3. Case bắt buộc theo yêu cầu R01–R09
 
 | Mã | Bằng chứng cần có | Case đề xuất |

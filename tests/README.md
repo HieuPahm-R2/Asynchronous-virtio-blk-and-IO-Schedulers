@@ -3,14 +3,17 @@
 Chạy bằng một lệnh, in PASS/FAIL từng case, lưu log + metadata.
 
 ```bash
-make test                 # suite mặc định (bỏ tag slow/stress)
-make test-fast            # chỉ smoke (~10s)
+make test                 # suite mặc định (bỏ tag slow/stress) — ~18 phút trên TCG
+make test-fast            # chỉ smoke (~8 giây)
 make test-slow            # usertests đầy đủ (rất lâu)
-make baseline             # build sạch + baseline stock
+make baseline             # build sạch + baseline stock — ~19,4 phút
 python3 tests/runner.py --list
 python3 tests/runner.py --case 'sched-*' --verbose
 python3 tests/runner.py --tag baseline --results-dir results/local/x
 ```
+
+Runner chờ **shell prompt `$ `** sau mỗi lệnh gửi vào xv6, nên output của lệnh
+trước không bị lẫn với lệnh sau; case tự động fail nếu kernel panic.
 
 ## Thành phần
 

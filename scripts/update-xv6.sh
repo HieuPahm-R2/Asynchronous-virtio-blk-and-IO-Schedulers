@@ -42,16 +42,21 @@ if [ -f .xv6-files ]; then
     while IFS= read -r f; do
         [ -n "$f" ] || continue
         case "$f" in
-            README|Makefile) ;;
+            # Các file dự án tự quản / xử lý riêng bên dưới.
+            README|Makefile|.gitignore) ;;
             .github/*) ;;
             *) rm -f -- "$f" ;;
         esac
     done <.xv6-files
 fi
 
-# 2) Copy file của commit mới (bỏ .github của upstream — dự án tự quản CI).
-git -C "$TMP/xv6" ls-files | grep -v '^\.github/' >"$TMP/files"
+# 2) Copy file của commit mới (bỏ .github của upstream — dự án tự quản CI;
+#    giữ .gitignore của dự án vì đã bổ sung mục riêng).
+git -C "$TMP/xv6" ls-files | grep -v '^\.github/' | LC_ALL=C sort >"$TMP/files"
 while IFS= read -r f; do
+    case "$f" in
+        .gitignore) continue ;;
+    esac
     mkdir -p "$(dirname "$f")"
     cp "$TMP/xv6/$f" "$f"
 done <"$TMP/files"
