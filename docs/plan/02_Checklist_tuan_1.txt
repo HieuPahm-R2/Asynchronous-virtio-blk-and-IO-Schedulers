@@ -1,0 +1,68 @@
+
+===== PAGE 1 =====
+Checklist tuần làm việc đầu tiên
+Đề tài 26128. Khung tuần: 19–25/10/2026. Ngày bắt đầu là giả định lập lịch theo thông tin nhóm; nếu lớp dùng
+lịch khác, dịch chuyển ngày nhưng giữ thứ tự phụ thuộc. Tuần nộp: tuần 10. Trạng thái khởi tạo của tất cả mục:
+chưa xác minh.
+Phân bổ 30 giờ trong tuần
+Giờ đã gồm họp, review và báo cáo. Mỗi người 10 giờ. Có thể đổi ngày theo lịch học; công việc môi trường và
+baseline phải xong trước spike.
+Ngày Hoàng Lợi Hiếu Kết quả cuối ngày
+19/10 1h kickoﬀ/phạm vi 1h kickoﬀ/backlog 1h kickoﬀ/ghi biênbản Phạm vi, câu hỏi GV,owner và boardskeleton
+20/10 2h môi trường/repo 2h môi trường/Jira 2h môitrường/FigJam Ba máy boot, versionlog, URL công cụ
+21/10 2h virtio/interrupt 2h descriptor/lock 2h bread/bwrite/log Bản đồ code; ghi cácđiểm phải sửa
+22/10 1h request lifecycle 1h policy/lock 1h async/ownership Ba sơ đồ và quyếtđịnh kỹ thuật sơ bộ
+23/10 2h baseline CPUS=1 1h baseline CPUS=4 1h testmatrix/protocol Log baseline, lỗi cóissue, ma trận test
+24/10 1h review chéo 2h review/backlogtuần 2 2h tái lập/protocol đo Task tuần 2 Ready;test plan được review
+25/10 1h review/báo cáo 1h review/báo cáo 1h review/báo cáo Báo cáo thực tế vàcheck-in
+Tổng 10h 10h 10h 30h nhóm
+Ngày 1 và 2
+☐  T1-01: Kiểm tra tên/MSSV; chốt người phụ trách và người review.
+☐  T1-01: Xác nhận tag xv6, tuần học phần hiện tại, giờ nộp tuần 10, lịch demo, phạm vi async API và
+merging với GV; ghi pending nếu chưa có trả lời.
+☐  T1-02: Repo private, thành viên đủ quyền; giảng viên có quyền đọc trước tuần học phần 2.
+☐  T1-03: Jira có backlog, assignee, estimate, status, DoD; chỉ dùng Trello/GitHub Projects nếu đã được
+duyệt.
+☐  T1-04: FigJam/Figma có trang architecture/state/sequence; giảng viên đọc được.
+☐  T1-05: Cả ba lưu git hash, compiler version, QEMU version, OS; build và boot.
+☐  T1-05: README đủ bước để máy khác làm lại; không để thông tin mật trong repo/log.
+Ngày 3 và 4
+☐  T1-06 Hoàng: Sơ đồ virtio_disk_rw/interrupt, descriptor allocation/free và channel chờ.
+☐  T1-07 Lợi: Tóm tắt NUM/chain cost trên tag gốc, lock order, điểm enqueue/dispatch và định nghĩa
+FCFS/SCAN/deadline.
+☐  T1-08 Hiếu: Ghi buﬀer ownership, bread/bwrite/log, completion-before-wait và API async đề xuất.
+☐  Review chéo: Phân biệt synchronous caller với số request concurrent toàn driver; không kết luận stock chỉ
+có một outstanding khi chưa đo.
+Đề tài 26128 · 1 / 2
+===== PAGE 2 =====
+☐  Design: FREE → ALLOCATED → QUEUED → INFLIGHT → DONE/ERROR → FREE; mô tả merged children và
+các lần thu hồi.
+☐  Chốt nguyên tắc không release sleeplock trong IRQ; không đưa user pointer sống ngắn làm DMA buﬀer.
+☐  Ghi quyết định write synchronous/fence, read merging; hỏi GV nếu phạm vi chưa rõ.
+Ngày 5 đến 7
+☐  T1-09: Lưu log baseline CPUS=1/4, stock usertests, grind và protocol timeout/termination.
+☐  T1-10: Chốt test plan; PASS phải có assertion tự động. Các bài chưa chạy ghi NOT RUN.
+☐  T1-10: Lưu mẫu metadata và format kết quả; chưa có số đo thì để trống, không điền dữ liệu giả.
+☐  T1-11: Sprint tuần 2 có 3 phần kernel, dependency và giờ dự kiến; không giao một người chỉ làm
+report/test.
+☐  T1-12: Báo cáo tuần 1 theo cấu trúc mẫu, summary thực tế 200–300 từ, có TODO tuần trước so với thực
+tế.
+☐  T1-12: Mỗi người ghi issue/commit/PR/log thật; thiếu bằng chứng thì ghi đang làm hoặc chưa hoàn
+thành.
+☐  Review và retrospective: Điều gì làm được, blocker, thay đổi kế hoạch; cập nhật board trước check-in.
+Bộ bằng chứng nên có trong repository
+docs/week01/kickoff.md
+docs/week01/environment.md
+docs/week01/io-path.md
+docs/week01/decisions.md
+docs/week01/progress-report.docx
+results/baseline/<run-id>/metadata.json
+results/baseline/<run-id>/serial.log
+results/baseline/<run-id>/summary.txt
+Đây là cấu trúc đề xuất cần tạo khi làm thực tế; các ﬁle kết quả này chưa được tạo hay kiểm chứng trong bộ T1.
+Log cần gắn commit, cấu hình CPU, thời điểm chạy và người chạy.
+Deﬁnition of done của tuần 1
+Đạt khi: có công cụ/quyền đọc; cả ba build/boot; có baseline và issue cho lỗi; có bản đồ I/O/lock; có design sơ
+bộ và câu hỏi chưa chốt; backlog tuần 2 đã giao owner/reviewer; có báo cáo tuần từ bằng chứng. Một mục
+chưa đạt phải có owner, nguyên nhân và ngày xử lý, không đánh dấu Done cho đủ hình thức.
+Đề tài 26128 · 2 / 2

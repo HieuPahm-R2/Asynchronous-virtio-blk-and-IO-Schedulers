@@ -3,6 +3,9 @@
 Mục tiêu: **ba máy trong nhóm dựng được cùng một môi trường**, build và boot
 xv6-riscv bằng cùng một commit, để kết quả baseline/benchmark so sánh được.
 
+> Nếu máy bạn là **laptop Ubuntu thật** (không phải WSL), dùng runbook riêng:
+> [run-on-ubuntu.md](run-on-ubuntu.md)
+
 ## Môi trường chuẩn của dự án
 
 | Hạng mục | Lựa chọn | Ghi chú |

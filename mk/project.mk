@@ -7,26 +7,31 @@
 PYTHON ?= python3
 TEST_ARGS ?=
 BASELINE_ARGS ?=
+DEMO_ARGS ?=
 
-.PHONY: help env-check list-tests test test-fast test-slow baseline clean-all
+.PHONY: help env-check list-tests demo test test-fast test-slow baseline clean-all
 
 help:
 	@echo "ET4290 — Async virtio-blk & I/O schedulers trên xv6-riscv"
 	@echo ""
 	@echo "  make qemu              boot xv6 (đặt CPUS=1..4, mặc định 3)"
 	@echo "  make qemu-gdb          boot và chờ gdb-multiarch kết nối"
+	@echo "  make env-check         kiểm tra toolchain + build + boot"
+	@echo "  make demo              demo ngắn 6 phần: môi trường/build/boot/test/baseline (~25 giây)"
 	@echo "  make test              suite mặc định (nhanh + stock usertests -q, CPUS=1/4)"
-	@echo "  make test-fast         smoke test: boot + shell (~10 giây)"
-	@echo "  make test-slow         stock usertests đầy đủ + grind (lâu, chạy có chủ đích)"
+	@echo "  make test-fast         smoke test: boot + shell (~8 giây)"
+	@echo "  make test-slow         stock usertests đầy đủ (rất lâu, chạy có chủ đích)"
 	@echo "  make baseline          đo baseline stock, ghi kết quả vào results/baseline/"
 	@echo "  make list-tests        liệt kê test case đã đăng ký"
-	@echo "  make env-check         kiểm tra toolchain + build + boot"
 	@echo "  make clean-all         make clean + xoá kết quả test cục bộ"
 	@echo ""
 	@echo "  Ví dụ: make qemu CPUS=1 | make test TEST_ARGS='--verbose'"
 
 env-check:
 	@bash scripts/check-env.sh
+
+demo:
+	@bash scripts/demo.sh $(DEMO_ARGS)
 
 list-tests:
 	@$(PYTHON) tests/runner.py --list

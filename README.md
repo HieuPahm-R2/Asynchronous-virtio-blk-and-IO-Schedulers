@@ -22,6 +22,7 @@ so với stock — đó là việc của tuần 2 trở đi.
 | Baseline stock (`usertests -q`, `grind`) lưu bằng chứng | ✅ [6/6 PASS](results/baseline/2026-10-19_222935/summary.md) — xem [`docs/baseline.md`](docs/baseline.md) |
 | Build lại được từ clone mới | ✅ đã kiểm tra (clone → `make` → boot smoke PASS) |
 | Sơ đồ kiến trúc I/O hiện tại + lifecycle request đề xuất | ✅ [`docs/architecture.md`](docs/architecture.md) |
+| Kịch bản demo cho GV (`make demo` + 20 phút final) | ✅ [`docs/demo.md`](docs/demo.md) |
 | Tag/commit xv6 chính thức của giảng viên | ⏳ **pending** — đổi bằng `scripts/update-xv6.sh` |
 
 ## Bắt đầu nhanh
@@ -55,7 +56,9 @@ bash scripts/check-env.sh        # build + boot thử
 make qemu CPUS=4
 ```
 
-Chi tiết môi trường, version và cách xử lý sự cố: [`docs/environment.md`](docs/environment.md).
+Chi tiết môi trường, version và cách xử lý sự cố:
+[`docs/environment.md`](docs/environment.md) (Windows/WSL2) ·
+[`docs/run-on-ubuntu.md`](docs/run-on-ubuntu.md) (laptop Ubuntu: clone → cài → chạy → baseline).
 
 ## Cấu trúc repo
 
@@ -72,6 +75,7 @@ Chi tiết môi trường, version và cách xử lý sự cố: [`docs/environm
 │   ├── setup-env.sh         # cài toolchain (Ubuntu/Debian, idempotent)
 │   ├── check-env.sh         # kiểm tra môi trường + build + boot
 │   ├── baseline.sh          # đo baseline stock, lưu vào results/
+│   ├── demo.sh              # demo 6 phần cho GV / tự kiểm tra máy mới
 │   ├── run-qemu.sh          # boot QEMU có CPUS/log/timeout
 │   ├── update-xv6.sh        # đổi sang tag/commit xv6 của giảng viên
 │   └── wsl/                 # helper cài WSL2 Ubuntu trên Windows
@@ -106,6 +110,7 @@ Xem ghi chú trong [`docs/architecture.md`](docs/architecture.md).
 | `make qemu` | boot xv6 (`CPUS=1..4`, mặc định 3) |
 | `make qemu-gdb` | boot chờ `gdb-multiarch` |
 | `make env-check` | kiểm tra toolchain + build + boot smoke |
+| `make demo` | demo 6 phần (~25 giây): môi trường/build/boot/test/baseline — dùng cho GV |
 | `make test` | suite mặc định (trừ tag `slow`/`stress`) |
 | `make test-fast` | chỉ smoke test boot/shell (~8 giây) |
 | `make test-slow` | usertests đầy đủ (rất lâu, chạy có chủ đích) |
@@ -117,6 +122,15 @@ Thời gian tham khảo trên máy dev WSL2 (QEMU TCG): `make test-fast` ~8 giâ
 `make test` ~18 phút (chủ yếu là `usertests -q` trên CPUS=1/4);
 `make baseline` ~19,4 phút. Dùng `make test-fast` khi code hằng ngày và
 `make test` trước khi commit lớn/PR. Chi tiết: [`docs/testing.md`](docs/testing.md).
+
+## Demo cho giảng viên
+
+- Chạy `make demo` — 6 phần: môi trường & pin → build một lệnh → boot xv6 →
+  test PASS/FAIL từng case → baseline đã đo → hạ tầng tuần 2 (`make demo DEMO_ARGS=--no-qemu`
+  nếu không muốn chạy QEMU).
+- Kịch bản demo check-in tuần 1 (10 phút) và **final demo 20 phút** theo từng
+  mục 0–2–4–3–3–4 phút, kèm output mẫu và checklist chuẩn bị:
+  [`docs/demo.md`](docs/demo.md).
 
 ## Viết thêm test case
 

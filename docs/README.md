@@ -3,7 +3,10 @@
 | File | Nội dung |
 | --- | --- |
 | [`plan/01_Bao_cao_ke_hoach_26128.pdf`](plan/01_Bao_cao_ke_hoach_26128.pdf) | Bản kế hoạch gốc 10 tuần (đề tài 26128) |
-| [`environment.md`](environment.md) | Môi trường chuẩn, cài WSL2 Ubuntu, toolchain, GDB, sự cố |
+| [`plan/02_Checklist_tuan_1.pdf`](plan/02_Checklist_tuan_1.pdf) · [`bản text`](plan/02_Checklist_tuan_1.txt) | Checklist tuần 1, bộ bằng chứng và DoD tuần 1 |
+| [`environment.md`](environment.md) | Môi trường chuẩn trên Windows (WSL2 Ubuntu), toolchain, GDB, sự cố |
+| [`run-on-ubuntu.md`](run-on-ubuntu.md) | **Runbook laptop Ubuntu**: clone → cài → env-check → boot → test → baseline |
+| [`demo.md`](demo.md) | **Kịch bản demo cho GV**: check-in tuần 1 (10') và final 20' |
 | [`architecture.md`](architecture.md) | Đường I/O stock xv6, thiết kế async + scheduler + merging |
 | [`testing.md`](testing.md) | Chiến lược test, ma trận CPUS, oracle, benchmark, stress |
 | [`baseline.md`](baseline.md) | Giao thức và kết quả baseline stock |

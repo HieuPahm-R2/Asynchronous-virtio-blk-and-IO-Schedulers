@@ -66,8 +66,30 @@ tuần sau. Mỗi người giải thích phần mình khảo sát và chỉ ra b
   `results/baseline/<timestamp>/`, tổng hợp `docs/baseline.md`.
 - Bản đồ kiến trúc + state machine + thiết kế đề xuất: `docs/architecture.md`.
 - Khung test/benchmark/stress: `docs/testing.md`.
+- Runbook máy Ubuntu: `docs/run-on-ubuntu.md`; kịch bản demo: `docs/demo.md`,
+  lệnh `make demo`.
+- Checklist tuần 1 gốc: `docs/plan/02_Checklist_tuan_1.pdf`.
 
-## Việc tiếp theo (tuần 2)
+## Đối chiếu bộ bằng chứng với checklist 02
+
+Checklist 02 đề xuất cấu trúc `docs/week01/...` và `results/baseline/...`; repo
+hiện dùng tên khác nhưng nội dung tương đương:
+
+| Checklist 02 (đề xuất) | Trong repo hiện tại | Trạng thái |
+| --- | --- | --- |
+| `docs/week01/kickoff.md` | chưa có (biên bản họp nhóm) | ⏳ cần họp |
+| `docs/week01/environment.md` | [`environment.md`](environment.md) + [`run-on-ubuntu.md`](run-on-ubuntu.md) | ✅ |
+| `docs/week01/io-path.md` | [`architecture.md`](architecture.md) mục 1 | ✅ |
+| `docs/week01/decisions.md` | [`architecture.md`](architecture.md) mục 2 + mục câu hỏi chốt | 🟡 bản nháp |
+| `docs/week01/progress-report.docx` | chưa có | ⏳ |
+| `results/baseline/<run-id>/metadata.json` | `results/baseline/2026-10-19_222935/meta.json` | ✅ (khác tên) |
+| `results/baseline/<run-id>/serial.log` | `results/baseline/2026-10-19_222935/logs/<case>.log` | ✅ (tách theo case) |
+| `results/baseline/<run-id>/summary.txt` | `results/baseline/2026-10-19_222935/summary.md` | ✅ (khác định dạng) |
+
+T1-09 (log baseline CPUS=1/4, usertests, grind + protocol timeout/termination):
+đã có — xem [`baseline.md`](baseline.md). T1-12 (báo cáo tuần theo mẫu) còn nợ.
+
+## Việc tiếp theo tuần 2
 
 - [ ] Spike counter `max_inflight` để đo baseline chính xác (nhánh riêng, review).
 - [ ] Chốt request struct + state machine + lock order (review chéo).
