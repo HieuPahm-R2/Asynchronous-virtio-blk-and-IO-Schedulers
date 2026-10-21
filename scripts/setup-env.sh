@@ -52,7 +52,6 @@ CORE_PKGS=(
     python3-venv
     gcc-riscv64-linux-gnu
     binutils-riscv64-linux-gnu
-    qemu-system-misc
     gdb-multiarch
     file
     less
@@ -85,6 +84,15 @@ fi
 
 echo "==> Cài gói: ${PKGS[*]}"
 apt-get install -y --no-install-recommends "${PKGS[@]}"
+
+# QEMU: Ubuntu 24.04 đóng gói trong qemu-system-misc; một số bản mới (26.04+)
+# tách riêng qemu-system-riscv. Thử lần lượt cả hai tên gói.
+if ! command -v qemu-system-riscv64 >/dev/null 2>&1; then
+    echo "==> Cài QEMU RISC-V (qemu-system-misc / qemu-system-riscv)"
+    if ! apt-get install -y --no-install-recommends qemu-system-misc; then
+        apt-get install -y --no-install-recommends qemu-system-riscv || true
+    fi
+fi
 
 echo "==> Dọn cache apt"
 apt-get clean

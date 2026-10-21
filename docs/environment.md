@@ -10,7 +10,7 @@ xv6-riscv bằng cùng một commit, để kết quả baseline/benchmark so sá
 
 | Hạng mục | Lựa chọn | Ghi chú |
 | --- | --- | --- |
-| OS | **WSL2 Ubuntu 24.04 LTS** (x86_64) trên Windows 10/11, hoặc Ubuntu 24.04 VM | Cùng một distro cho cả nhóm |
+| OS | **WSL2 Ubuntu 24.04 LTS** (x86_64) trên Windows 10/11, hoặc Ubuntu 24.04 / **26.04 LTS** VM | Cùng một distro cho cả nhóm; 26.04 vẫn được, chỉ cần ghi version và không trộn số liệu |
 | Compiler/binutils | `gcc-riscv64-linux-gnu` (GCC 13.x) | Makefile tự nhận `TOOLPREFIX` |
 | QEMU | `qemu-system-riscv64` ≥ 7.2 (gói `qemu-system-misc`) | Makefile có `check-qemu-version` |
 | Debug | `gdb-multiarch` | Bắt buộc nếu debug kernel |

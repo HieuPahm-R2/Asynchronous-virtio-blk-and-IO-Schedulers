@@ -48,13 +48,17 @@ make test-fast            # smoke test nhanh (~8 giây)
 make test                 # suite đầy đủ hơn (~18 phút trên QEMU TCG)
 ```
 
-### Linux / VM (Ubuntu 24.04)
+### Linux / VM (Ubuntu 24.04 hoặc 26.04 LTS)
 
 ```bash
 sudo bash scripts/setup-env.sh   # cài gcc/binutils RISC-V, QEMU, gdb-multiarch, Python
 bash scripts/check-env.sh        # build + boot thử
 make qemu CPUS=4
 ```
+
+Ubuntu 26.04 dùng được bình thường (QEMU/GCC mới hơn, upstream xv6 cũng CI trên
+26.04); chỉ cần ghi lại version vào báo cáo và không trộn số liệu giữa các máy —
+chi tiết trong [`docs/run-on-ubuntu.md`](docs/run-on-ubuntu.md).
 
 Chi tiết môi trường, version và cách xử lý sự cố:
 [`docs/environment.md`](docs/environment.md) (Windows/WSL2) ·
@@ -117,6 +121,7 @@ Xem ghi chú trong [`docs/architecture.md`](docs/architecture.md).
 | `make list-tests` | liệt kê test case |
 | `make baseline` | build sạch + đo baseline stock → `results/baseline/<ts>/` |
 | `make fmt` | clang-format kernel/user (cần clang-format ≥ 19) |
+| `make check-text` | kiểm tra encoding tài liệu/script (UTF-8, mojibake, CRLF) |
 
 Thời gian tham khảo trên máy dev WSL2 (QEMU TCG): `make test-fast` ~8 giây;
 `make test` ~18 phút (chủ yếu là `usertests -q` trên CPUS=1/4);

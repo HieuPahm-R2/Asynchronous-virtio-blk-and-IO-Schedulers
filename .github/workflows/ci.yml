@@ -12,6 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Kiểm tra encoding tài liệu/script
+        run: python3 scripts/check_text.py
+
       - name: Cài toolchain RISC-V + QEMU
         run: |
           sudo apt-get update
@@ -27,7 +30,7 @@ jobs:
       # ReflowComments: Never (enum) chỉ có ở clang-format >= 19, còn
       # ubuntu-24.04 có clang-format 18. Format là khuyến nghị, không bắt buộc.
 
-      - name: Smoke test (boot + shell, CPUS=1/4)
+      - name: Smoke test (boot + shell)
         run: python3 tests/runner.py --tag ci --results-dir results/local/ci
 
       - name: Upload log khi fail
