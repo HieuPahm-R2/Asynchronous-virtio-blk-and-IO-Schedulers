@@ -11,21 +11,21 @@ tuần 3, không phải đặc tả đã chốt với giảng viên.
 
 ```mermaid
 flowchart TD
-    U[user: read/write syscall] --> F[sysfile.c: sys_read/sys_write]
-    F --> RC[file.c: fileread/fileread]
-    RC --> FSR[fs.c: readi/writei]
+    U[user: read/write syscall] --> F[sysfile.c: sys_read / sys_write]
+    F --> RC[file.c: fileread / filewrite]
+    RC --> FSR[fs.c: readi / writei]
     FSR --> BR[bio.c: bread / bget]
     FSR --> LW[log.c: log_write + commit]
     BR --> BE[bio.c: bwrite only from log]
     LW --> BW[bwrite]
     BE --> VDR[kernel/virtio_disk.c: virtio_disk_rw]
     BW --> VDR
-    VDR -->|3 descriptor: header, data, status| VQ[(virtqueue avail/used)]
-    VQ -->|notify MMIO 0x10001000| DEV[QEMU virtio-blk device]
-    DEV -->|IRQ 1| PLIC[plic.c]
-    PLIC --> TR[trap.c: devintr irq==VIRTIO0_IRQ]
+    VDR -->|"3 descriptor: header, data, status"| VQ[(virtqueue avail/used)]
+    VQ -->|"notify MMIO 0x10001000"| DEV[QEMU virtio-blk device]
+    DEV -->|"IRQ 1"| PLIC[plic.c]
+    PLIC --> TR[trap.c: devintr irq == VIRTIO0_IRQ]
     TR --> VDI[virtio_disk_intr]
-    VDI -->|b->disk=0; wakeup(b)| WAIT[caller đang sleep trong virtio_disk_rw]
+    VDI -->|"b.disk = 0, wakeup(b)"| WAIT[caller đang sleep trong virtio_disk_rw]
 ```
 
 ### 1.2 Các file/hàm quan trọng

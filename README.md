@@ -123,6 +123,7 @@ Xem ghi chú trong [`docs/architecture.md`](docs/architecture.md).
 | `make baseline` | build sạch + đo baseline stock → `results/baseline/<ts>/` |
 | `make fmt` | clang-format kernel/user (cần clang-format ≥ 19) |
 | `make check-text` | kiểm tra encoding tài liệu/script (UTF-8, mojibake, CRLF) |
+| `make check-mermaid` | lint cú pháp các khối Mermaid trong docs |
 
 Thời gian tham khảo trên máy dev WSL2 (QEMU TCG): `make test-fast` ~8 giây;
 `make test` ~18 phút (chủ yếu là `usertests -q` trên CPUS=1/4);

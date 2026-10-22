@@ -9,7 +9,7 @@ TEST_ARGS ?=
 BASELINE_ARGS ?=
 DEMO_ARGS ?=
 
-.PHONY: help env-check list-tests demo test test-fast test-slow baseline clean-all check-text
+.PHONY: help env-check list-tests demo test test-fast test-slow baseline clean-all check-text check-mermaid
 
 help:
 	@echo "ET4290 — Async virtio-blk & I/O schedulers trên xv6-riscv"
@@ -24,6 +24,7 @@ help:
 	@echo "  make baseline          đo baseline stock, ghi kết quả vào results/baseline/"
 	@echo "  make list-tests        liệt kê test case đã đăng ký"
 	@echo "  make check-text        kiểm tra encoding tài liệu/script (UTF-8, mojibake, CRLF)"
+	@echo "  make check-mermaid     lint cú pháp các khối Mermaid trong docs"
 	@echo "  make clean-all         make clean + xoá kết quả test cục bộ"
 	@echo ""
 	@echo "  Ví dụ: make qemu CPUS=1 | make test TEST_ARGS='--verbose'"
@@ -36,6 +37,9 @@ demo:
 
 check-text:
 	@$(PYTHON) scripts/check_text.py
+
+check-mermaid:
+	@$(PYTHON) scripts/check_mermaid.py
 
 list-tests:
 	@$(PYTHON) tests/runner.py --list
