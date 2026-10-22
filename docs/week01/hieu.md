@@ -1,15 +1,13 @@
-# Hiếu — hướng dẫn từng bước tuần 1 (10 giờ)
+# Hiếu
 
-Vai trò của bạn trong học phần (theo kế hoạch): **async API, buffer lifetime,
+Vai trò trong học phần (theo kế hoạch): **async API, buffer lifetime,
 merging và counters kernel**; thêm phần **test harness, benchmark và báo cáo
-phép đo**. Người review bạn: **Hoàng**; bạn review: **Lợi**.
+phép đo**.
 
 Tuần 1 mục tiêu không phải code kernel, mà là: chạy được trên máy mình, hiểu
-đường I/O + ownership, có test plan, có bằng chứng, và chốt câu hỏi với GV.
+đường I/O + ownership, có test plan, có bằng chứng.
 
-> Tất cả lệnh dưới đây chạy trong terminal **Ubuntu 26.04 trên laptop của bạn**
-> (repo đặt tại `~/ET4290`). Máy này dùng script `scripts/setup-env.sh` như mọi
-> máy Linux khác — xem [run-on-ubuntu.md](../run-on-ubuntu.md) nếu có lỗi.
+> Xem [run-on-ubuntu.md](../run-on-ubuntu.md) nếu có lỗi.
 
 ## Bước 0 — Chuẩn bị (15 phút, làm trước mọi bước)
 
@@ -27,9 +25,6 @@ make check-text                       # phải PASS
 3. [`docs/week1.md`](../week1.md) — bảng ngày/giờ và checklist nghiệm thu.
 4. [`docs/demo.md`](../demo.md) — mục 2 (check-in 10 phút) để biết cuối tuần demo gì.
 
-Ghi chú: các file trong `docs/week01/` là **template**; bạn điền dần trong tuần,
-mỗi lần điền commit kèm câu `docs(week01): ...`.
-
 ---
 
 ## Bước 1 — Kickoff + ghi biên bản (1h, ngày 19/10)
@@ -46,8 +41,6 @@ mỗi lần điền commit kèm câu `docs(week01): ...`.
    - **quyết định sơ bộ**: dùng nhánh `week1/<tên>`, PR có reviewer, không sửa
      kernel tuần này, lệnh test chính thức là `make test`,
    - hành động sau họp (ai làm gì, hạn nào).
-2. Chốt với nhóm trong buổi họp: ai review ai (Hoàng↔bạn, bạn↔Lợi), mốc check-in.
-3. Commit: `git add docs/week01/kickoff.md && git commit -m "docs(week01): biên bản kickoff + câu hỏi GV"`.
 
 **Nghiệm thu:** kickoff.md không còn `PENDING` ở phần bắt buộc (câu hỏi GV được
 phép PENDING nhưng phải có owner + hạn hỏi); có ít nhất 1 commit.
