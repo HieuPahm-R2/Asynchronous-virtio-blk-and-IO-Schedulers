@@ -14,7 +14,7 @@ không phải code kernel.
 | `docs/week01/kickoff.md` | [kickoff.md](kickoff.md) | **Hiếu** (ghi biên bản) | 📝 template — chờ họp |
 | `docs/week01/environment.md` | [environment.md](environment.md) | **Hiếu** (điều phối 3 máy) | 📝 template + dòng máy dev |
 | `docs/week01/io-path.md` | [io-path.md](io-path.md) | Hoàng | 📝 template |
-| `docs/week01/decisions.md` | [decisions.md](decisions.md) | **Hiếu** (T1-08) + Lợi | 📝 template |
+| `docs/week01/decisions.md` | [decisions.md](decisions.md) | **Hiếu** (T1-08) + Lợi | ✅ §1–§4 (Hiếu, 21/10) · 📝 §5 (Lợi) · 📝 §7 review (Hoàng) |
 | `docs/week01/test-plan.md` | [test-plan.md](test-plan.md) | **Hiếu** (T1-10) | 📝 template |
 | `docs/week01/progress-report.docx` | [progress-report.md](progress-report.md) → xuất .docx | cả nhóm | 📝 template |
 | `results/baseline/<run-id>/metadata.json` | `results/baseline/2026-10-19_222935/meta.json` | máy dev | ✅ đã có |
