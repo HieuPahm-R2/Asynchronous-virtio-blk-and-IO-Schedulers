@@ -85,13 +85,23 @@ fi
 echo "==> Cài gói: ${PKGS[*]}"
 apt-get install -y --no-install-recommends "${PKGS[@]}"
 
-# QEMU: Ubuntu 24.04 đóng gói trong qemu-system-misc; một số bản mới (26.04+)
-# tách riêng qemu-system-riscv. Thử lần lượt cả hai tên gói.
+# QEMU: Ubuntu 24.04 đóng gói RISC-V trong qemu-system-misc; các bản mới
+# (26.04+) tách riêng gói qemu-system-riscv và qemu-system-misc KHÔNG còn chứa
+# binary qemu-system-riscv64. Vì vậy: cài qemu-system-misc, kiểm tra binary;
+# nếu vẫn thiếu thì cài tiếp qemu-system-riscv (không dựa vào exit code apt vì
+# "already the newest version" vẫn là exit 0).
 if ! command -v qemu-system-riscv64 >/dev/null 2>&1; then
-    echo "==> Cài QEMU RISC-V (qemu-system-misc / qemu-system-riscv)"
-    if ! apt-get install -y --no-install-recommends qemu-system-misc; then
-        apt-get install -y --no-install-recommends qemu-system-riscv || true
-    fi
+    echo "==> Cài QEMU RISC-V: thử qemu-system-misc"
+    apt-get install -y --no-install-recommends qemu-system-misc || true
+fi
+if ! command -v qemu-system-riscv64 >/dev/null 2>&1; then
+    echo "==> qemu-system-misc không cung cấp qemu-system-riscv64; thử qemu-system-riscv"
+    apt-get install -y --no-install-recommends qemu-system-riscv || true
+fi
+if ! command -v qemu-system-riscv64 >/dev/null 2>&1; then
+    echo "!! CẢNH BÁO: không cài được qemu-system-riscv64 bằng apt." >&2
+    echo "!! Thử: apt-cache search qemu-system | grep riscv" >&2
+    echo "!! hoặc tải QEMU >= 7.2 từ nguồn khác; xem docs/run-on-ubuntu.md mục 9." >&2
 fi
 
 echo "==> Dọn cache apt"

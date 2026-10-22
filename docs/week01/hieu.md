@@ -70,8 +70,17 @@ make demo DEMO_ARGS=--no-qemu     # xem nhanh 6 phần demo (không cần QEMU)
 ```
 
 Nếu `make env-check` FAIL: copy nguyên output gửi nhóm; các lỗi hay gặp ở bảng
-[run-on-ubuntu.md](../run-on-ubuntu.md) mục 9. Riêng 26.04 chú ý tên gói QEMU
-(`qemu-system-riscv` thay vì `qemu-system-misc`) — script đã tự thử cả hai.
+[run-on-ubuntu.md](../run-on-ubuntu.md) mục 9. Riêng 26.04 chú ý tên gói QEMU:
+dấu hiệu `qemu-system-riscv64: not found` dù apt báo `qemu-system-misc is
+already the newest version` → cài thêm:
+
+```bash
+sudo apt-get install -y qemu-system-riscv   # gói riêng của 26.04+
+make env-check                              # phải PASS
+```
+
+(Trên 26.04 `qemu-system-misc` không còn chứa binary RISC-V; script
+`setup-env.sh` đã được sửa để tự thử cả hai gói sau khi `git pull`.)
 
 Sau đó mở [`docs/week01/environment.md`](environment.md), điền **dòng máy của
 bạn**: OS, git hash (`git rev-parse HEAD`), xv6 pin (`cat .xv6-commit`), gcc,

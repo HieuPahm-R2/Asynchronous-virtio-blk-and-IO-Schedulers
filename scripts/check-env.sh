@@ -100,7 +100,7 @@ if command -v qemu-system-riscv64 >/dev/null 2>&1; then
         bad "QEMU phải >= 7.2 (Makefile yêu cầu); hiện tại: ${qv:-?}"
     fi
 else
-    bad "thiếu qemu-system-riscv64 (gói qemu-system-misc)"
+    bad "thiếu qemu-system-riscv64 (Ubuntu 24.04: gói qemu-system-misc; Ubuntu 26.04+: gói qemu-system-riscv)"
 fi
 
 command -v gdb-multiarch >/dev/null 2>&1 \

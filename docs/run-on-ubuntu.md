@@ -28,6 +28,13 @@ chạy trong terminal Ubuntu, không cần mạng sau bước cài toolchain.
 - `clang-format` trên 26.04 nhiều khả năng ≥ 19 → `make fmt` sẽ chạy được
   (trên 24.04 chỉ có 18 nên `make fmt` lỗi config của upstream).
 
+Version tham khảo trên một máy 26.04 đã chạy được (Ubuntu 26.04.1): GCC RISC-V
+15.2.0, QEMU 10.2.1, gdb 17.1, make 4.4.1, python 3.14.4, clang-format 21.1.8.
+**QEMU trên 26.04 phải cài gói `qemu-system-riscv`** (không phải
+`qemu-system-misc`); dấu hiệu thiếu là `qemu-system-riscv64: not found` dù apt
+báo `qemu-system-misc is already the newest version`. `scripts/setup-env.sh`
+mới đã tự thử cả hai gói.
+
 Cần chú ý khi cả nhóm dùng nhiều version khác nhau:
 
 1. **Chạy `make env-check` và lưu output** (git hash, gcc, QEMU, OS) vào báo
@@ -205,6 +212,7 @@ make baseline                     # khi cần số liệu so sánh
 | --- | --- | --- |
 | `Couldn't find a riscv64 version of GCC/binutils` | thiếu toolchain | `sudo bash scripts/setup-env.sh` |
 | `Need qemu version >= 7.2` | QEMU cũ (Ubuntu 22.04) | nâng lên 24.04/26.04 hoặc cài QEMU mới hơn |
+| **`qemu-system-riscv64: not found`** dù `qemu-system-misc` đã cài (Ubuntu **26.04+**) | 26.04 tách binary RISC-V sang gói riêng, `qemu-system-misc` không còn chứa nó | `sudo apt-get install -y qemu-system-riscv` rồi `make env-check` (setup-env.sh mới đã tự thử) |
 | `make: bc: No such file or directory` | thiếu `bc` | `sudo apt install bc` |
 | `Permission denied` khi clone | chưa đăng nhập GitHub cho repo private | `gh auth login` hoặc SSH key |
 | `apt-get update` lỗi mạng/IPv6 | mạng chỉ IPv6 lỗi | script đã tự thử IPv4; hoặc `-o Acquire::ForceIPv4=true` |
