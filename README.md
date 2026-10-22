@@ -23,6 +23,7 @@ so với stock — đó là việc của tuần 2 trở đi.
 | Build lại được từ clone mới | ✅ đã kiểm tra (clone → `make` → boot smoke PASS) |
 | Sơ đồ kiến trúc I/O hiện tại + lifecycle request đề xuất | ✅ [`docs/architecture.md`](docs/architecture.md) |
 | Kịch bản demo cho GV (`make demo` + 20 phút final) | ✅ [`docs/demo.md`](docs/demo.md) |
+| Hồ sơ + hướng dẫn từng bước tuần 1 (Hiếu/Hoàng/Lợi) | ✅ [`docs/week01/README.md`](docs/week01/README.md) |
 | Tag/commit xv6 chính thức của giảng viên | ⏳ **pending** — đổi bằng `scripts/update-xv6.sh` |
 
 ## Bắt đầu nhanh
