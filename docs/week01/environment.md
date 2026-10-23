@@ -11,7 +11,7 @@
 | dev-WSL2 (máy mẫu) | base | Ubuntu 24.04 (WSL2) | `f780d785` | 13.3.0 | 8.2.2 | 15.1 | 3.12.3 | 21/10/2026 | **PASS** |
 | laptop-Hiếu | Hiếu | Ubuntu 26.04.1 | `f780d785` | 15.2.0 | 10.2.1 *(cài `qemu-system-riscv`)* | 17.1 | 3.14.4 | TODO | PASS sau khi cài QEMU |
 | laptop-Hoàng | Hoàng | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
-| laptop-Lợi | Lợi | TODO | TODO | TODO | TODO | TODO | TODO | TODO | TODO |
+| laptop-Lợi | Lợi | Ubuntu 24.04 | `f780d785` | 13.3.0 | 8.2.2 | 15.1 | 3.12.3 | 23/10/2026 | PASS |
 
 ## 2. Cách lấy thông tin
 
