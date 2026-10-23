@@ -1,0 +1,97 @@
+{
+  "started_at": "2026-10-23T12:13:45.799382+07:00",
+  "project_commit": "a0cfa2e942fd7cf27040ec404b002e5a25c691d9",
+  "xv6_pin": "f780d7850765d74cbdcd1fff4b822d8829f7c9bd 2026-10-15 build with -fno-delete-null-pointer-checks",
+  "source_status": "",
+  "host": "Linux-7.2.6-x86_64-with-glibc2.39",
+  "os_release": "PRETTY_NAME=\"Ubuntu 24.04.3 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.3 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+  "tools": {
+    "riscv64-unknown-elf-gcc": [
+      "riscv64-unknown-elf-gcc (13.2.0-11ubuntu1+12) 13.2.0"
+    ],
+    "riscv64-unknown-elf-ld": [
+      "GNU ld (2.42-1ubuntu1+6) 2.42"
+    ],
+    "qemu-system-riscv64": [
+      "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)"
+    ],
+    "make": [
+      "GNU Make 4.3"
+    ],
+    "python3": [
+      "Python 3.12.3"
+    ]
+  },
+  "scope": "Smoke only; no usertests/grind/full regression or async implementation",
+  "checks": [
+    {
+      "name": "build",
+      "status": "PASS",
+      "command": [
+        "make",
+        "-B",
+        "-j4",
+        "kernel/kernel",
+        "fs.img"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "write-read-cpus1",
+      "cpus": 1,
+      "status": "PASS",
+      "commands": [
+        "ls",
+        "echo HOANG_W01_CPUS1_20261023 > hcheck",
+        "cat hcheck",
+        "sync"
+      ],
+      "duration_s": 1.46,
+      "serial_log": "write-read-cpus1.log"
+    },
+    {
+      "name": "reboot-read-cpus1",
+      "cpus": 1,
+      "status": "PASS",
+      "commands": [
+        "ls",
+        "cat hcheck",
+        "sync",
+        "rm hcheck",
+        "sync"
+      ],
+      "duration_s": 1.646,
+      "serial_log": "reboot-read-cpus1.log"
+    },
+    {
+      "name": "write-read-cpus4",
+      "cpus": 4,
+      "status": "PASS",
+      "commands": [
+        "ls",
+        "echo HOANG_W01_CPUS4_20261023 > hcheck",
+        "cat hcheck",
+        "sync"
+      ],
+      "duration_s": 1.458,
+      "serial_log": "write-read-cpus4.log"
+    },
+    {
+      "name": "reboot-read-cpus4",
+      "cpus": 4,
+      "status": "PASS",
+      "commands": [
+        "ls",
+        "cat hcheck",
+        "sync",
+        "rm hcheck",
+        "sync"
+      ],
+      "duration_s": 1.647,
+      "serial_log": "reboot-read-cpus4.log"
+    }
+  ],
+  "finished_at": "2026-10-23T12:13:53.352888+07:00",
+  "passed": 5,
+  "failed": 0
+}

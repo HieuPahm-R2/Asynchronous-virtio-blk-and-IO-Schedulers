@@ -1,0 +1,29 @@
+sequenceDiagram
+    autonumber
+    participant C as Caller / bio
+    participant D as virtio_disk_rw
+    participant V as Descriptor / rings
+    participant Q as QEMU virtio-blk
+    participant T as PLIC / devintr
+    participant I as virtio_disk_intr
+    Note over C,I: STOCK CODE - caller waits, caller reclaims descriptors
+    C->>D: bread miss / bwrite
+    D->>D: lock, alloc3_desc
+    D->>V: header + data + status
+    D->>D: b.disk=1, info[head]=b
+    D->>V: avail[slot]=head, fence
+    D->>V: avail.idx++, fence
+    D->>Q: QUEUE_NOTIFY=0
+    D->>D: prepare(b), unlock
+    D->>D: sleep [caller only]
+    Q->>V: DMA + status, used.idx++
+    Q->>T: IRQ 1
+    T->>I: claim, dispatch handler
+    I->>I: lock, MMIO ACK, fence
+    V->>I: used entry: head ID
+    I->>C: b.disk=0, wakeup(b)
+    I-->>T: unlock, return
+    T->>T: plic_complete(irq)
+    C->>D: resume, lock, recheck
+    D->>D: clear info, free_chain
+    D-->>C: unlock, return
