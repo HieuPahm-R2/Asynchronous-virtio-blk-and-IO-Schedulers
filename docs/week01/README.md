@@ -13,7 +13,7 @@ không phải code kernel.
 | --- | --- | --- | --- |
 | `docs/week01/kickoff.md` | [kickoff.md](kickoff.md) | **Hiếu** (ghi biên bản) | 📝 template — chờ họp |
 | `docs/week01/environment.md` | [environment.md](environment.md) | **Hiếu** (điều phối 3 máy) | 📝 template + dòng máy dev |
-| `docs/week01/io-path.md` | [io-path.md](io-path.md) | Hoàng | 📝 template |
+| `docs/week01/io-path.md` | [io-path.md](io-path.md) | Hoàng | ✅ đã đối chiếu code + sequence; chờ Hiếu review (23/10) |
 | `docs/week01/decisions.md` | [decisions.md](decisions.md) | **Hiếu** (T1-08) + Lợi | ✅ §1–§4 (Hiếu, 21/10) · 📝 §5 (Lợi) · 📝 §7 review (Hoàng) |
 | `docs/week01/test-plan.md` | [test-plan.md](test-plan.md) | **Hiếu** (T1-10) | 📝 template |
 | `docs/week01/progress-report.docx` | [progress-report.md](progress-report.md) → xuất .docx | cả nhóm | 📝 template |
@@ -47,3 +47,17 @@ nguyên nhân, ngày xử lý — **không đánh dấu Done cho đủ hình th�
 - Mọi tuyên bố "đã xong" phải kèm: commit hash / PR / đường dẫn file / log.
 - Việc chưa làm ghi **NOT RUN** hoặc **PENDING**, không điền số liệu giả.
 - Báo cáo tuần dùng summary 200–300 từ; phân biệt Completed / In progress / Blocked.
+
+## Phần việc Hoàng ngày 23/10/2026
+
+[Hướng dẫn thao tác và báo cáo](hoang.md), [bản đồ I/O](io-path.md),
+[thiết kế async](async-design.md). Máy Hoàng build/boot PASS, smoke đọc ghi
+và reboot CPUS=1/4 4/4 PASS; stock-fast 2/2 PASS. Kernel chưa thay đổi;
+async chỉ ở mức thiết kế; reviewer và tag GV còn pending; chưa commit.
+
+Sơ đồ có bản draw.io chỉnh sửa được: [virtio-submit-complete.drawio](diagrams/virtio-submit-complete.drawio), gồm hai trang stock và async đề xuất.
+
+Bản draw.io đã đồng bộ theo link của nhóm; xem [nguồn sơ đồ](diagrams/README.md),
+[bằng chứng có thể commit](../../results/week01/hoang-2026-10-23/README.md),
+[báo cáo PDF](reports/hoang-week01-2026-10-23.pdf) và
+[hướng dẫn commit/push](git-workflow-hoang.md).
