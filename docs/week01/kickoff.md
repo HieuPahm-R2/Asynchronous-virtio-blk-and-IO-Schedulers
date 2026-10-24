@@ -3,15 +3,7 @@
 > **Owner:** Hiếu (ghi biên bản). **Trạng thái:** 📝 CHƯA HỌP — cập nhật ngay sau
 > buổi kickoff. Thay mọi `PENDING` bằng thông tin thật hoặc `PENDING (owner, hạn)`.
 
-## 1. Thông tin buổi họp
 
-| | |
-| --- | --- |
-| Thời gian | PENDING (dự kiến 19/10/2026) |
-| Hình thức | PENDING (offline / Discord / Google Meet) |
-| Tham dự | Nguyễn Văn Hoàng (20233413), Phạm Qúy Lợi (20233501), Phạm Trung Hiếu (20233402) |
-| Người ghi biên bản | Hiếu |
-| Tài liệu dùng | `01_Bao_cao_ke_hoach_26128.pdf`, `02_Checklist_tuan_1.pdf` |
 
 ## 2. Phạm vi chốt trong tuần 1
 
@@ -46,17 +38,10 @@
 | 4 | Định nghĩa SCAN giảng viên mong đợi (SCAN vs LOOK)? | Lợi | PENDING | |
 | 5 | Phạm vi merging được chấp nhận (chỉ read? có write fence?) | Hiếu | PENDING | |
 | 6 | Trọng số rubric (Functionality/Testing/Measurement) — bảng rubric và spec lệch nhau | Hiếu | PENDING | |
-| 7 | Công cụ tracker: Jira mặc định; Trello/GitHub Projects có được chấp thuận? | Lợi | PENDING | |
+
 
 > Chưa có câu trả lời: giữ `PENDING` + ghi hạn hỏi (dự kiến 20/10). Không tự suy đoán.
 
-## 5. URL công cụ (T1-02/T1-03/T1-04)
-
-| Công cụ | URL | Quyền của GV | Trạng thái |
-| --- | --- | --- | --- |
-| Repo GitHub (private) | PENDING | Cần mời GV (`admin`) | PENDING |
-| Jira / board | PENDING | Cần mời GV | PENDING |
-| FigJam / Figma | PENDING | Cần share "Anyone with link can view" | PENDING |
 
 ## 6. Phân công tuần 1 (theo checklist 02)
 
@@ -83,19 +68,3 @@
 - Lệnh chuẩn: `make env-check`, `make test-fast`, `make test`, `make check-text`.
 - Không commit build artifact; không đưa thông tin mật (token) vào repo/log.
 
-## 8. Rủi ro & hành động
-
-| Rủi ro | Tín hiệu | Hành động | Owner |
-| --- | --- | --- | --- |
-| Chưa có tag GV | quá 20/10 chưa trả lời | tiếp tục pin tạm, ghi PENDING, nhắc GV | Hoàng |
-| Máy thứ 2/3 build lỗi | `make env-check` FAIL | gửi output, cùng sửa môi trường | Hiếu |
-| Không có quyền đọc GV | GV chưa mở được repo | kiểm tra lại invite + link | Hoàng |
-| Dồn việc cuối tuần | ngày 24–25/10 còn nhiều task | cắt phần stretch FigJam, ưu tiên baseline/report | cả nhóm |
-
-## 9. Hành động sau họp
-
-| Việc | Owner | Hạn | Trạng thái |
-| --- | --- | --- | --- |
-| Ghi biên bản + tạo issue T1-01..T1-12 | Hiếu | 19/10 | PENDING |
-| Tạo repo/Jira/FigJam + mời GV | Hoàng/Lợi/Hiếu | 20/10 | PENDING |
-| PENDING | | | |

@@ -1,8 +1,7 @@
 # Bản đồ đường I/O & lock — tuần 1 (T1-06)
 
 > **Owner:** Hoàng. **Reviewer:** Hiếu. Điền theo [`../architecture.md`](../architecture.md)
-> mục 1 (đã có sẵn bản nháp tốt — việc chính là kiểm chứng lại bằng code và bổ sung
-> điểm sai/thiếu, không chép lại nguyên văn).
+> mục 1.
 >
 > Yêu cầu checklist: mô tả **cả đường descriptor hết** (khi không còn descriptor
 > free), không kết luận stock chỉ có 1 outstanding khi chưa đo.
@@ -35,16 +34,5 @@ TODO — link ảnh hoặc sơ đồ Mermaid.
 - Nơi được sleep: `virtio_disk_rw` (chờ descriptor, chờ completion), `acquiresleep`.
 - Quy tắc: interrupt **không** sleep; không release sleeplock của caller trong IRQ.
 
-## 5. Điểm phải sửa / câu hỏi mở
 
-| # | Vấn đề | Đề xuất | Trạng thái |
-| ---: | --- | --- | --- |
-| 1 | chưa đo được max_inflight stock | spike counter ở nhánh riêng, review | NOT RUN |
-| 2 | TODO | | |
 
-## 6. Review của Hiếu
-
-- [ ] Sơ đồ khớp code thật (`virtio_disk.c`, `trap.c`, `bio.c`)
-- [ ] Có mô tả đường hết descriptor
-- [ ] Không kết luận "stock chỉ 1 outstanding" khi chưa đo
-- Nhận xét: TODO

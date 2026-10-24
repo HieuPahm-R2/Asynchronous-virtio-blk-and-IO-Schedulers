@@ -7,15 +7,6 @@
 > Quy tắc: **summary 200–300 từ**; mỗi mục Completed phải kèm bằng chứng
 > (commit/PR/file/log); không lấy tỷ lệ trong báo cáo mẫu làm tỷ lệ của nhóm.
 
-## 1. Thông tin
-
-| | |
-| --- | --- |
-| Tuần | Tuần 1 (19–25/10/2026) |
-| Đề tài | 26128 — Asynchronous virtio-blk and I/O schedulers on xv6-riscv |
-| Nhóm | Hoàng (20233413), Lợi (20233501), Hiếu (20233402) |
-| Project commit | TODO (ghi hash cuối tuần) |
-| xv6 pin | TODO (`.xv6-commit`) |
 
 ## 2. Summary (200–300 từ)
 
@@ -33,7 +24,6 @@ kế hoạch tuần 2.
 | Bản đồ I/O + thiết kế async/policy (bản nháp) | Hoàng/Lợi/Hiếu | `docs/architecture.md` |
 | Test plan khung ≥ 30 case | Hiếu | `docs/week01/test-plan.md` |
 | Version log máy Hiếu/Hoàng/Lợi | Hiếu | `docs/week01/environment.md` |
-| FigJam 3 trang + quyền GV | Hiếu | `docs/week01/kickoff.md` mục URL |
 | Baseline tái lập trên máy thứ 2 | Hiếu | `results/baseline/<ts>/` |
 | TODO | | |
 
@@ -70,15 +60,6 @@ kế hoạch tuần 2.
 | T1-10 test plan ≥ 30 case | 23/10 | TODO | |
 | T1-11 sprint tuần 2 | 24/10 | TODO | |
 | T1-12 báo cáo tuần | 25/10 | TODO | |
-
-## 7. Kế hoạch tuần 2 (3 phần kernel + dependency)
-
-| Phần | Owner | Reviewer | Giờ dự kiến | Phụ thuộc |
-| --- | --- | --- | ---: | --- |
-| Request pool + submit/wait + FCFS | Lợi | Hiếu | TODO | chốt request struct/lock |
-| Descriptor lifecycle + interrupt/completion | Hoàng | Lợi | TODO | chốt tag/API sleep |
-| Async API + buffer lifetime + counters | Hiếu | Hoàng | TODO | chốt API với GV |
-| Harness: case async/policy đầu tiên | Hiếu | Lợi | TODO | có code |
 
 ## 8. Đóng góp cá nhân
 
