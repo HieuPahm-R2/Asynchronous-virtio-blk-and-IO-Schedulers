@@ -53,15 +53,3 @@ git diff --stat        # review thay đổi xv6
   `include mk/project.mk` ở cuối.
 - `.github` của upstream **không** copy (CI của dự án tự quản); workflow cũ
   upstream nằm ngoài phạm vi.
-
-## Kiểm tra nhanh sau khi update
-
-```bash
-git status                                   # chỉ thay file xv6 + .xv6-commit
-make clean && make -j"$(nproc)" kernel/kernel fs.img
-python3 tests/runner.py --tag fast           # boot + shell
-python3 tests/runner.py --tag baseline       # usertests + grind smoke
-```
-
-Nếu tag mới đổi API (sleep/wakeup, virtio), cập nhật `docs/architecture.md`
-và kiểm tra lại toàn bộ test stock trước khi code tính năng.

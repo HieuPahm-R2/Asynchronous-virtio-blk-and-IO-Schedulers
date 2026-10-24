@@ -1,7 +1,6 @@
-# Demo cho giảng viên — xem cái gì, chạy cái gì
+# Demo — xem cái gì, chạy cái gì
 
-Tài liệu này trả lời: **demo cho GV xem cái gì, theo từng mốc**, kèm kết quả mẫu
-chạy thật trên base hiện tại và storyboard cho demo cuối kỳ 20 phút.
+Tài liệu này trả lời: kèm kết quả mẫu chạy thật trên base hiện tại và storyboard cho demo cuối kỳ 20 phút.
 
 > Nguyên tắc: **demo là chạy thật + log thật**, không phải đọc slide.
 > Mọi con số phải mở được file bằng chứng trong `results/` hoặc `docs/`.

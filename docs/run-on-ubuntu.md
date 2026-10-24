@@ -1,7 +1,6 @@
-# Chạy dự án trên laptop Ubuntu (clone về máy mới)
+# Chạy dự án trên laptop Ubuntu
 
-Tài liệu này là runbook cho **máy Ubuntu thật** (laptop Linux). Nếu dùng Windows
-thì xem [environment.md](environment.md) (WSL2 Ubuntu). Toàn bộ lệnh dưới đây
+Tài liệu này là runbook cho **máy Ubuntu thật** (laptop Linux). Toàn bộ lệnh dưới đây
 chạy trong terminal Ubuntu, không cần mạng sau bước cài toolchain.
 
 ## 0. Điều kiện cần
@@ -13,41 +12,6 @@ chạy trong terminal Ubuntu, không cần mạng sau bước cài toolchain.
 | Đĩa | ~2 GB trống | toolchain ~1 GB + source/build |
 | Quyền | `sudo` (một lần để cài) | build/test không cần root |
 | Mạng | lần đầu cài apt + clone repo | sau đó chạy offline được |
-| Truy cập repo | repo **private** → cần PAT/SSH key GitHub | dùng `gh auth login` hoặc SSH key |
-
-> Repo private theo yêu cầu học phần; giảng viên phải được cấp quyền đọc.
-
-### Ubuntu 26.04 có sao không?
-
-**Không sao** — thậm chí mượt hơn:
-
-- QEMU trên 26.04 mới hơn 24.04 (chắc chắn ≥ 7.2), GCC RISC-V mới hơn.
-- Chính upstream xv6-riscv chạy CI trên `ubuntu-26.04` (xem `test.yml` của
-  <https://github.com/mit-pdos/xv6-riscv>), nên build/boot xv6 được kiểm chứng
-  sẵn trên nền này.
-- `clang-format` trên 26.04 nhiều khả năng ≥ 19 → `make fmt` sẽ chạy được
-  (trên 24.04 chỉ có 18 nên `make fmt` lỗi config của upstream).
-
-Version tham khảo trên một máy 26.04 đã chạy được (Ubuntu 26.04.1): GCC RISC-V
-15.2.0, QEMU 10.2.1, gdb 17.1, make 4.4.1, python 3.14.4, clang-format 21.1.8.
-**QEMU trên 26.04 phải cài gói `qemu-system-riscv`** (không phải
-`qemu-system-misc`); dấu hiệu thiếu là `qemu-system-riscv64: not found` dù apt
-báo `qemu-system-misc is already the newest version`. `scripts/setup-env.sh`
-mới đã tự thử cả hai gói.
-
-Cần chú ý khi cả nhóm dùng nhiều version khác nhau:
-
-1. **Chạy `make env-check` và lưu output** (git hash, gcc, QEMU, OS) vào báo
-   cáo tuần — spec yêu cầu cả ba ghi lại version.
-2. **Không trộn số liệu baseline/benchmark giữa 24.04 và 26.04**; mỗi máy có
-   baseline riêng, chỉ so sánh giữa các lần đo cùng máy/cùng command line.
-3. **Không sửa Makefile/source để "chạy được trên máy tôi"** — nếu GCC mới hơn
-   làm `-Werror` nổi cảnh báo, gửi log lại để cả nhóm xử lý chung bằng PR.
-4. CI của repo chạy `ubuntu-24.04`; nếu CI xanh mà máy bạn lỗi (hoặc ngược lại),
-   ghi rõ khác biệt để cùng xử lý.
-5. **Tên gói QEMU có thể khác**: 24.04 dùng `qemu-system-misc`, một số bản mới
-   (26.04+) tách riêng `qemu-system-riscv`. `scripts/setup-env.sh` đã thử lần
-   lượt cả hai tên gói; nếu cả hai đều lỗi, gửi output apt lại để cập nhật script.
 
 ## 1. Clone source (đúng commit)
 
@@ -62,7 +26,7 @@ git rev-parse HEAD            # ghi hash này vào báo cáo tuần
 
 Nên clone vào `~/ET4290` (đường dẫn **không có dấu cách**).
 
-## 2. Cài toolchain (một lần cho mỗi máy)
+## 2. Cài toolchain
 
 ```bash
 sudo bash scripts/setup-env.sh
@@ -73,8 +37,6 @@ Script cài: `build-essential`, `gcc-riscv64-linux-gnu`, `binutils-riscv64-linux
 `qemu-system-misc`, `gdb-multiarch`, `bc`, `perl`, `python3`, `clang-format`…
 (idempotent — chạy lại vô hại; tự thử IPv4 nếu apt lỗi mạng).
 
-> Script được kiểm thử trên Ubuntu 24.04. Trên 26.04, tên gói dự kiến không đổi;
-> nếu apt báo thiếu gói nào, gửi log lại để cập nhật script.
 
 ## 3. Kiểm tra môi trường — bước quan trọng nhất
 
@@ -228,5 +190,3 @@ make baseline                     # khi cần số liệu so sánh
 make demo                                 # 6 phần: môi trường → build → boot → test → baseline → hạ tầng
 make demo DEMO_ARGS=--no-qemu             # chỉ in thông tin, không chạy QEMU
 ```
-
-Kịch bản demo đầy đủ cho giảng viên: [demo.md](demo.md).

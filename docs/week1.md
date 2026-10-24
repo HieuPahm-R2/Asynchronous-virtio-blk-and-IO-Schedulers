@@ -1,8 +1,5 @@
 # Tuần 1 — chuẩn bị nền tảng
-
-Nguồn: kế hoạch 26128 (mục 8). Tuần 1 tính từ thứ Hai **19/10/2026**; mục
-tiêu **30 giờ làm việc của cả nhóm** (kể cả họp/review). Đây là checklist của
-nhóm — trạng thái ghi theo thực tế, không lấy kế hoạch làm thành tích.
+Đây là checklist của nhóm — trạng thái ghi theo thực tế, không lấy kế hoạch làm thành tích.
 
 ## Việc theo ngày
 
@@ -21,32 +18,23 @@ nhóm — trạng thái ghi theo thực tế, không lấy kế hoạch làm th�
 1. Cả ba dùng đúng commit gốc, build/boot được; môi trường mô tả để tái lập.
    - Repo có `.xv6-commit`, `docs/environment.md`, script cài + `make env-check`.
    - ⏳ Chờ tag chính thức của giảng viên để chốt (đang dùng pin tạm).
-2. Có repo private, tracker và design; kiểm tra giảng viên đọc được trước mốc
-   tuần học phần 2. ⏳ (cần URL Jira/FigJam thật)
+2. Có repo, tracker và design;
 3. Có bản đồ bread/bwrite → driver → interrupt → wakeup, mô tả cả đường
    descriptor hết. 🟡 `docs/architecture.md` mục 1.
 4. Có baseline stock usertests và grind theo protocol đã ghi; lỗi phải có
    issue + log. ✅ `results/baseline/2026-10-19_222935/` (6/6 PASS, `dirty: false`),
-   tổng hợp `docs/baseline.md`; `grind` mới 60 giây ×2 (smoke), R09 vẫn còn nợ.
+   tổng hợp `docs/baseline.md`; `grind` mới 60 giây ×2 (smoke)
 5. Có request lifecycle, ownership, chính sách ordering và quyết định
    async kernel/user cần chốt. 🟡 lifecycle + ownership trong
    `docs/architecture.md`; async kernel/user ⏳ chờ GV.
-6. Có backlog toàn dự án; task tuần 2 vừa sức; mỗi người có phần kernel cụ thể.
-   ⏳ cần tạo task trên tracker (xem phân công trong README).
-7. Có kế hoạch ≥ 30 ca test, ma trận CPU, stress 30 phút, protocol benchmark.
-   🟡 `docs/testing.md`.
-8. Có báo cáo tuần 1 phân biệt Completed/In progress/Blocked, không lấy tỷ lệ
+6. Có báo cáo tuần 1 phân biệt Completed/In progress/Blocked, không lấy tỷ lệ
    trong báo cáo mẫu làm tỷ lệ của nhóm. ⏳
 
 ## Câu hỏi phải chốt với giảng viên (ghi pending nếu chưa trả lời)
 
-- [ ] Tag/commit xv6 chính thức của học phần
-- [ ] Quy đổi tuần học phần ↔ tuần làm việc; ngày/giờ nộp tuần 10; lịch demo
 - [ ] API đọc bất đồng bộ: syscall user-space hay API kernel + chương trình minh hoạ?
 - [ ] Định nghĩa SCAN giảng viên mong đợi (SCAN vs LOOK); phạm vi merging
-- [ ] Trọng số rubric (spec ghi Functionality 30 + Testing 20 nhưng bảng rubric
-      ghi Testing 5 + Measurement 5) — không tự suy ra
-- [ ] Jira/Trello + FigJam: URL và quyền đọc của giảng viên
+- [ ] Trọng số rubric (spec ghi Functionality 30 + Testing 20 nhưng bảng rubric ghi Testing 5 + Measurement 5)
 
 ## Nội dung check-in 10 phút (gợi ý)
 
@@ -66,8 +54,6 @@ tuần sau. Mỗi người giải thích phần mình khảo sát và chỉ ra b
   `results/baseline/<timestamp>/`, tổng hợp `docs/baseline.md`.
 - Bản đồ kiến trúc + state machine + thiết kế đề xuất: `docs/architecture.md`.
 - Khung test/benchmark/stress: `docs/testing.md`.
-- Runbook máy Ubuntu: `docs/run-on-ubuntu.md`; kịch bản demo: `docs/demo.md`,
-  lệnh `make demo`.
 - Checklist tuần 1 gốc: `docs/plan/02_Checklist_tuan_1.pdf`.
 
 ## Đối chiếu bộ bằng chứng với checklist 02
@@ -89,13 +75,6 @@ kèm hướng dẫn riêng cho từng người (bắt đầu từ [`week01/hieu.
 | `results/baseline/<run-id>/summary.txt` | `results/baseline/2026-10-19_222935/summary.md` | ✅ (khác định dạng) |
 
 T1-09 (log baseline CPUS=1/4, usertests, grind + protocol timeout/termination):
-đã có trên máy dev — xem [`baseline.md`](baseline.md); máy thứ 2/3 tự chạy. T1-12
-(báo cáo tuần theo mẫu) dùng template ở trên.
+đã có trên máy dev — xem [`baseline.md`](baseline.md); máy thứ 2/3 tự chạy.
 
-## Việc tiếp theo tuần 2
 
-- [ ] Spike counter `max_inflight` để đo baseline chính xác (nhánh riêng, review).
-- [ ] Chốt request struct + state machine + lock order (review chéo).
-- [ ] Triển khai request pool + submit/wait + FCFS trước; giữ wrapper đồng bộ.
-- [ ] Mỗi người bắt đầu module kernel của mình (xem bảng phân công README).
-- [ ] Tạo task trên tracker với owner/reviewer/estimate/DoD.

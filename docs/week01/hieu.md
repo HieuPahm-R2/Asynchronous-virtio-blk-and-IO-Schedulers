@@ -83,7 +83,7 @@ QEMU, gdb, python (copy từ output `make env-check`), ngày, `env-check = PASS`
 
 ---
 
-## Bước 3 — FigJam/Figma + URL (45 phút, ngày 20/10 chiều)
+## Bước 3 — DrawIO + URL (45 phút, ngày 20/10 chiều)
 
 **Mục tiêu (T1-04):** có 3 trang sơ đồ, giảng viên đọc được.
 
@@ -97,16 +97,12 @@ Tạo FigJam (hoặc Figma) với 3 trang, vẽ theo [`docs/architecture.md`](..
 3. **Sequence async đề xuất**: caller → `aio_read_submit` → pending queue →
    scheduler → device → interrupt → completion → `aio_poll/aio_wait` → `aio_release`.
 
-Chia sẻ cho GV (quyền đọc) + cả nhóm; dán URL bản chỉnh sửa vào:
-- bảng "URL công cụ" trong [`kickoff.md`](kickoff.md),
-- đầu [`docs/architecture.md`](../architecture.md) (mục "Ảnh FigJam").
-
 **Nghiệm thu:** 3 trang đủ nội dung; URL dán ở 2 chỗ; quyền GV đã kiểm tra
 (bạn nhờ GV mở thử hoặc xác nhận qua kênh lớp).
 
 ---
 
-## Bước 4 — Đọc code + ghi chú buffer/async (2h ngày 21/10 + 1h ngày 22/10)
+## Bước 4 — Đọc code + ghi chú buffer/async
 
 **Mục tiêu (T1-08):** bạn là người nắm buffer lifetime/async API của nhóm.
 
@@ -229,29 +225,17 @@ Tạo PR `week1/hieu → main`:
 
 - tiêu đề: `docs(week01): hồ sơ tuần 1 — Hiếu`;
 - mô tả: checklist T1-01/04/05/08/10/12 + link file + kết quả `make env-check`/baseline;
-- gắn issue ID (tạo issue nếu chưa có Jira — dùng GitHub Issues tạm thời);
 - reviewer: **Hoàng**; chờ approve rồi merge (không tự merge);
 - sau merge cập nhật bảng trạng thái trong [`docs/week01/README.md`](README.md).
 
 ---
 
-## Checklist cá nhân cuối tuần (đối chiếu T1)
-
-- [ ] **T1-01** kickoff.md có biên bản + câu hỏi GV có owner (PENDING được)
-- [ ] **T1-04** 3 trang FigJam + URL dán vào kickoff.md & architecture.md, GV đọc được
-- [ ] **T1-05** environment.md có dòng máy Hiếu đầy đủ (git hash, gcc, QEMU, OS) + PASS
 - [ ] **T1-08** decisions.md đủ buffer ownership / write path / completion-before-wait / API async
 - [ ] **T1-09** baseline máy Hiếu 6/6 PASS; clone mới build/boot PASS
 - [ ] **T1-10** test-plan.md khung ≥ 30 case + benchmark + stress + NOT RUN
 - [ ] **T1-12** progress-report.md 200–300 từ, có link commit/PR/log
 - [ ] Review Lợi xong (comment + approve/reject)
 - [ ] PR `week1/hieu` merged bởi reviewer, main vẫn xanh (`make env-check` PASS)
-- [ ] Không có tuyên bố "Done" nào thiếu bằng chứng
 
-## Nhắc nhanh
 
-- Thời gian nằm trong 10h; nếu bước nào vượt, báo nhóm + cắt phần stretch
-  (FigJam có thể đơn giản hơn, baseline có thể chạy lại sau).
-- Gặp blocker quá 1 ngày: ghi vào kickoff.md mục "Rủi ro & hành động" + báo nhóm.
-- Không đưa token/GitHub PAT vào log, không commit `fs.img`, `kernel/kernel`.
-- Mọi lệnh kiểm tra nhanh: `make env-check`, `make test-fast`, `make check-text`.
+

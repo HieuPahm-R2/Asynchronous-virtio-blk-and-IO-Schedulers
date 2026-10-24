@@ -1,0 +1,30 @@
+sequenceDiagram
+    autonumber
+    participant C as Caller
+    participant A as Async API
+    participant P as Pool / pending queue
+    participant D as Driver / virtqueue
+    participant Q as QEMU device
+    participant I as PLIC / IRQ
+    Note over C,I: DESIGN ONLY - APIs and IRQ reclaim are not implemented
+    C->>A: submit(A)
+    A->>P: allocate, enqueue(A)
+    P->>D: dispatch(A), map head
+    D->>Q: publish + notify(A)
+    A-->>C: return handle A
+    C->>A: submit(B)
+    A->>P: allocate, enqueue(B)
+    P->>D: dispatch(B) if space
+    D->>Q: publish + notify(B)
+    A-->>C: return handle B
+    C->>C: other work before wait
+    Q->>I: used(head A), IRQ 1
+    I->>D: ACK, map, free desc(A)
+    D->>P: A=DONE/ERROR, wakeup
+    P->>D: dispatch next QUEUED
+    I->>I: plic_complete(irq)
+    C->>A: wait(A)
+    A-->>C: return saved result A
+    Q->>I: complete(B), same handler
+    C->>A: wait(B), release A,B
+    A->>P: free slots, generation++

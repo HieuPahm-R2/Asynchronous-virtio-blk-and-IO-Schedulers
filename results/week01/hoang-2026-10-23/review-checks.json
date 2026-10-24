@@ -1,0 +1,82 @@
+{
+  "checked_at": "2026-10-23T13:58:15.496361+07:00",
+  "checks": [
+    {
+      "command": [
+        "make",
+        "check-text",
+        "check-mermaid"
+      ],
+      "exit_code": 0,
+      "stdout": "\n== check-text: PASS — 132 file UTF-8 sạch, không mojibake ==\n\n== check-mermaid: PASS — 3 khối Mermaid, không thấy lỗi cú pháp phổ biến ==\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--quiet",
+        "--",
+        "kernel",
+        "user",
+        "mkfs",
+        "Makefile",
+        "mk"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--cached",
+        "--quiet"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "changed_and_new_files_encoding": {
+    "count": 30,
+    "status": "PASS"
+  },
+  "drawio": {
+    "pages": 2,
+    "messages": [
+      20,
+      21
+    ],
+    "native_export": "PASS SVG/PDF via draw.io 32.5.5",
+    "source": "docs/week01/diagrams/drawio-source.json",
+    "message_labels_unchanged": true
+  },
+  "pdf": {
+    "pages": 10,
+    "diagrams_pages": [
+      5,
+      6
+    ],
+    "diagram_paper": "A3 portrait",
+    "text_bounds": "PASS",
+    "bookmarks": "PASS",
+    "visual_review": "All pages contact sheet; changed pages 1, 5, 6, 10 inspected at full size"
+  },
+  "tests_rerun": false,
+  "reason": "Documentation, assets and evidence copies only; kernel/user/build sources unchanged",
+  "staged": false,
+  "committed": false,
+  "pushed": false
+}
