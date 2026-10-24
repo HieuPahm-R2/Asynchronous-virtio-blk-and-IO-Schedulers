@@ -1,0 +1,124 @@
+{
+  "schema": 1,
+  "tool": "et4290-tests-runner",
+  "started_at": "2026-10-24T12:22:01+07:00",
+  "git": {
+    "commit": "50e296a39c2a1ee1949d9fe38cbc9b9bbbe6c884",
+    "branch": "week1/loi",
+    "dirty": false
+  },
+  "xv6_pin": "f780d7850765d74cbdcd1fff4b822d8829f7c9bd 2026-10-15 build with -fno-delete-null-pointer-checks",
+  "host": {
+    "hostname": "haree",
+    "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "kernel": "6.18.54.1-microsoft-standard-WSL2",
+    "wsl": true,
+    "cpus": 16,
+    "mem_total_mb": 7533
+  },
+  "toolchain": {
+    "riscv_gcc": [
+      "riscv64-linux-gnu-gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0"
+    ],
+    "qemu": [
+      "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)"
+    ],
+    "make": [
+      "GNU Make 4.3"
+    ],
+    "python": "3.12.3"
+  },
+  "selection": {
+    "cases": [
+      "boot-smoke",
+      "shell-fs-cpus3",
+      "usertests-quick-cpus1",
+      "usertests-quick-cpus4",
+      "grind-smoke-cpus1",
+      "grind-smoke-cpus4"
+    ],
+    "cpus": [
+      1,
+      3,
+      4
+    ]
+  },
+  "finished_at": "2026-10-24T12:28:46+07:00",
+  "duration_s": 404.06,
+  "results": [
+    {
+      "name": "boot-smoke",
+      "cpus": 1,
+      "tags": [
+        "fast",
+        "baseline",
+        "ci"
+      ],
+      "status": "PASS",
+      "duration_s": 5.66,
+      "reason": "",
+      "log": "logs/boot-smoke.log"
+    },
+    {
+      "name": "shell-fs-cpus3",
+      "cpus": 3,
+      "tags": [
+        "fast",
+        "baseline",
+        "ci"
+      ],
+      "status": "PASS",
+      "duration_s": 4.33,
+      "reason": "",
+      "log": "logs/shell-fs-cpus3.log"
+    },
+    {
+      "name": "usertests-quick-cpus1",
+      "cpus": 1,
+      "tags": [
+        "baseline",
+        "usertests"
+      ],
+      "status": "PASS",
+      "duration_s": 139.81,
+      "reason": "",
+      "log": "logs/usertests-quick-cpus1.log"
+    },
+    {
+      "name": "usertests-quick-cpus4",
+      "cpus": 4,
+      "tags": [
+        "baseline",
+        "usertests"
+      ],
+      "status": "PASS",
+      "duration_s": 131.25,
+      "reason": "",
+      "log": "logs/usertests-quick-cpus4.log"
+    },
+    {
+      "name": "grind-smoke-cpus1",
+      "cpus": 1,
+      "tags": [
+        "baseline",
+        "stress"
+      ],
+      "status": "PASS",
+      "duration_s": 61.18,
+      "reason": "",
+      "log": "logs/grind-smoke-cpus1.log"
+    },
+    {
+      "name": "grind-smoke-cpus4",
+      "cpus": 4,
+      "tags": [
+        "baseline",
+        "stress"
+      ],
+      "status": "PASS",
+      "duration_s": 61.83,
+      "reason": "",
+      "log": "logs/grind-smoke-cpus4.log"
+    }
+  ]
+}

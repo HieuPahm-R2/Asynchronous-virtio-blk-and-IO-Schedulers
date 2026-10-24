@@ -1,0 +1,14 @@
+# case: grind-smoke-cpus1
+# cpus: 1
+# status: PASS
+# duration_s: 61.18
+# reason: -
+# note: stock grind 60s, fail nếu panic (không phải PASS tuyệt đối)
+# --- serial console ---
+make[1]: Warning: File 'fs.img' has modification time 0.26 s in the future
+
+xv6 kernel is booting
+
+init: starting sh
+$ grind
+BABA
