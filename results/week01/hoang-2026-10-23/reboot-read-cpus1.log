@@ -1,0 +1,36 @@
+
+xv6 kernel is booting
+
+init: starting sh
+$ ls
+.              1 1 1024
+..             1 1 1024
+README         2 2 2441
+cat            2 3 36792
+echo           2 4 35640
+forktest       2 5 17416
+grep           2 6 40224
+init           2 7 36096
+kill           2 8 35584
+ln             2 9 35376
+ls             2 10 38920
+mkdir          2 11 35624
+rm             2 12 35616
+sh             2 13 58640
+stressfs       2 14 36488
+usertests      2 15 202504
+grind          2 16 52048
+wc             2 17 37776
+zombie         2 18 34976
+logstress      2 19 37560
+forphan        2 20 36376
+dorphan        2 21 35824
+sync           2 22 35040
+console        3 23 0
+hcheck         2 24 25
+$ cat hcheck
+HOANG_W01_CPUS1_20261023
+$ sync
+$ rm hcheck
+$ sync
+$ 

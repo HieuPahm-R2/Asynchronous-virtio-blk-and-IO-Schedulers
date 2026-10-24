@@ -1,0 +1,92 @@
+{
+  "source_title": "ProjectTerm - ET4290",
+  "source_url": "https://app.diagrams.net/#G1lpHCZ3cDq0vzGF7y1B910eJgA_-NZf_m",
+  "exported_file": "ProjectTerm - ET4290.drawio.xml",
+  "retrieved_at": "2026-10-23T13:44:12.373311+07:00",
+  "full_export_sha256": "d8194474f5f10bfc4d1e17a06114221688f14b2c9f0541dfb846b8231d00bc84",
+  "selected_drawio_sha256": "9fae15dc8e7ae25ffd224b58edf173d3850eb43039ae1a47d046f76df02cb669",
+  "selection": "Two named sequence pages only; other pages preserved in full export outside repository",
+  "changes": [
+    {
+      "page": "01 Stock xv6",
+      "page_id": "syCbyil-3QD5AwRnEXHI",
+      "messages": 20,
+      "removed_objects": [
+        "footer",
+        "guide",
+        "note1",
+        "note2",
+        "scope",
+        "subtitle"
+      ],
+      "changed_labels": [],
+      "changed_geometries": [
+        "header-C",
+        "header-D",
+        "header-I",
+        "header-Q",
+        "header-T",
+        "header-V",
+        "message-1",
+        "message-10",
+        "message-11",
+        "message-12",
+        "message-14",
+        "message-15",
+        "message-16",
+        "message-18",
+        "message-20",
+        "message-3",
+        "message-5",
+        "message-6",
+        "message-7"
+      ],
+      "changed_styles": [],
+      "technical_messages_unchanged": true
+    },
+    {
+      "page": "02 Async đề xuất",
+      "page_id": "PsFjlPXYRRXGbiq-e9UE",
+      "messages": 21,
+      "removed_objects": [
+        "footer",
+        "guide",
+        "note1",
+        "note2",
+        "scope",
+        "subtitle",
+        "title"
+      ],
+      "changed_labels": [],
+      "changed_geometries": [
+        "header-A",
+        "header-C",
+        "header-D",
+        "header-I",
+        "header-P",
+        "header-Q",
+        "message-1",
+        "message-10",
+        "message-12",
+        "message-13",
+        "message-14",
+        "message-15",
+        "message-17",
+        "message-18",
+        "message-19",
+        "message-2",
+        "message-20",
+        "message-21",
+        "message-3",
+        "message-4",
+        "message-5",
+        "message-6",
+        "message-7",
+        "message-8",
+        "message-9"
+      ],
+      "changed_styles": [],
+      "technical_messages_unchanged": true
+    }
+  ]
+}

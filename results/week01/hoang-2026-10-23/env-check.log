@@ -1,0 +1,43 @@
+== Hệ điều hành ==
+  distro: Ubuntu 24.04.3 LTS
+  kernel: 7.2.6
+  môi trường: Linux (không phải WSL)
+  CPU: 12  |  RAM: 14Gi
+  thư mục: /home/ubuntu/2026.1/HDH/Asynchronous-virtio-blk-and-IO-Schedulers
+
+== Pin xv6-riscv ==
+  f780d7850765d74cbdcd1fff4b822d8829f7c9bd 2026-10-15 build with -fno-delete-null-pointer-checks
+  [ OK ] đã ghi pin xv6 (.xv6-commit)
+
+== Toolchain ==
+  [ OK ] make: GNU Make 4.3
+  [ OK ] git: git version 2.43.0
+  [ OK ] python3: Python 3.12.3
+  [ OK ] bc: bc 1.07.1
+  [ OK ] perl: v5.38.2
+  [ OK ] RISC-V gcc: riscv64-unknown-elf-gcc (13.2.0-11ubuntu1+12) 13.2.0  (TOOLPREFIX tự nhận diện)
+  [ OK ] QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)
+  [ OK ] QEMU >= 7.2
+  [WARN] thiếu gdb-multiarch — chỉ cần khi debug bằng GDB
+  [WARN] thiếu clang-format — cần cho 'make fmt' và CI
+
+== Dung lượng đĩa ==
+  [ OK ] còn 13 GiB trống tại /
+
+== Build thử (make -j) ==
+  [ OK ] build kernel/kernel + fs.img thành công (272K kernel)
+
+== Boot smoke (QEMU, CPUS=1) ==
+  == ET4290 test runner — 1 case ==
+     kết quả: /home/ubuntu/2026.1/HDH/Asynchronous-virtio-blk-and-IO-Schedulers/results/local/env-check
+  --- [1/1] boot-smoke (CPUS=1) ... PASS (0.9s)
+  
+  == Kết quả: 1 PASS / 0 FAIL ==
+     meta:     /home/ubuntu/2026.1/HDH/Asynchronous-virtio-blk-and-IO-Schedulers/results/local/env-check/meta.json
+     summary:  /home/ubuntu/2026.1/HDH/Asynchronous-virtio-blk-and-IO-Schedulers/results/local/env-check/summary.md
+  [ OK ] QEMU boot xv6 và shell trả lời
+
+== MÔI TRƯỜNG SẴN SÀNG (cảnh báo: 2) ==
+   make qemu              # boot xv6
+   make test              # chạy test suite
+   make baseline          # ghi baseline stock vào results/
