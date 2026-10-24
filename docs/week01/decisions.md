@@ -348,13 +348,13 @@ Dữ kiện Hiếu đã kiểm chứng từ code (Lợi dùng, không cần suy 
 
 | Nội dung | Kết luận (Lợi điền) |
 | --- | --- |
-| `NUM`/chain cost | (dữ kiện trên) |
-| Lock order | (dữ kiện trên) |
-| Điểm enqueue/dispatch | (dữ kiện trên) |
-| FCFS: tie-break, oracle test | |
-| SCAN: biên capacity, chiều quét, khác LOOK ở đâu | |
-| Deadline: hạn đọc/ghi, batch limit, chống starvation | |
-| Đổi policy khi đang chạy: dữ liệu nào giữ, reset gì, counter nào | |
+| `NUM`/chain cost | NUM = 8 descriptor, mỗi request tốn 3 descriptor nên tối đa 2 chain đồng thời; caller thứ 3 ngủ chờ trên disk.free[0] và được đánh thức khi có descriptor được trả. <br> Hệ quả: tối đa 2 request INFLIGHT, phần còn lại phải nằm trong queue phần mềm. |
+| Lock order | `bcache.lock` → `buf.lock (sleeplock)` → `disk.vdisk_lock`; thêm `log.lock` → `bcache.lock` |
+| Điểm enqueue/dispatch |  **Enqueue**: `aio_read_submit` → `ioq_enqueue` (dưới `ioq.lock`). <br> **Dispatch**: scheduler chọn request QUEUED → `vdisk_submit` (cấp descriptor + notify); nếu `-EAGAIN` thì quay lại queue, chờ tín hiệu descriptor free. <br> **Completion**: `virtio_disk_intr` → completion hook → DONE/ERROR → `wakeup(request)`.   |
+| FCFS: tie-break, oracle test |  **Quy tắc**: chọn request QUEUED có `enqueue_seq` nhỏ nhất; `enqueue_seq` tăng dần, gán trong `ioq_enqueue` khi đang giữ `ioq.lock` nên không bao giờ trùng (đây là tie-break). Không dùng `ticks` vì timer khoảng 1/10 s (`start.c:65`, `trap.c:177`), nhiều request có thể vào cùng một tick (§4.8). |
+| SCAN: biên capacity, chiều quét, khác LOOK ở đâu |  **Quy tắc**: lưu `head_pos` (sector của request vừa dispatch) và `direction`, bắt đầu UP; chọn request gần nhất theo chiều hiện tại, sector bằng `head_pos` tính là phía trước, trùng sector thì so `enqueue_seq`; hết request theo chiều này thì đặt `head_pos` tới biên rồi đảo chiều (không tạo I/O giả). <br> **Biên** = sector 0 và capacity − 1; capacity tính bằng sector = FSSIZE × BSIZE/512 = 2000 × 1024/512 = 4000, tức sector 0–3999 (`param.h:12`, `fs.h:5`, `virtio_disk.c:218`; khớp §4.5 FSSIZE * 2). <br> **LOOK**: LOOK đảo chiều ngay tại request cuối, không đi tới biên; thứ tự dispatch có thể giống nhau, chỉ khác vị trí đảo chiều.  |
+| Deadline: hạn đọc/ghi, batch limit, chống starvation | **Quy tắc**: mỗi read khi enqueue có `deadline = t_enqueue + READ_EXPIRE`, thời gian đo bằng `r_time()` (`riscv.h:301`, §4.8). Mỗi lần chọn: có request quá hạn thì lấy cái có deadline sớm nhất (trùng thì `enqueue_seq`); không có thì chọn theo sector như SCAN, tối đa `BATCH_LIMIT` request liên tiếp rồi kiểm tra hạn lại. <br> **Hạn ghi**: không áp dụng ở bản đầu vì write đi wrapper đồng bộ, không vào queue <br> **Giá trị `READ_EXPIRE`, `BATCH_LIMIT`**: PENDING — cần đo (latency baseline)|
+| Đổi policy khi đang chạy: dữ liệu nào giữ, reset gì, counter nào |**Quy tắc**: `ioq_set_policy` chạy dưới `ioq.lock`. Giữ: `id/generation`, `enqueue_seq`, `t_enqueue`, `deadline`, `state` của mọi request và `head_pos`. Chỉ request QUEUED được chọn theo policy mới; INFLIGHT không bị đụng, hoàn thành bình thường. Reset: `direction = UP`, bộ đếm batch = 0. Counter: `policy_switch++`. <br> **Lý do**: dữ kiện của request không thuộc policy nào nên phải giữ (đánh lại enqueue_seq sẽ làm FCFS sai); trạng thái riêng của policy cũ không có nghĩa với policy mới.  |
 
 ## 6. Câu hỏi mở / cần GV
 
