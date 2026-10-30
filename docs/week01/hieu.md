@@ -228,14 +228,6 @@ Tạo PR `week1/hieu → main`:
 - reviewer: **Hoàng**; chờ approve rồi merge (không tự merge);
 - sau merge cập nhật bảng trạng thái trong [`docs/week01/README.md`](README.md).
 
----
-
-- [ ] **T1-08** decisions.md đủ buffer ownership / write path / completion-before-wait / API async
-- [ ] **T1-09** baseline máy Hiếu 6/6 PASS; clone mới build/boot PASS
-- [ ] **T1-10** test-plan.md khung ≥ 30 case + benchmark + stress + NOT RUN
-- [ ] **T1-12** progress-report.md 200–300 từ, có link commit/PR/log
-- [ ] Review Lợi xong (comment + approve/reject)
-- [ ] PR `week1/hieu` merged bởi reviewer, main vẫn xanh (`make env-check` PASS)
 
 
 

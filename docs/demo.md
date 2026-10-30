@@ -2,9 +2,6 @@
 
 Tài liệu này trả lời: kèm kết quả mẫu chạy thật trên base hiện tại và storyboard cho demo cuối kỳ 20 phút.
 
-> Nguyên tắc: **demo là chạy thật + log thật**, không phải đọc slide.
-> Mọi con số phải mở được file bằng chứng trong `results/` hoặc `docs/`.
-> Phần chưa làm thì ghi rõ **chưa có**, không diễn cho giống đã xong.
 
 ## 1. Demo theo từng mốc của học phần
 
