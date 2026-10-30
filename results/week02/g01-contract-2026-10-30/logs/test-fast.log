@@ -1,0 +1,10 @@
+$ LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONIOENCODING=utf-8 make test-fast
+== ET4290 test runner — 2 case ==
+   kết quả: /mnt/e/ET4290/results/local/tests-2026-10-30_115234
+--- [1/2] boot-smoke (CPUS=1) ... PASS (3.2s)
+--- [2/2] shell-fs-cpus3 (CPUS=3) ... PASS (4.1s)
+
+== Kết quả: 2 PASS / 0 FAIL ==
+   meta:     /mnt/e/ET4290/results/local/tests-2026-10-30_115234/meta.json
+   summary:  /mnt/e/ET4290/results/local/tests-2026-10-30_115234/summary.md
+RESULT: PASS

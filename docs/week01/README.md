@@ -11,7 +11,7 @@ không phải code kernel.
 
 | Checklist 02 | File trong repo | Owner | Trạng thái |
 | --- | --- | --- | --- |
-| `docs/week01/kickoff.md` | [kickoff.md](kickoff.md) | **Hiếu** (ghi biên bản) | 📝 template — chờ họp |
+| `docs/week01/kickoff.md` | [kickoff.md](kickoff.md) | **Hiếu** (ghi biên bản) | ✅ cập nhật trạng thái thật 30/10 (W2-G01) — không họp kickoff riêng |
 | `docs/week01/environment.md` | [environment.md](environment.md) | **Hiếu** (điều phối 3 máy) | 📝 template + dòng máy dev |
 | `docs/week01/io-path.md` | [io-path.md](io-path.md) | Hoàng | ✅ đã đối chiếu code + sequence; chờ Hiếu review (23/10) |
 | `docs/week01/decisions.md` | [decisions.md](decisions.md) | **Hiếu** (T1-08) + Lợi | ✅ §1–§4 (Hiếu, 21/10) · 📝 §5 (Lợi) · 📝 §7 review (Hoàng) |
