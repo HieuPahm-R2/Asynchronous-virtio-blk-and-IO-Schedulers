@@ -13,6 +13,7 @@
 | [`upstream.md`](upstream.md) | Pin xv6-riscv, manifest, cách cập nhật tag |
 | [`week1.md`](week1.md) | Việc tuần 1: môi trường, baseline, thiết kế, phân công |
 | [`week01/README.md`](week01/README.md) | **Hồ sơ tuần 1** + hướng dẫn từng bước cho Hiếu/Hoàng/Lợi, template điền dần |
+| [`week02/interface.md`](week02/interface.md) | **Contract W2-G01** (30/10): interface async READ, buffer ownership, lock domain, state machine, 3 kịch bản review, câu hỏi GV/PTO |
 
 ## Quy ước
 

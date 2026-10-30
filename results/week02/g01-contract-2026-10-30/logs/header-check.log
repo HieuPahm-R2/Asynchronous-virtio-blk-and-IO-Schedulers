@@ -1,0 +1,2 @@
+$ riscv64-linux-gnu-gcc -Wall -Werror -std=gnu11 -march=rv64gc -ffreestanding -fno-common -nostdlib -I kernel -fsyntax-only results/week02/g01-contract-2026-10-30/io_hdr_check.c
+RESULT: PASS (io_request.h compiles clean; _Static_assert: sizeof(struct io_request)==1080, IO_NREQ==16, IO_SECTORS_PER_BLOCK==2)

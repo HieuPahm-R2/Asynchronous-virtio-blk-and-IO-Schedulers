@@ -1,0 +1,4 @@
+$ LANG=C.UTF-8 LC_ALL=C.UTF-8 make check-text
+
+== check-text: PASS — 179 file UTF-8 sạch, không mojibake ==
+RESULT: PASS

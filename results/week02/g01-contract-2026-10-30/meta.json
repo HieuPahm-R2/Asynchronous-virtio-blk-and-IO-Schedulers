@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "run": "g01-contract-2026-10-30",
+  "card": "W2-G01",
+  "started_at": "2026-10-30T11:51:00+07:00",
+  "git": {
+    "commit": "e8095001b2e64f361cd80b25e98a1bea5fd60888",
+    "branch": "week2/hieu-request",
+    "dirty": true,
+    "note": "Bằng chứng chạy trên cây làm việc của contract W2-G01 (git base e809500, chưa commit ở thời điểm chạy). Commit của PR ghi hash ở summary.md khi tạo."
+  },
+  "xv6_pin": "f780d7850765d74cbdcd1fff4b822d8829f7c9bd",
+  "host": {
+    "platform": "Windows 11 + WSL2 Ubuntu-24.04",
+    "cpus": 6,
+    "wsl_distro": "Ubuntu-24.04"
+  },
+  "toolchain": {
+    "riscv_gcc": "riscv64-linux-gnu-gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "qemu": "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)",
+    "make": "GNU Make 4.3",
+    "python": "3.12.3"
+  },
+  "scope": "W2-G01 contract only: header + docs. No kernel async implementation, no syscall, no T01-T13.",
+  "checks": [
+    {
+      "name": "header-contract-syntax",
+      "command": "riscv64-linux-gnu-gcc -Wall -Werror -std=gnu11 -march=rv64gc -ffreestanding -fno-common -nostdlib -I kernel -fsyntax-only results/week02/g01-contract-2026-10-30/io_hdr_check.c",
+      "status": "PASS",
+      "coverage": "io_request.h compiles clean; _Static_assert sizeof(struct io_request)==1080, IO_NREQ==16, IO_SECTORS_PER_BLOCK==2",
+      "log": "logs/header-check.log"
+    },
+    {
+      "name": "clean-build",
+      "command": "make clean && make -j6",
+      "status": "PASS",
+      "coverage": "base kernel + user programs + fs.img build; contract header chưa được include vào build nên không thay đổi kernel",
+      "log": "logs/build.log"
+    },
+    {
+      "name": "check-text",
+      "command": "make check-text",
+      "status": "PASS",
+      "coverage": "UTF-8/mojibake/LF cho toàn bộ file track trong commit này (gồm docs/week02, header, results/week02)",
+      "log": "logs/check-text.log"
+    },
+    {
+      "name": "test-fast",
+      "command": "LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONIOENCODING=utf-8 make test-fast",
+      "status": "PASS",
+      "coverage": "boot-smoke CPUS=1, shell-fs-cpus3 CPUS=3; xác nhận base + header không làm hỏng boot/shell",
+      "cases": ["boot-smoke", "shell-fs-cpus3"],
+      "passed": 2,
+      "failed": 0,
+      "log": "logs/test-fast.log"
+    }
+  ],
+  "not_run": [
+    "T01-T13 (kernel async tests): chưa có implementation W2-I01/H01/H02/L01",
+    "make test / make test-slow / make baseline: không cần cho card contract",
+    "review của Hoàng/Lợi: PENDING"
+  ]
+}

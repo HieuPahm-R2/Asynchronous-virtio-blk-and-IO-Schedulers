@@ -200,8 +200,15 @@ không vượt giới hạn size/segment/descriptor. Hỗ trợ **append và pre
 
 ### 2.6 Đồng bộ, khóa, ownership
 
-Đề xuất bản đầu: **một spinlock** bảo vệ pending queue + request state + kế toán
-descriptor; chưa tối ưu nhiều khóa. Ghi rõ:
+**ĐÃ CHỐT (W2-G01, 30/10/2026):** dùng **một lock domain duy nhất** `io_lock`
+(chính là `disk.vdisk_lock`, truy cập qua `virtio_disk_io_lock()`) bảo vệ
+request pool + queue + state + descriptor/ring/head-map + `b->disk`; không có
+khóa thứ hai, không acquire lồng, không ngủ khi giữ khóa. Hai khóa
+`ioq.lock`/`vdisk_lock` bị loại vì đảo chiều khóa giữa enqueue và completion
+(xem phân tích trong [`week02/interface.md`](week02/interface.md) D6).
+
+Đề xuất ban đầu giữ nguyên làm lịch sử: một spinlock bảo vệ pending queue +
+request state + kế toán descriptor; chưa tối ưu nhiều khóa. Ghi rõ:
 
 - Thứ tự khóa hiện tại: `bcache.lock` → `buf.lock` (sleeplock) → `disk.vdisk_lock`.
   Nếu thêm `ioq.lock`, phải định nghĩa thứ tự và ghi vào tài liệu.
@@ -215,12 +222,22 @@ descriptor; chưa tối ưu nhiều khóa. Ghi rõ:
 
 ### 2.7 API async đề xuất (chưa phải tên syscall chốt)
 
+**ĐÃ CHỐT cho tuần 2 (W2-G01):** kernel-level C API, READ một block
+`BSIZE=1024`, đơn vị địa chỉ là **blockno**, buffer do pool sở hữu. Nguồn sự
+thật + semantics đầy đủ:
+[`docs/week02/interface.md`](week02/interface.md) §2–§3 và
+[`kernel/io_request.h`](../kernel/io_request.h).
+
 ```c
-int aio_read_submit(int dev, uint sector, void *buf, uint nbytes); // trả handle ngay
-int aio_poll(int id);      // 0 = chưa xong, 1 = xong, <0 = lỗi
-int aio_wait(int id);      // chờ completion, trả trạng thái
-int aio_release(int id);   // trả slot/refcount sau khi caller thu hồi kết quả
+int aio_read_submit(uint dev, uint blockno, struct io_handle *out); // 0 hoặc -E*
+int aio_poll(struct io_handle h);        // 1 DONE, 0 đang bay, -EIO/-E*
+int aio_wait(struct io_handle h);        // process ctx; 0 DONE, -EIO/-E*
+int aio_release(struct io_handle h);     // chỉ terminal; 0 hoặc -EBUSY/-E*
+void *aio_data(struct io_handle h);      // staging buffer của pool, đọc sau DONE
 ```
+
+Bản nháp cũ `aio_read_submit(dev, sector, buf, nbytes)` + caller-owned `kbuf`
+đã bị thay thế (xem banner đầu `docs/week01/decisions_report.md`).
 
 Cần chốt với giảng viên: **syscall user-space** hay **API kernel + chương trình
 minh hoạ**. Bản base hiện tại chưa thêm syscall nào.

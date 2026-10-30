@@ -1,5 +1,12 @@
 # BÁO CÁO PHÂN TÍCH VÀ ĐỀ XUẤT THIẾT KẾ ASYNCHRONOUS I/O TRÊN XV6
 
+> **CẬP NHẬT 2026-10-30 (W2-G01):** mô hình **caller-owned `kbuf`** và chữ ký
+> `aio_read_submit(dev, sector, kbuf, nbytes)` ở §3.2–§3.3 (và câu hỏi §5.3)
+> **đã được thay thế** bởi quyết định D2/D3 trong
+> [`docs/week02/interface.md`](../week02/interface.md): pool sở hữu staging
+> buffer cố định, public API dùng `blockno` + `struct io_handle`. Tài liệu này
+> giữ nguyên làm phân tích thiết kế lịch sử; **không** dùng để code/ghép module.
+
 ## 1. Mục tiêu và phạm vi
 
 Mục tiêu của đề xuất là bổ sung cơ chế **đọc đĩa bất đồng bộ (asynchronous read)** cho xv6. Thay vì chờ mỗi yêu cầu đọc hoàn tất mới thực hiện công việc tiếp theo, hệ thống có thể đưa yêu cầu vào hàng đợi, gửi nhiều yêu cầu xuống thiết bị khi còn tài nguyên và thông báo cho bên gọi khi có kết quả.
