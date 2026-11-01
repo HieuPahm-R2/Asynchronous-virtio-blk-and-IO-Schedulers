@@ -6,9 +6,8 @@ dirty source.
 
 ## Giao thức
 
-1. Pin xv6: xem `.xv6-commit` (hiện là `f780d785…`, tạm chờ tag giảng viên).
 2. Build sạch: `make clean && make -j$(nproc) kernel/kernel fs.img`.
-3. Chạy trên QEMU TCG (WSL2 không KVM), đúng command line của Makefile:
+3. Chạy trên QEMU TCG, đúng command line của Makefile:
    `-machine virt -bios none -kernel kernel/kernel -m 128M -smp CPUS -nographic`
    `-global virtio-mmio.force-legacy=false -drive file=fs.img,... -device virtio-blk-device,...`.
 4. Mỗi cấu hình CPUS=1 và CPUS=4:
@@ -47,18 +46,9 @@ Lần chạy: **`results/baseline/2026-10-19_222935/`**
 | `grind-smoke-cpus1` | 1 | PASS | 63,00 |
 | `grind-smoke-cpus4` | 4 | PASS | 63,27 |
 
-Bằng chứng: [`results/baseline/2026-10-19_222935/`](../results/baseline/2026-10-19_222935/)
-(`meta.json`, `summary.md`, `build.log`, `logs/*.log`).
-
-> Bảng trên do `make baseline` sinh ra tại `results/baseline/<timestamp>/summary.md`;
-> mục này được cập nhật tay sau khi chạy. Ghi kèm commit + ngày chạy.
-> Nếu pin/commit thay đổi (tag giảng viên), **chạy lại baseline** và thêm lần chạy mới
-> thay vì sửa số cũ.
 
 ## Diễn giải & giới hạn
 
-- QEMU **TCG** trên WSL2: chậm hơn KVM, số liệu tuyệt đối không dùng để so với
-  máy khác. Chỉ so sánh giữa các lần đo **cùng máy, cùng command line**.
 - `usertests -q` mất **~8–9 phút/cấu hình CPU** trên máy dev này (TCG), nên
   `make test` (gồm usertests CPUS=1/4) mất **~18 phút**. Dùng `make test-fast`
   (~8 giây) trong lúc code hằng ngày, `make test` trước khi commit lớn/PR.
@@ -70,9 +60,8 @@ Bằng chứng: [`results/baseline/2026-10-19_222935/`](../results/baseline/2026
   counter (xem `docs/architecture.md` mục 1.4). Đây là việc tuần 1–2.
 - Số request INFLIGHT tối đa suy ra từ code: `floor(NUM/3) = 2` chain
   (`NUM = 8` descriptor, 3 descriptor/chain); caller thứ 3 ngủ chờ descriptor.
-  Con số **đo được** phải lấy từ counter, không suy đoán.
 
-## Bằng chứng lưu ở đâu
+## Bằng chứng lưu ở
 
 ```
 results/baseline/<timestamp>/

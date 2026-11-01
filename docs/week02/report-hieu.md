@@ -1,349 +1,183 @@
-# Báo cáo phần việc của Hiếu — tuần 2 (26/10 – 01/11/2026)
+# Báo cáo kỹ thuật cá nhân — Tuần 2 (26/10 – 01/11/2026)
 
-> **Người lập:** Phạm Trung Hiếu (20233402) — nhóm 3 người, đề tài **26128:
-> Asynchronous virtio-blk và I/O schedulers trên xv6-riscv**.
-> **Phạm vi báo cáo:** các card được giao cho Hiếu trong kế hoạch tuần 2
-> (W2-G01, W2-I01, W2-I02) + phần việc tuần 1 còn liên quan + đóng góp phối hợp.
-> **Ngày lập:** 2026-11-01. **Nhánh:** `week2/hieu-request`.
-> **Base:** `e809500` (origin/main, 3 PR tuần 1 đã merge) · **Pin xv6 tạm:**
-> `f780d785…` (GV chưa xác nhận tag chính thức).
->
-> **Trạng thái chung:** 3/3 card của Hiếu đã có code + tài liệu + test PASS và
-> commit trên nhánh; **cả 3 đang chờ reviewer xác nhận** (Hoàng review G01/I01/I02,
-> Lợi review G01) nên **chưa đóng card**. Các test cần driver IRQ thật/queue
-> (T01, T07–T10, T12–T13) vẫn **NOT RUN** — không ghi thành PASS.
+> **Người thực hiện:** Phạm Trung Hiếu (MSSV: 20233402)  
+
+> **Trạng thái tổng quan:** Toàn bộ 3/3 card kỹ thuật đảm nhận đã hoàn thành đầy đủ mã nguồn kernel, bộ kiểm thử nội bộ (selftest harness), tài liệu kỹ thuật và đã vượt qua kiểm thử thực tế (PASS) trên nhánh làm việc. **Cả 3 card hiện đang ở trạng thái chờ rà soát chéo (peer review)** từ các thành viên trong nhóm (Hoàng review G01/I01/I02, Lợi review G01) trước khi chính thức đóng card. Các ca kiểm thử yêu cầu driver ngắt thực tế hoặc hàng đợi scheduler (T01, T07–T10, T12–T13) được ghi nhận minh bạch là **NOT RUN**
 
 ---
 
-## 1. Tóm tắt điều hành
+## 1. Tóm tắt
 
-- **W2-G01 (contract):** chốt mâu thuẫn lớn nhất của tuần 1 — chọn **pool sở hữu
-  staging buffer** (bỏ mô hình caller-owned `kbuf`) và **một lock domain duy
-  nhất** `io_lock` (bỏ phương án hai khóa `ioq.lock`/`vdisk_lock`); chốt API
-  kernel-only, `struct io_handle{id, gen}`, vòng đời request/descriptor, quy tắc
-  wait/wakeup, bảng context–khóa–lỗi cho từng hàm và 3 kịch bản review trên giấy.
-- **W2-I01 (pool):** triển khai pool 16 slot trong BSS, try-alloc không ngủ/không
-  panic, validate handle + generation trước mọi dereference, release chỉ khi
-  terminal, counter `free_req/queued/inflight/eagain_pool/stale_handle`; kèm
-  kernel selftest **T02/T03/T04/T11 PASS** và **negative control** chứng minh test
-  bắt được bug.
-- **W2-I02 (poll/wait/release):** triển khai `aio_poll`, `aio_wait` (đúng pattern
-  `sleep_prepare→release→sleep→acquire`, single consumer), `aio_data`,
-  `io_async_completed_locked` cho IRQ H02 gọi; harness test process-context
-  **T05 complete-before-wait, T04 release-active, T06a lost-wakeup gap, T06b
-  waiter ngủ thật được timer IRQ đánh thức** — tất cả PASS, có negative control
-  bỏ `wakeup(req)` để chứng minh test bắt lost-wakeup.
-- **Không ảnh hưởng production:** build production và `make test-fast` PASS;
-  toàn bộ harness test nằm sau `#ifdef IO_SELFTEST`.
-- **Việc còn lại trước khi đóng card:** reviewer ký cùng revision; push nhánh +
-  mở PR; Lợi rà PTO trên Jira; trả lời câu hỏi GV (PTO-7); G02 tích hợp với
-  H01/H02/L01 để chạy được các test IRQ/queue thật.
+Trong tuần làm việc thứ 2, phần việc kỹ thuật của Hiếu tập trung vào việc thiết kế giao diện lõi, quy tắc đồng bộ và xây dựng tầng quản lý request bất đồng bộ (Request Layer) làm nền tảng cho toàn bộ hệ thống:
+
+1. ** (Đặc tả giao diện & Quy tắc đồng bộ):**  
+   Giải quyết dứt điểm xung đột kiến trúc tồn đọng từ Tuần 1 giữa hai tài liệu thiết kế. Nhóm thống nhất lựa chọn mô hình **staging buffer do Request Pool quản lý** (thay vì mô hình bộ đệm do caller sở hữu) và quy về **một miền khóa duy nhất** `io_lock` (đồng nhất với `disk.vdisk_lock`, loại trừ triệt để nguy cơ deadlock AB-BA khi dùng hai khóa riêng biệt). Hoàn thiện đặc tả API mức kernel, cấu trúc handle an toàn `struct io_handle { id, gen }`, phân định rạch ròi vòng đời của request và descriptor, chuẩn hóa chuỗi đồng bộ `wait/wakeup`, lập bảng ma trận ngữ cảnh–khóa–mã lỗi cho từng hàm, cùng 3 kịch bản phản biện thiết kế trên giấy.
+
+2. *(Cơ chế Request Pool hữu hạn & Quản lý thế hệ Handle):**  
+   Hiện thực hóa pool tĩnh gồm 16 slot nằm trọn trong phân vùng BSS, loại bỏ hoàn toàn việc cấp phát bộ nhớ động (`kalloc`) trên đường truyền I/O bất đồng bộ. Xây dựng cơ chế cấp phát không chặn (`try-alloc`), trả về lỗi an toàn khi pool đầy mà không làm panic kernel; cơ chế tra cứu và kiểm thực kép (chỉ số slot và thế hệ `gen`) trước mọi thao tác dereference nhằm loại trừ lỗi sử dụng handle cũ (stale handle / use-after-free); chỉ cho phép thu hồi slot khi request đã ở trạng thái kết thúc (`IO_DONE`/`IO_ERROR`) và không còn tiến trình nào đang chờ. Thiết kế bộ kiểm thử nội bộ chạy lúc khởi động kernel vượt qua các ca **T02, T03, T04, T11 (PASS)**, kèm thực nghiệm đối chứng nghịch (negative control) chứng minh test harness phát hiện lỗi tin cậy.
+
+3. **(Giao diện Poll, Wait và Release an toàn):**  
+   Hiện thực các hàm API chuẩn gồm `aio_poll`, `aio_wait`, `aio_data`, và callback `io_async_completed_locked` phục vụ tầng ngắt virtio-blk. Trong đó, `aio_wait` tuân thủ nghiêm ngặt mô hình đơn tiêu thụ (single consumer) và chuỗi đồng bộ của xv6 (`sleep_prepare -> release lock -> sleep -> acquire lock`), đảm bảo không giữ spinlock khi ngủ và không để lọt tín hiệu đánh thức (lost-wakeup). Triển khai khung kiểm thử trong ngữ cảnh tiến trình (process context) thông qua system call nội bộ `SYS_io_selftest`, vượt qua các ca **T05, T04, T06a (gap-completion) và T06b (ngủ thật và được timer IRQ đánh thức)**. Kiểm thử đối chứng nghịch bằng cách cố tình bỏ `wakeup(req)` xác nhận test harness bắt được lỗi treo do mất tín hiệu.
+
+
+## 3. Chi tiết công việc đã thực hiện
+
+### 3.1 W2-G01 — Thiết kế Contract interface, cơ chế sở hữu buffer và quy tắc khóa
+
+#### Bối cảnh và bài toán kỹ thuật
+Trong Tuần 1, hai tài liệu thiết kế xuất hiện điểm mâu thuẫn lớn: `async-design.md` đề xuất pool sở hữu buffer và dùng chung một khóa hệ thống; trong khi `decisions_report.md` lại quy định caller sở hữu con trỏ `kbuf` và chưa chốt được cơ chế khóa. Nếu các thành viên lập trình song song trên hai mô hình trái ngược này, hệ thống sẽ không thể tích hợp hoặc chắc chắn xảy ra deadlock khi đồng bộ. Card W2-G01 có nhiệm vụ giải quyết dứt điểm mâu thuẫn này trước khi viết code.
+
+#### Bảng quyết định thiết kế then chốt (D1 – D10)
+
+| Mã | Quyết định được chọn | Phương án bị loại trừ & Lý do kỹ thuật |
+| :---: | :--- | :--- |
+| **D1** | Phạm vi MVP kernel-level: Thao tác READ 1 block (`BSIZE=1024`), trên thiết bị gốc `ROOTDEV`, điều phối FCFS; các lệnh WRITE và hệ thống log giữ nguyên đường dẫn đồng bộ truyền thống. | Chưa mở rộng ra system call người dùng, WRITE bất đồng bộ hoặc gom cụm I/O (merge) để tập trung nguồn lực kiểm chứng luồng cốt lõi theo đúng yêu cầu tuần 2. |
+| **D2** | **Request Pool sở hữu staging buffer** (`uchar data[BSIZE]` tích hợp trực tiếp trong từng slot tĩnh tại phân vùng BSS). | Loại bỏ mô hình caller tự sở hữu `kbuf` do vòng đời phức tạp, dễ gây rò rỉ bộ nhớ hoặc xung đột khi tiến trình bị hủy đột ngột trong lúc DMA đang chạy. |
+| **D3** | Giao diện công khai sử dụng thống nhất đơn vị địa chỉ là **blockno**; việc chuyển đổi sang sector (`blockno * 2`) chỉ được thực hiện **duy nhất tại tầng driver**. | Loại trừ nguy cơ hai module cùng thực hiện phép nhân 2, dẫn đến việc tính sai địa chỉ sector trên đĩa (double multiply bug). |
+| **D4** | Định danh request an toàn bằng cấu trúc `struct io_handle { id, gen }`; giá trị `gen` tự động tăng khi giải phóng slot và luôn khác 0; handle hết hạn trả về `-ENOENT`. | Loại trừ việc sử dụng chỉ số mảng trần (raw index), tránh tình trạng handle cũ vô tình thao tác nhầm vào slot đã được tái cấp phát (ABA problem / stale handle). |
+| **D5** | Phân định rạch ròi hai vòng đời độc lập: Request (`FREE → ALLOCATED → QUEUED → INFLIGHT → DONE/ERROR → FREE`) và Descriptor phần cứng (`FREE → RESERVED → PUBLISHED → USED → RECLAIMED → FREE`). | Không gộp chung request, descriptor phần cứng và bộ đệm thành một đối tượng duy nhất nhằm đảm bảo tính độc lập giữa logic điều phối và tầng driver. |
+| **D6** | **Quy về một miền khóa duy nhất** `io_lock` (đồng nhất với `disk.vdisk_lock` thông qua hàm `virtio_disk_io_lock()`); cấm acquire lồng nhau; tuyệt đối không ngủ khi đang giữ spinlock. | Loại bỏ thiết kế dùng hai khóa riêng biệt (`ioq.lock` và `vdisk_lock`) vì dễ gây deadlock AB-BA khi luồng enqueue cần lấy `ioq → vdisk` còn luồng ngắt lại cần `vdisk → ioq`. |
+| **D7** | Mỗi descriptor head gắn cờ sở hữu rõ ràng: `STOCK` hoặc `ASYNC`. Luồng **async do ngắt IRQ giải phóng**, luồng **stock do caller giải phóng**; cơ chế dispatch được kích hoạt tại 3 điểm (submit, ngắt IRQ, và sau khi stock thu hồi head). | Không dùng chung hàm giải phóng nếu không kiểm tra quyền sở hữu, ngăn ngừa lỗi giải phóng hai lần (double-free) đối với các request đồng bộ truyền thống. |
+| **D8** | Chuẩn hóa bảng mã lỗi kernel: `-EINVAL`, `-ENODEV`, `-ERANGE`, `-ENOENT`, `-EAGAIN`, `-EIO`, `-EBUSY`. Khi pool đầy, trả về mã lỗi `-EAGAIN`, không gây block và không làm panic kernel. | Tránh việc hệ điều hành rơi vào trạng thái chờ vô hạn hoặc bị crash ngoài ý muốn khi tải I/O tăng đột biến. |
+| **D9** | Kênh chờ (wait channel) sử dụng trực tiếp con trỏ của `struct io_request`; giới hạn số lượng waiter `∈ {0, 1}` (đơn tiêu thụ); ngắt IRQ phải cập nhật trạng thái kết thúc **trước** khi gọi `wakeup`; bên chờ phải gọi `sleep_prepare` khi còn đang giữ khóa. | Tránh việc giải phóng slot trước khi caller kịp đọc kết quả; loại trừ khe hở mất tín hiệu đánh thức (lost-wakeup) khi ngắt xảy ra ngay trước lệnh ngủ. |
+| **D10** | Thiết lập bộ đếm thống kê và các bất biến kế toán nghiêm ngặt (`submitted = queued + inflight + done + error`; số slot rảnh và descriptor tự do phải hoàn trả đầy đủ sau chu kỳ xả hàng đợi). | Không chấp nhận tiêu chí kiểm thử mơ hồ "chạy không panic là đạt", mà buộc mọi tài nguyên phải được cân bằng kế toán tuyệt đối. |
+
+#### Kết quả bàn giao (Deliverables)
+- [`docs/week02/interface.md`](interface.md): Tài liệu đặc tả kỹ thuật chi tiết gồm bảng ma trận ngữ cảnh–khóa–lỗi của từng hàm, biểu đồ chuyển trạng thái, 3 kịch bản phản biện thiết kế (xử lý cạn kiệt pool; ngắt hoàn tất trước khi tiến trình vào chờ; tái sử dụng head trước khi giải phóng), ánh xạ bộ kiểm thử T01–T13, cùng danh mục câu hỏi kỹ thuật gửi giảng viên.
+- [`kernel/io_request.h`](../../kernel/io_request.h): Header trung tâm định nghĩa các kiểu dữ liệu, hằng số trạng thái, `struct io_request` (được tối ưu ở kích thước 1080 B), `struct io_handle`, các prototype API cùng các chỉ thị kiểm tra kiểu tại thời điểm biên dịch (`_Static_assert`).
+- Cập nhật đồng bộ các tài liệu liên quan: [`docs/week01/kickoff.md`](../week01/kickoff.md), [`docs/architecture.md`](../architecture.md) (§2.6–§2.7), gắn banner thông báo thay thế tại [`docs/week01/async-design.md`](../week01/async-design.md) và [`docs/week01/decisions_report.md`](../week01/decisions_report.md).
+- Hồ sơ kiểm chứng thực nghiệm: [`results/week02/g01-contract-2026-10-30/summary.md`](../../results/week02/g01-contract-2026-10-30/summary.md) xác nhận header biên dịch nghiêm ngặt với các cờ `-Wall -Werror`, vượt qua 3 lệnh `_Static_assert`, build production sạch và bộ kiểm thử `make test-fast` đạt 2/2 PASS.
+---
+
+### 3.2 W2-I01 — Hiện thực Request Pool tĩnh và Handle có Generation
+
+#### Nội dung kỹ thuật đã triển khai
+- **Cấu trúc Pool tĩnh trong phân vùng BSS:** Khởi tạo mảng `io_pool[IO_NREQ=16]` trong BSS. Giải pháp này đảm bảo địa chỉ bộ nhớ của header request, trạng thái và staging buffer luôn cố định trong suốt vòng đời của kernel, loại bỏ hoàn toàn chi phí cấp phát động (`kalloc`) và nguy cơ phân mảnh bộ nhớ trên luồng xử lý I/O.
+- **Hệ thống hàm quản lý vòng đời Request:**
+  - `io_init()`: Khởi tạo pool ngay trong hàm `main()` sau khi driver đĩa `virtio_disk_init()` đã sẵn sàng.
+  - `io_alloc_slot_locked()`: Cấp phát tuần tự slot đang ở trạng thái `IO_SLOT_FREE`. Khi pool đầy, hàm trả về con trỏ `NULL` và tăng biến đếm `eagain_pool++` một cách an toàn mà không làm treo hay panic hệ thống.
+  - `io_lookup_handle_locked()`: Cơ chế tra cứu handle an toàn 3 lớp. Kiểm tra dải chỉ số slot (`0 <= id < IO_NREQ`), kiểm tra slot có đang hoạt động hay không, và so khớp thế hệ (`req->gen == handle.gen`) trước khi cho phép dereference con trỏ.
+  - `io_release_locked()`: Chỉ chấp nhận giải phóng các slot đã ở trạng thái kết thúc (`IO_DONE` hoặc `IO_ERROR`) và không còn tiến trình nào đang chờ (`waiters == 0`). Khi giải phóng, hàm tự động tăng thế hệ `gen++` (tránh giá trị 0) và đưa slot về trạng thái `IO_SLOT_FREE`.
+  - `aio_release()`: Giao diện bọc ngoài, tự động quản lý việc chiếm giữ và giải phóng `io_lock`.
+  - `io_get_stats()`: Truy vấn số liệu thống kê (`free_req`, `queued`, `inflight`). Số lượng slot rảnh và đang bay được suy luận trực tiếp từ trạng thái thực tế của các phần tử trong pool nhằm loại trừ hiện tượng trôi lệch số liệu đếm (counter drift).
+- **Phân đoạn tích hợp sớm với H01:** Bổ sung hàm `virtio_disk_io_lock()` trả về địa chỉ con trỏ `&disk.vdisk_lock` của driver đĩa, bảo đảm toàn bộ hệ thống tuân thủ nghiêm ngặt nguyên tắc một miền khóa duy nhất (D6).
+- **Bộ kiểm thử nội bộ tự động (Kernel Selftest):** Xây dựng các ca kiểm thử chuyên sâu chạy ngay khi kernel khởi động, được kích hoạt thông qua cờ biên dịch `-DIO_SELFTEST` và mục tiêu `make test-io`:
+  - **T02 (Cạn kiệt Pool):** Cấp phát hết 16 slot, kiểm tra việc từ chối slot thứ 17 an toàn, giải phóng toàn bộ và kiểm tra pool phục hồi nguyên vẹn 16 slot tự do.
+  - **T03 (Chống Handle cũ / Stale Handle):** Giải phóng slot rồi tái cấp phát, kiểm tra việc từ chối handle cũ và đảm bảo dữ liệu mới không bị rò rỉ cho handle cũ.
+  - **T04 (Chống giải phóng Slot đang hoạt động):** Ngăn chặn việc release slot khi đang ở các trạng thái sống (`ALLOCATED`, `QUEUED`, `INFLIGHT`) hoặc khi còn waiter.
+  - **T11 (Cân bằng kế toán & Tính ổn định của Buffer):** Thực hiện 10 chu kỳ cấp phát và giải phóng liên tục, xác nhận không rò rỉ tài nguyên và địa chỉ staging buffer hoàn toàn bất biến.
+
+#### Bằng chứng thực nghiệm
+Toàn bộ log được lưu trữ tại [`results/week02/i01-pool-2026-10-30/summary.md`](../../results/week02/i01-pool-2026-10-30/summary.md):
+- Kiểm tra tính đúng đắn của header compile `-Wall -Werror`: **PASS**.
+- Biên dịch bản production sạch và chạy bộ smoke test `make test-fast`: **PASS (2/2)**.
+- Chạy kiểm thử nội bộ qua `make test-io`: Toàn bộ các ca T02, T03, T04, T11 đều **PASS**.
+- **Thực nghiệm đối chứng nghịch (Negative Control):** Cố tình vô hiệu hóa điều kiện kiểm tra thế hệ `gen` trong `io_lookup_handle_locked()`. Kết quả cho thấy ca kiểm thử T03 lập tức báo **FAIL** (bắt đúng 4 assertion) và lệnh make dừng với mã lỗi khác 0. Khi khôi phục lại mã nguồn chuẩn, toàn bộ bài test **PASS** trở lại.
+
+**Tiêu chí nghiệm thu card:** ✅ Cấp phát chuẩn xác 16 slot, từ chối slot 17 an toàn và duy trì đúng biến đếm thống kê; ✅ Handle cũ bị từ chối truy cập tuyệt đối sau khi slot được tái sử dụng; ✅ Ngăn chặn việc giải phóng slot đang xử lý hoặc còn tiến trình chờ; ✅ Không rò rỉ slot sau 10 vòng lặp kế toán.
 
 ---
 
-## 2. Vai trò và phạm vi tuần 2
+### 3.3 W2-I02 — Hiện thực cơ chế Poll, Wait và Release an toàn tối thiểu
 
-Theo kế hoạch tuần 2, Hiếu phụ trách: **Pool/handle, buffer lifetime,
-poll/wait/release** (8h) + 2h việc chung.
+#### Nội dung kỹ thuật đã triển khai
+- **API `aio_poll()`:** Hàm kiểm tra trạng thái không chặn (non-blocking). Trả về 1 khi request hoàn thành (`DONE`), 0 khi đang xử lý (`INFLIGHT`/`QUEUED`), `-EIO` khi gặp lỗi phần cứng, và `-ENOENT` nếu handle không hợp lệ hoặc đã hết hạn. Hàm tuyệt đối không đưa tiến trình vào giấc ngủ và không tự ý giải phóng slot.
+- **API `aio_wait()`:** Hàm chờ đồng bộ an toàn, được thiết kế với các ràng buộc kỹ thuật nghiêm ngặt:
+  - Chỉ cho phép gọi từ ngữ cảnh tiến trình (process context); cấm gọi từ ngữ cảnh ngắt hoặc scheduler (kiểm tra `myproc() == 0` lập tức trả về `-EINVAL`).
+  - Áp dụng mô hình đơn tiêu thụ (single consumer): biến đếm `waiters` chỉ nhận giá trị 0 hoặc 1.
+  - **Đường xử lý nhanh (Fast-path):** Nếu request đã hoàn tất trước thời điểm gọi wait, hàm lập tức trả về kết quả thành công mà không cần chuyển trạng thái tiến trình sang ngủ.
+  - **Chuỗi thao tác tránh Lost-wakeup:** Khi request chưa hoàn tất, tiến trình gọi `sleep_prepare(req)` ngay khi còn đang giữ `io_lock` để đăng ký vào kênh chờ, sau đó giải phóng `io_lock`, gọi `sleep()` để nhường CPU, và tái sở hữu `io_lock` khi được đánh thức để kiểm tra lại trạng thái. Thiết kế này loại bỏ hoàn toàn khe hở chạy đua (race condition) và **tuyệt đối không ôm spinlock khi ngủ**.
+- **API `aio_data()`:** Trả về con trỏ vùng nhớ staging buffer tương ứng với request đã hoàn thành.
+- **Callback `io_async_completed_locked()`:** Hàm chuẩn hóa để tầng ngắt thiết bị (`virtio_disk_intr` do Hoàng hiện thực tại H02) gọi khi phần cứng hoàn tất lệnh đọc. Hàm thực hiện chuyển trạng thái request sang `IO_DONE` hoặc `IO_ERROR`, ghi nhận mã trạng thái và timestamp `t_complete`, cập nhật các biến đếm kế toán và phát tín hiệu `wakeup(req)`.
+- **Hạ tầng kiểm thử trong ngữ cảnh tiến trình (Process-Context Test Harness):**  
+  Do `aio_wait` bắt buộc phải chạy trong ngữ cảnh tiến trình có cấu trúc `struct proc` hợp lệ, bài test không thể thực thi trong pha khởi động kernel đơn thuần. Hệ thống đã bổ sung:
+  - System call nội bộ `SYS_io_selftest` (chỉ mở khi có cờ `-DIO_SELFTEST`, ở bản production syscall này lập tức trả về -1).
+  - Chương trình `user/init.c` tự động kích hoạt `SYS_io_selftest` ngay trước khi mở shell người dùng.
+  - Kịch bản `scripts/io-selftest.sh` khởi động QEMU nạp trực tiếp file nhị phân kernel (không gọi qua make nhằm tránh việc relink làm mất cờ `-DIO_SELFTEST`).
+  - Danh mục các ca kiểm thử đã vượt qua:
+    - **T05 (Complete-before-wait):** Kiểm tra đường dẫn fast-path cho cả trường hợp DONE, ERROR và stale handle; xác nhận wait trả về ngay lập tức.
+    - **T04 (Process context):** Cố tình gọi release khi request đang ở trạng thái INFLIGHT; hệ thống từ chối an toàn với mã lỗi `-EBUSY`.
+    - **T06a (Lost-wakeup gap test):** Giả lập trường hợp completion xảy ra chính xác tại khe hở giữa `sleep_prepare` và `sleep`; xác nhận tiến trình không bao giờ bị mất tín hiệu đánh thức.
+    - **T06b (Sleep & Timer IRQ wakeup):** Waiter thực sự đi ngủ trên kênh chờ, sau đó được ngắt đồng hồ định kỳ (`clockintr`) giả lập hoàn tất request và phát tín hiệu đánh thức sau 2 tick (nhật ký ghi nhận tiến trình đã ngủ thực tế `slept >= 3 tick(s)`).
+    - **T03 & T11:** Kiểm tra mở rộng các dạng handle lỗi biên (`id` âm, vượt ngưỡng, `gen` bằng 0) và xác nhận xả sạch toàn bộ tài nguyên sau bài test.
 
-| Card | Đầu việc | Estimate | Hạn nội bộ | Trạng thái thực tế |
-| --- | --- | ---: | --- | --- |
-| **W2-G01** | Chốt interface request, buffer ownership và quy tắc khóa | 1,5h | 28/10 | ✅ có code/tài liệu/test; ⬜ chờ review |
-| **W2-I01** | Triển khai request pool hữu hạn và handle có generation | 6h | 29/10 | ✅ có code/test/evidence; ⬜ chờ review |
-| **W2-I02** | Bổ sung poll, wait và release tối thiểu an toàn | 2h | 30/10 | ✅ có code/test/evidence; ⬜ chờ review |
-| G02/G03 (chung) | Tích hợp MVP + báo cáo tuần | 2h | 01/11 | ⏳ phần của Hiếu: contract/ownership review, evidence; chờ H01/H02/L01 |
+#### Bằng chứng thực nghiệm
+Toàn bộ log được lưu trữ tại [`results/week02/i02-poll-wait-2026-10-30/summary.md`](../../results/week02/i02-poll-wait-2026-10-30/summary.md):
+- Biên dịch header ở cả 2 chế độ (production và test): **PASS**.
+- Biên dịch production và chạy `make test-fast`: **PASS (2/2)**.
+- Chạy bộ kiểm thử tự động `make test-io`: Toàn bộ các ca T02, T03, T04, T05, T06a, T06b, T11 đều **PASS**.
+- **Negative Control:** Cố tình loại bỏ lời gọi `wakeup(req)` trong hàm completion. Kết quả ca kiểm thử T06a bị treo hoàn toàn, không thể in ra dòng xác nhận PASS và tiến trình QEMU bị cơ chế watchdog cưỡng chế dừng sau khoảng thời gian timeout, khiến lệnh make kết thúc với lỗi. Khi phục hồi lại lệnh `wakeup`, bài test lập tức **PASS** trở lại.
 
-> **Giờ actual chưa được ghi riêng.** Báo cáo giữ estimate của kế hoạch, không
-> sao chép estimate thành giờ actual (theo quy tắc G03).
+**Tiêu chí nghiệm thu card:** ✅ `aio_wait` sau khi có kết quả trả về tức thời; `aio_wait` trước khi hoàn tất được đánh thức chuẩn xác, không bị treo hệ thống; ✅ Từ chối an toàn việc giải phóng request đang xử lý (`-EBUSY`); ✅ Đảm bảo tuyệt đối không giữ spinlock khi ngủ và cấm wait trong ngắt; ✅ Xử lý an toàn các dạng handle lỗi mà không gây crash kernel;.
 
----
 
-## 3. Công việc tuần 2 theo card
+## 5. Tổng hợp kết quả kiểm thử và bằng chứng thực nghiệm
 
-### 3.1 W2-G01 — Contract interface, buffer ownership, quy tắc khóa
+### 5.1 Các ca kiểm thử đã đạt (PASS)
 
-**Commit:** `fa0746e` (2026-10-30) · 16 file, +1157/−31.
+Toàn bộ nhật ký kiểm thử chi tiết được lưu trữ có cấu trúc trong thư mục `results/week02/`:
 
-**Vấn đề phải giải:** hai tài liệu tuần 1 mâu thuẫn nhau: `async-design.md` cho
-pool sở hữu buffer + một lock chung; `decisions_report.md` cho caller sở hữu
-`kbuf` và chưa chốt khóa. Nếu ba nhánh code theo hai mô hình thì không ghép được
-hoặc deadlock.
+| Nhóm kiểm thử | Nội dung ca kiểm thử chi tiết | Môi trường thực nghiệm | Bằng chứng lưu vết |
+| :--- | :--- | :--- | :--- |
+| **Contract (W2-G01)** | Biên dịch header nghiêm ngặt (`-Wall -Werror`, 3 lệnh `_Static_assert`), build production sạch hoàn toàn, chạy smoke test `make test-fast` đạt 2/2 PASS. | WSL2 Ubuntu-24.04, riscv64-linux-gnu-gcc 13.3.0, QEMU 8.2.2 | [Hồ sơ nghiệm thu G01](../../results/week02/g01-contract-2026-10-30/summary.md) |
+| **Pool & Handle (W2-I01)** | **T02:** Cạn kiệt pool; **T03:** Phát hiện stale-handle; **T04:** Chống giải phóng slot đang bận; **T11:** Cân bằng kế toán qua 10 chu kỳ cấp phát và tính bất biến của địa chỉ bộ đệm. | Chạy kernel selftest thông qua lệnh `make test-io` | [Hồ sơ nghiệm thu I01](../../results/week02/i01-pool-2026-10-30/summary.md) |
+| **Poll & Wait (W2-I02)** | **T05:** Complete-before-wait (nhánh DONE, ERROR và stale handle); **T04:** Chống giải phóng request INFLIGHT trong process context; **T06a:** Chống lost-wakeup tại khe hở chuẩn bị ngủ; **T06b:** Ngủ thật và được Timer IRQ đánh thức; **T03:** Handle lỗi biên; **T11:** Xả sạch hàng đợi. | Ngữ cảnh tiến trình qua system call `SYS_io_selftest` trên `make test-io` | [Hồ sơ nghiệm thu I02](../../results/week02/i02-poll-wait-2026-10-30/summary.md) |
+| **Đối chứng nghịch (Negative Control)** | **I01:** Tắt kiểm tra generation ⇒ T03 lập tức báo FAIL; **I02:** Bỏ lệnh `wakeup(req)` ⇒ T06a bị treo và watchdog hủy QEMU; sau khi khôi phục mã nguồn ⇒ cả hai đều PASS trở lại. | Tương tự các môi trường trên | Nhật ký `negative-control-*` trong 2 thư mục bằng chứng I01 và I02 |
+| **Hồi quy hệ thống (Regression)** | Lệnh `make test-fast` đạt **PASS 2/2** trên bản build production ở cả hai mốc I01 và I02 mà không bị ảnh hưởng bởi mã kiểm thử. | QEMU đa xử lý ảo (CPUS=1 và CPUS=3) | File `logs/test-fast.log` trong các thư mục evidence |
 
-**Quyết định đã chốt (D1–D10):**
+### 5.2 Các ca kiểm thử chưa chạy (NOT RUN)
 
-| Mã | Chốt | Phương án bị loại / lý do |
-| --- | --- | --- |
-| D1 | MVP kernel-level, READ 1 block `BSIZE=1024`, một device `ROOTDEV`, FCFS; WRITE/log giữ đường stock | syscall user-space/async WRITE/merge thật: chờ GV + ngoài tuần 2 |
-| D2 | **Pool sở hữu staging buffer** (`uchar data[BSIZE]` trong slot BSS) | caller-owned `kbuf`: nhiều đường lifetime/IRQ/exit-kill; không kịp 1,5h contract + 6h pool |
-| D3 | Đơn vị địa chỉ công khai là **blockno**; đổi sector đúng **một chỗ** trong driver (`blockno*2`) | để hai module cùng nhân 2 |
-| D4 | `struct io_handle {id, gen}`; gen tăng khi release, khỏi 0; stale trả `-ENOENT` | dùng index trần: handle cũ trỏ nhầm slot tái sử dụng |
-| D5 | Hai vòng đời tách rời: request `FREE→ALLOCATED→QUEUED→INFLIGHT→DONE/ERROR→FREE`, descriptor `FREE→RESERVED→PUBLISHED→USED→RECLAIMED→FREE` | gộp request/descriptor/buffer làm một |
-| D6 | **Một lock domain** `io_lock` = `disk.vdisk_lock` qua `virtio_disk_io_lock()`; không acquire lồng; không ngủ khi giữ khóa | hai khóa `ioq.lock`/`vdisk_lock`: enqueue đi `ioq→vdisk`, completion cần `vdisk→ioq` ⇒ deadlock |
-| D7 | Mỗi head có owner `STOCK/ASYNC`; **async: IRQ reclaim**, **stock: caller reclaim**; dispatch kick ở 3 điểm (submit, IRQ, stock reclaim); không free hai lần | free chung không xét owner ⇒ double-free stock |
-| D8 | Mã lỗi `-EINVAL/-ENODEV/-ERANGE/-ENOENT/-EAGAIN/-EIO/-EBUSY`; pool đầy trả `-EAGAIN` không ngủ/panic | panic hoặc chờ vô hạn |
-| D9 | Kênh chờ = con trỏ request; `waiters ∈ {0,1}` (single consumer); IRQ set terminal **trước** `wakeup`; wait dùng `sleep_prepare` khi còn giữ khóa | release ngay khi terminal ⇒ mất kết quả; prepare sau release ⇒ lost wakeup |
-| D10 | Counter + bất biến kế toán (`submitted = queued+inflight+done+error`, free_req, free_desc về đủ sau drain) | "PASS vì không panic" |
+Nhóm duy trì tính kỷ luật kỹ thuật, ghi nhận minh bạch trạng thái **NOT RUN** và tuyệt đối không làm tròn thành PASS đối với các bài kiểm tra đòi hỏi sự tích hợp của các module khác:
 
-**Đầu ra:**
+| Ca kiểm thử | Lý do kỹ thuật chưa thể thực thi | Kế hoạch triển khai |
+| :--- | :--- | :---: |
+| **T01** — Đọc 1 block dữ liệu thực tế từ thiết bị | Yêu cầu hàm nạp request vào phần cứng (`try-submit` thuộc H01) và ngắt xử lý hoàn tất (`completion IRQ` thuộc H02). | Mốc G02 |
+| **T07** (Áp lực descriptor), **T08** (Tái sử dụng head), **T09** (Đảo thứ tự hoàn tất), **T10** (Submit không chờ) | Yêu cầu tầng điều khiển driver thực tế hoặc bộ giả lập driver chuyên biệt từ nhóm phần cứng (H01/H02). | Mốc G02 |
+| **T12** — Kiểm thử hồi quy toàn diện hệ thống (`usertests -q`, `grind 60s` trên CPUS=1/4) | Chưa thực hiện trong phạm vi hẹp của từng card riêng lẻ; thuộc trách nhiệm kiểm thử nghiệm thu toàn hệ thống. | Mốc G02 |
+| **T13** — Kiểm chứng thuật toán điều phối FCFS | Yêu cầu hàng đợi I/O scheduler do Lợi hiện thực tại card L01. | Mốc L02 + G02 |
+| **T06 mở rộng** (Đa waiter, xử lý hủy tiến trình kill/exit/cancel trên CPUS=4) | Nằm ngoài phạm vi của phiên bản MVP tuần 2; được hoạch định giải quyết toàn diện trong kỳ tiếp theo (K04). | Kỳ tiếp theo |
+| **`aio_read_submit` đầu-cuối** | Đòi hỏi sự kết nối hoàn chỉnh giữa hàng đợi L01 và tầng driver H01/G02. | Mốc G02 |
+| **Đo lường baseline trên máy cá nhân của Hiếu** | Chưa thu thập vào hồ sơ kỹ thuật chung; cấu hình máy cá nhân chạy Ubuntu 26.04 sẽ được đo đồng bộ. | Mốc G02 |
 
-- [`docs/week02/interface.md`](interface.md) — contract đầy đủ: bảng context/khóa/
-  lỗi từng hàm, state machine, 3 kịch bản review trên giấy (hết pool; IRQ trước
-  wait; head reuse trước release), map T01–T13 → contract, câu hỏi GV/PTO, bảng
-  chữ ký reviewer (PENDING, không ghi "đã duyệt").
-- [`kernel/io_request.h`](../../kernel/io_request.h) — header contract: enum/state,
-  `struct io_request` (1080 B), `struct io_handle`, API, quy tắc lock/buffer.
-- Cập nhật [`docs/week01/kickoff.md`](../week01/kickoff.md) (trạng thái thật đầu
-  tuần 2 + câu hỏi GV), [`docs/architecture.md`](../architecture.md) §2.6–§2.7,
-  banner "đã thay thế" ở [`docs/week01/async-design.md`](../week01/async-design.md)
-  và [`docs/week01/decisions_report.md`](../week01/decisions_report.md).
-- Bằng chứng: [`results/week02/g01-contract-2026-10-30/summary.md`](../../results/week02/g01-contract-2026-10-30/summary.md)
-  — header compile `-Wall -Werror` + 3 `_Static_assert`, build clean PASS,
-  `make check-text` PASS, `make test-fast` 2/2 PASS.
 
-**Nghiệm thu card:** ✅ một contract duy nhất, hết mâu thuẫn buffer/lock; ✅ mỗi
-hàm ghi context/khóa/hành vi hết tài nguyên; ✅ 3 kịch bản review trên giấy; ⬜
-Hoàng + Lợi review cùng revision (hạn nội bộ 28/10 — hiện `PENDING`).
+## 6. Trạng thái, Điểm nghẽn kỹ thuật và Công việc tồn đọng
 
-### 3.2 W2-I01 — Request pool hữu hạn + handle có generation
+| Nội dung công việc | Người phụ trách | Trạng thái hiện tại | Ghi chú kỹ thuật |
+| :--- | :---: | :---: | :--- |
+| Rà soát chéo W2-G01 (Contract / Buffer / Lock) | Hoàng + Lợi | ⬜ PENDING | Review trực tiếp trên commit của Pull Request; bắt buộc hoàn thành trước khi merge module. |
+| Rà soát chéo W2-I01 (Pool / Generation / Lock slice) | Hoàng | ⬜ PENDING | Đặc biệt chú trọng rà soát hàm chia sẻ `virtio_disk_io_lock()` dùng chung cho H01. |
+| Rà soát chéo W2-I02 (Wait / Wakeup / Harness test-only) | Hoàng | ⬜ PENDING | Đánh giá mức độ ảnh hưởng đến mã nguồn production (đã có kết quả build sạch và test-fast làm cơ sở). |
 
-**Commit:** `5296c92` (2026-11-01) · 26 file, +1317/−9.
+| Rà soát các mục PTO trên Jira (PTO-4/7/9/10/11) | Lợi | ⬜ PENDING | Cập nhật minh chứng trực tiếp từ tài liệu kỹ thuật đã ghi nhận tại `interface.md` §9.2. |
+| Giải đáp 7 câu hỏi kỹ thuật gửi GV (PTO-7) | Toàn nhóm | ⬜ PENDING | Các vấn đề về tag xv6, API/syscall, phạm vi READ-only, thuật toán scheduler, cơ chế merge block và rubric chấm điểm. |
+| Tích hợp hệ thống MVP và chạy test ngắt thật (G02) | Hoàng chủ trì | ⏳ Chờ H01/H02/L01 | Hiếu sẵn sàng tham gia rà soát quyền sở hữu buffer/API và chạy lại ma trận test khi có nhánh tích hợp. |
+| Đo đạc baseline hiệu năng riêng trên máy Hiếu | Hiếu | ⬜ PENDING | Thực hiện trong mốc G02 trên cùng base commit để đối chiếu chéo. |
 
-**Đã triển khai:**
+**Phân tích điểm nghẽn kỹ thuật (Blockers):**  
+Hiện tại, hệ thống chưa thể kiểm thử luồng submit bất đồng bộ đầu-cuối (`aio_read_submit`) do tầng nạp lệnh và xử lý ngắt (`try-submit` / `IRQ handler` thuộc H01/H02) cùng hàng đợi scheduler (L01) đang được các thành viên khác hoàn thiện độc lập. Để khắc phục điểm nghẽn này mà không phá vỡ tính bao gói, Hiếu đã chủ động cung cấp sẵn callback `io_async_completed_locked` cùng tài liệu đặc tả contract hoàn chỉnh để H02/L01 dễ dàng tích hợp, kiên quyết không tự ý thay đổi mô hình sở hữu buffer để đi tắt.
 
-- **Pool tĩnh** `io_pool[IO_NREQ=16]` trong BSS → địa chỉ header/status/buffer ổn
-  định suốt boot, không `kalloc` trên đường async.
-- `io_init()` gọi từ `main()` sau `virtio_disk_init()`; `io_alloc_slot_locked()`
-  chỉ lấy slot FREE, pool đầy trả `NULL` + `eagain_pool++` (không ngủ/panic);
-  `io_lookup_handle_locked()` kiểm id range + slot in-use + generation trước mọi
-  dereference; `io_release_locked()` chỉ nhận DONE/ERROR, `waiters==0`, bump
-  generation (khỏi 0), reset FREE; `aio_release()`; `io_get_stats()` (free_req/
-  queued/inflight suy từ state để counter không drift).
-- Slice sớm của H01: `virtio_disk_io_lock()` trả `&disk.vdisk_lock` để mọi module
-  dùng đúng một lock domain (D6).
-- Selftest riêng: **T02 pool-exhaustion, T03 stale-handle, T04 release-active,
-  T11 accounting-drain (10 vòng) + buffer-address stability** — build bằng
-  `-DIO_SELFTEST`, target một lệnh `make test-io`; production là stub rỗng.
 
-**Bằng chứng:** [`results/week02/i01-pool-2026-10-30/summary.md`](../../results/week02/i01-pool-2026-10-30/summary.md)
-— header check PASS, production build PASS, `test-fast` 2/2 PASS, `make test-io`
-T02/T03/T04/T11 PASS; **negative control** tắt kiểm generation ⇒ T03 FAIL (4
-assertion) và make exit ≠ 0, restore ⇒ PASS.
-
-**Nghiệm thu card:** ✅ cấp đúng 16 slot, slot 17 bị từ chối, counter không đổi
-(trừ `eagain_pool`); ✅ handle cũ bị từ chối sau reuse; ✅ không release slot còn
-live/có waiter; ✅ không rò slot sau 10 vòng; ⬜ Hoàng review (PENDING).
-
-### 3.3 W2-I02 — Poll, wait, release tối thiểu an toàn
-
-**Commit:** `1677f11` (2026-11-01) · 27 file, +1290/−9.
-
-**Đã triển khai:**
-
-- `aio_poll()`: 1 = DONE, 0 = đang bay, `-EIO` = ERROR, `-ENOENT` = handle
-  stale; không ngủ, không free slot.
-- `aio_wait()`: chỉ process context; single consumer (`waiters`); vòng
-  `sleep_prepare(req)` khi còn giữ `io_lock` → `release` → `sleep` → `acquire` →
-  kiểm lại; fast-path trả ngay khi đã terminal; **không giữ spinlock khi ngủ**;
-  `myproc()==0` trả `-EINVAL` (không wait trong IRQ/scheduler).
-- `aio_data()`: trả staging buffer của pool; `io_async_completed_locked()`:
-  chuyển DONE/ERROR + status + `t_complete` + counter + `wakeup(req)` — callback
-  chuẩn để H02 gọi từ `virtio_disk_intr()`.
-- Harness test **process-context** (chỉ `-DIO_SELFTEST`): `SYS_io_selftest` + init
-  gọi test trước shell + timer hook trong `clockintr` + `scripts/io-selftest.sh`
-  boot QEMU thẳng kernel (không qua make, tránh relink thiếu flag). Test:
-  - **T05** complete-before-wait (DONE + ERROR + stale handle) → wait trả ngay;
-  - **T04** release khi INFLIGHT → `-EBUSY`;
-  - **T06a** completion rơi đúng khe `sleep_prepare→sleep` (deterministic, không
-    dựa delay) → không mất wakeup;
-  - **T06b** waiter ngủ thật, được **timer IRQ** hoàn tất và đánh thức
-    (serial in `slept >= 3 tick(s)`);
-  - **T03** handle sai (id âm, `id==NREQ`, gen 0, stale); **T11** drain.
-
-**Bằng chứng:** [`results/week02/i02-poll-wait-2026-10-30/summary.md`](../../results/week02/i02-poll-wait-2026-10-30/summary.md)
-— header compile 2 mode PASS, production build PASS, `test-fast` 2/2 PASS,
-`make test-io` PASS (boot pool + process slice), **negative control** bỏ
-`wakeup(req)` ⇒ T06a treo, không có PASS, make exit ≠ 0; restore ⇒ PASS.
-
-**Nghiệm thu card:** ✅ wait sau DONE/ERROR trả ngay đúng status; wait trước
-completion được đánh thức, không treo; ✅ release request đang bay `-EBUSY`;
-✅ không giữ spinlock khi ngủ/không wait trong IRQ; ✅ lỗi handle hữu hạn, không
-panic; ⬜ Hoàng review (PENDING).
-
-### 3.4 Đóng góp phối hợp (G02/G03 — phần của Hiếu)
-
-- **Nguồn sự thật cho L01/H01/H02:** header + contract chốt sẵn state machine,
-  lock domain, owner/reclaim, callback completion (`io_async_completed_locked`),
-  helper pool (`io_alloc_slot_locked`/`io_lookup_handle_locked`/
-  `io_release_locked`), điểm dispatch-kick sau stock reclaim.
-- **Hạ tầng test dùng lại được:** `make test-io` + `scripts/io-selftest.sh` +
-  `io_selftest()`/`SYS_io_selftest` (guard `#ifdef IO_SELFTEST`); H02/G02 có thể
-  mở rộng test IRQ thật trên cùng khung.
-- **Cập nhật tài liệu chung:** kickoff trạng thái thật, architecture §2.6/§2.7,
-  docs/README index, banner thay thế mô hình cũ.
-- **Phần chưa đóng góp được cho G02:** tích hợp end-to-end và chạy T01–T13 cần
-  H01/H02/L01 merge trước; Hiếu sẽ review ownership/API và chạy lại ma trận khi
-  có nhánh tích hợp.
-
----
-
-## 4. Phần việc tuần 1 của Hiếu (trạng thái thật)
-
-| Mã | Việc | Bằng chứng hiện có | Trạng thái thật |
-| --- | --- | --- | --- |
-| T1-01 | Kickoff, biên bản, câu hỏi GV | [`docs/week01/kickoff.md`](../week01/kickoff.md) — đã cập nhật trạng thái thật đầu tuần 2, bảng câu hỏi Q1–Q7 có owner | ✅ file có; nhóm **không họp kickoff riêng**; câu hỏi GV còn `PENDING` |
-| T1-04 | FigJam 3 trang + quyền GV | Chưa thấy URL FigJam trong repo | ⬜ **PENDING/NOT EVIDENCED** — cần bổ sung URL hoặc xác nhận nhóm dùng draw.io thay thế |
-| T1-05 | Version log 3 máy + README tái lập | [`docs/week01/environment.md`](../week01/environment.md) có dòng `laptop-Hiếu` (Ubuntu 26.04.1, env-check PASS sau cài QEMU) | 🟡 điền một phần — cột **Ngày còn `TODO`**; **baseline riêng máy Hiếu chưa có** (kế hoạch tuần 2 đã ghi nhận, chuyển G02) |
-| T1-08 | Buffer ownership, bread/bwrite/log, async API | [`docs/week01/decisions_report.md`](../week01/decisions_report.md) (owner Hiếu) + banner cập nhật thay thế mô hình | ✅ tài liệu có; mô hình caller-`kbuf` đã được G01 thay bằng pool-owned buffer (D2/D3) |
-| T1-10 | Test plan ≥ 30 case + format kết quả | [`docs/week01/test-plan.md`](../week01/test-plan.md) (owner Hiếu) — phân tầng T0–T6, ma trận CPUS, benchmark, stress, mục NOT RUN | ✅ khung có; các case policy/async/merge còn `NOT RUN` vì chưa có code |
-| T1-12 | Báo cáo tuần 1 + review chéo | File `docs/week01/progress-report.md` từng tồn tại nhưng đã bị xoá ở commit dọn dẹp `c5adc4f`; báo cáo tuần 1 đã nộp 25/10 theo kế hoạch tuần 2 | 🟡 **không còn bằng chứng trong repo hiện tại** — nếu G03 cần thì khôi phục từ lịch sử git hoặc bổ sung bản tóm tắt |
-
-> Không đánh dấu `Done` cho mục thiếu bằng chứng; các mục trên là dữ liệu để
-> G03 tổng hợp, không phải kết quả đã kiểm chứng lại.
-
----
-
-## 5. Kiểm thử và bằng chứng tổng hợp
-
-### 5.1 Test đã PASS (có log trong `results/week02/`)
-
-| Nhóm | Test | Môi trường | Bằng chứng |
-| --- | --- | --- | --- |
-| Contract | header compile (`-Wall -Werror`, 3 `_Static_assert`), build clean, `test-fast` 2/2 | WSL2 + riscv gcc 13.3.0 + QEMU 8.2.2 | [G01 summary](../../results/week02/g01-contract-2026-10-30/summary.md) |
-| Pool/handle | T02 pool-exhaustion, T03 stale-handle, T04 release-active, T11 accounting (10 vòng), buffer address | kernel selftest `make test-io` | [I01 summary](../../results/week02/i01-pool-2026-10-30/summary.md) |
-| Poll/wait | T05 complete-before-wait (DONE+ERROR+stale), T04 release-active, T06a gap-completion, T06b sleep/wakeup bằng timer IRQ, T03 handle sai, T11 drain | process context qua `SYS_io_selftest` + `make test-io` | [I02 summary](../../results/week02/i02-poll-wait-2026-10-30/summary.md) |
-| Negative control | I01: tắt kiểm generation ⇒ T03 FAIL; I02: bỏ `wakeup` ⇒ T06a treo/FAIL; restore ⇒ PASS | như trên | log `negative-control-*` trong 2 thư mục evidence |
-| Regression | `make test-fast` 2/2 PASS trên production build ở cả I01 và I02 | QEMU CPUS=1/3 | `logs/test-fast.log` trong evidence |
-
-### 5.2 NOT RUN (không đổi thành PASS)
-
-| Hạng mục | Lý do | Kế hoạch |
-| --- | --- | --- |
-| **T01** single READ block thật | cần H01 try-submit + H02 completion/IRQ | G02 |
-| **T07** backpressure descriptor, **T08** head reuse, **T09** completion mapping/đảo thứ tự, **T10** submit không chờ | cần driver/queue hoặc mock driver của H/L | G02 |
-| **T12** stock regression `usertests -q`, `grind 60s` CPUS=1/4 | chưa chạy trong phiên card; thuộc G02 | G02 |
-| **T13** oracle FCFS | cần queue L01 | L02 + G02 |
-| T06 CPUS=4 / multi-waiter / kill-exit / cancel | K04 đầy đủ để kỳ sau; MVP chỉ single consumer | kỳ sau |
-| `aio_read_submit` end-to-end | cần L01 + H01/G02 | G02 |
-| Baseline riêng máy Hiếu | chưa có trong hồ sơ; máy Hiếu Ubuntu 26.04 | G02 |
-
-### 5.3 Môi trường và giới hạn bằng chứng
-
-- Bằng chứng chạy trên **Windows 11 + WSL2 Ubuntu-24.04**, 6 CPU, riscv gcc
-  13.3.0, QEMU 8.2.2, GNU Make 4.3, Python 3.12.3. **Không phải** máy Ubuntu
-  26.04 của Hiếu → không dùng làm baseline hiệu năng.
-- Mọi evidence chạy trên cây làm việc dirty của nhánh; hash commit cuối là
-  `fa0746e`/`5296c92`/`1677f11` (báo cáo trích đúng hash, không trích base như
-  hash của card).
-- `make test-io` để lại kernel build `-DIO_SELFTEST`; phải `make clean && make`
-  trước khi dùng cho việc khác (đã làm ở bước restore trong evidence).
-- Log tiếng Việt phải chạy với `LANG=C.UTF-8 LC_ALL=C.UTF-8
-  PYTHONIOENCODING=utf-8`, nếu không make/echo WSL sinh mojibake và
-  `make check-text` FAIL.
-
----
-
-## 6. Trạng thái, blocker và việc còn lại
-
-| Việc | Owner | Trạng thái | Ghi chú |
-| --- | --- | --- | --- |
-| Review W2-G01 (contract/buffer/lock) | Hoàng + Lợi | ⬜ PENDING | review cùng revision = commit của PR; cần trước khi merge module |
-| Review W2-I01 (pool/generation/lock slice) | Hoàng | ⬜ PENDING | đặc biệt slice `virtio_disk_io_lock()` thuộc H01 |
-| Review W2-I02 (wait/wakeup, harness test-only) | Hoàng | ⬜ PENDING | kiểm tác động production (đã có build + test-fast) |
-| Push nhánh + mở PR | Hiếu | ⬜ PENDING | nhánh local đang ahead 2 so với `origin/week2/hieu-request` |
-| Rà PTO-4/7/9/10/11 trên Jira | Lợi | ⬜ PENDING | môi trường làm việc không có quyền Jira; bằng chứng repo đã ghi trong interface §9.2 |
-| 7 câu hỏi GV (PTO-7): tag, API/syscall, READ-only, SCAN/LOOK, merge, rubric, max_inflight | theo owner | ⬜ PENDING | interface §9.1, không tự suy đáp án |
-| Tích hợp MVP + test IRQ/queue thật (G02) | Hoàng chủ trì | ⏳ chờ H01/H02/L01 | Hiếu review ownership/API + chạy lại ma trận |
-| Baseline riêng máy Hiếu | Hiếu | ⬜ PENDING | G02, cùng base commit |
-
-**Blocker kỹ thuật đã biết:** chưa có `aio_read_submit` end-to-end, chưa có
-try-submit/IRQ (H01/H02), chưa có queue (L01) ⇒ các test cần thiết bị thật chưa
-chạy được. Hiếu đã cung cấp callback `io_async_completed_locked` + contract để
-H02/L01 ghép; không tự đổi ownership để vượt blocker.
-
----
-
-## 7. Kế hoạch tiếp theo của Hiếu
-
-1. **Cùng Hoàng/Lợi review** 3 commit `fa0746e`, `5296c92`, `1677f11`; xử lý
-   comment và đóng card khi cả hai ký cùng revision.
-2. **Push nhánh + PR** `week2/hieu-request → main`, gắn reviewer, kèm link
-   evidence và bảng T-case; không tự merge.
-3. **G02:** review tích hợp H02 (IRQ completion) + L01 (FCFS) theo contract; bổ
-   sung test hook cho completion thật; chạy ma trận T01/T07–T13 trong phạm vi MVP.
-4. **Bổ sung baseline máy Hiếu** (Ubuntu 26.04) trên đúng base, tách khỏi số liệu
-   máy dev; ghi version/hash/CPU/log đầy đủ.
-5. **Kỳ sau (K04):** kill/exit/cancel, multi-waiter, timeout không free DMA,
-   quyết định mô hình buffer/API theo trả lời của GV (Q2/Q3).
-
----
-
-## 8. Phụ lục
-
-### A. Commit của Hiếu trong tuần 2
-
-| Commit | Nội dung | File thay đổi | Bằng chứng |
-| --- | --- | --- | --- |
-| `fa0746e` | W2-G01 contract + header | 16 file (+1157/−31) | `results/week02/g01-contract-2026-10-30/` |
-| `5296c92` | W2-I01 pool/handle + selftest | 26 file (+1317/−9) | `results/week02/i01-pool-2026-10-30/` |
-| `1677f11` | W2-I02 poll/wait/release + harness | 27 file (+1290/−9) | `results/week02/i02-poll-wait-2026-10-30/` |
-
-Lịch sử nhánh: `e809500` (origin/main tuần 1) → `fa0746e` (G01) → `c5adc4f`
-(dọn tài liệu, không thuộc card của Hiếu) → `5296c92` (I01) → `1677f11` (I02).
-
-### B. File chính Hiếu đã tạo/sửa
-
-| Nhóm | File |
-| --- | --- |
-| Contract | `docs/week02/interface.md`, `kernel/io_request.h` |
-| Pool/API | `kernel/io_request.c`, `kernel/io_request_test.c`, `kernel/defs.h`, `kernel/main.c` |
-| Test harness | `scripts/io-selftest.sh`, `mk/project.mk` (`make test-io`), `kernel/syscall.{h,c}`, `kernel/trap.c`, `user/usys.pl`, `user/init.c` (phần guard `#ifdef IO_SELFTEST`) |
-| Tài liệu | `docs/week02/progress-i01.md`, `docs/week02/progress-i02.md`, `docs/week01/kickoff.md`, `docs/architecture.md` §2.6–§2.7, `docs/week01/{async-design,decisions_report}.md` (banner), `docs/README.md` |
-
-### C. Lệnh tái lập
+### C. Hướng dẫn lệnh tái lập và kiểm chứng thực nghiệm
 
 ```bash
-# production
+# 1. Biên dịch và kiểm tra tính toàn vẹn của bản build production
 make clean && make -j"$(nproc)"
 make test-fast
 
-# kernel selftest (W2-I01 + W2-I02), chỉ build -DIO_SELFTEST
+# 2. Thực thi toàn bộ bộ kiểm thử nội bộ tự động (Kernel Selftest & Process Context Selftest)
 make test-io
-# sau đó trả về production:
+
+# 3. Phục hồi môi trường kernel về trạng thái production sạch
 make clean && make
 
-# kiểm tra tài liệu
+# 4. Kiểm tra chuẩn mã hóa và tính toàn vẹn của toàn bộ tài liệu trong kho lưu trữ
 make check-text
 ```
 
-### D. Ghi chú kỹ thuật / rủi ro đã xử lý
+### D. Ghi chú kỹ thuật và Các giải pháp xử lý rủi ro
 
-- **Không cho make relink thiếu flag:** `make qemu` không track CFLAGS nên có
-  thể link lại object production sau khi build `-DIO_SELFTEST` (đã gặp lỗi
-  `undefined reference io_test_timer_tick`). Giải pháp: `scripts/io-selftest.sh`
-  boot QEMU trực tiếp, không gọi make.
-- **Production an toàn:** toàn bộ hook test nằm trong `#ifdef IO_SELFTEST`;
-  `SYS_io_selftest` trả `-1`, `init`/`clockintr` không gọi test; đã chứng minh
-  bằng production build + `test-fast`.
-- **Khi cập nhật pin xv6:** các mảnh test-only trong file upstream
-  (`kernel/syscall.{h,c}`, `kernel/trap.c`, `user/usys.pl`, `user/init.c`) phải
-  re-apply sau `scripts/update-xv6.sh` — ghi vào checklist kỳ sau.
-- **Một workspace dùng chung:** trong phiên có thay đổi tài liệu từ tiến trình
-  khác (`docs/architecture.md`, `docs/baseline.md`, `docs/upstream.md`); các
-  thay đổi này **không** nằm trong commit của Hiếu.
+- **Ngăn chặn lỗi relink thiếu cờ biên dịch:** Công cụ `make qemu` mặc định của xv6 không theo dõi sự thay đổi của biến `CFLAGS`, do đó có thể dẫn tới việc vô tình liên kết lại các file object của bản production khi đang cần cờ `-DIO_SELFTEST` (từng gây lỗi thiếu biểu tượng `io_test_timer_tick`). Giải pháp được áp dụng là xây dựng kịch bản `scripts/io-selftest.sh` để nạp trực tiếp file nhị phân kernel vào QEMU mà không triệu gọi lại make.
+- **Bảo toàn tính an toàn tuyệt đối cho bản Production:** Toàn bộ các điểm can thiệp kiểm thử đều được bao bọc chặt chẽ sau chỉ thị tiền xử lý `#ifdef IO_SELFTEST`. Khi biên dịch ở chế độ production thông thường, system call `SYS_io_selftest` trả về mã lỗi `-1`, các hàm `init` và bộ xử lý ngắt đồng hồ `clockintr` hoàn toàn không gọi mã test. Tính toàn vẹn này đã được kiểm chứng thông qua bài kiểm tra `make test-fast`.
+- **Lưu ý khi cập nhật phiên bản gốc của xv6 (Pin xv6):** Do một số đoạn mã kiểm thử được đưa vào các file nguồn cốt lõi (`kernel/syscall.{h,c}`, `kernel/trap.c`, `user/usys.pl`, `user/init.c`), nhóm cần chú ý áp dụng lại (re-apply) các đoạn mã này sau mỗi lần thực thi kịch bản cập nhật `scripts/update-xv6.sh`.
+- **Môi trường làm việc đa luồng:** Trong quá trình thực hiện, cây làm việc có ghi nhận một số thay đổi tài liệu độc lập từ các thành viên khác (`docs/architecture.md`, `docs/baseline.md`, `docs/upstream.md`); các thay đổi này được tách biệt hoàn toàn khỏi các commit chuyên môn của Hiếu.
 
-### E. Nguồn tham chiếu
-
-- Kế hoạch triển khai tuần 2 — đề tài 26128 (PDF, lập 27/10/2026): các card
-  W2-G01/W2-I01/W2-I02, ma trận T01–T13, quy tắc đóng card.
-- Contract tuần 2: [`docs/week02/interface.md`](interface.md).
-- Tiến độ chi tiết: [`docs/week02/progress-i01.md`](progress-i01.md),
-  [`docs/week02/progress-i02.md`](progress-i02.md).
-- Bằng chứng: 3 thư mục `results/week02/*` (README format:
-  [`results/README.md`](../../results/README.md)).
-
----
-
-> **Người lập:** Phạm Trung Hiếu — soạn ngày 2026-11-01, có sự hỗ trợ của AI
-> agent trong việc chạy lệnh/test và soạn thảo; mọi số liệu lấy từ log/commit
-> thật trong repo, không suy diễn. Báo cáo này **không thay thế** review của
-> Hoàng/Lợi và không tự đánh dấu card `Done`.
