@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "tool": "et4290-tests-runner",
+  "started_at": "2026-11-01T15:21:45+07:00",
+  "git": {
+    "commit": "785e1acc69603a97e5e7c802903410e85d7eaefc",
+    "branch": "week2/loi",
+    "dirty": true
+  },
+  "xv6_pin": "f780d7850765d74cbdcd1fff4b822d8829f7c9bd 2026-10-15 build with -fno-delete-null-pointer-checks",
+  "host": {
+    "hostname": "haree",
+    "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "kernel": "6.18.54.1-microsoft-standard-WSL2",
+    "wsl": true,
+    "cpus": 16,
+    "mem_total_mb": 7533
+  },
+  "toolchain": {
+    "riscv_gcc": [
+      "riscv64-linux-gnu-gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0"
+    ],
+    "qemu": [
+      "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)"
+    ],
+    "make": [
+      "GNU Make 4.3"
+    ],
+    "python": "3.12.3"
+  },
+  "selection": {
+    "cases": [
+      "ioq-fcfs-mock"
+    ],
+    "cpus": [
+      1
+    ]
+  },
+  "finished_at": "2026-11-01T15:21:59+07:00",
+  "duration_s": 13.8,
+  "results": [
+    {
+      "name": "ioq-fcfs-mock",
+      "cpus": 1,
+      "tags": [
+        "selftest",
+        "scheduler",
+        "mock"
+      ],
+      "status": "FAIL",
+      "duration_s": 13.8,
+      "reason": "ExpectTimeout: gặp dòng bị cấm: 'IOQTEST MOCK T07 progress-after-complete FAIL'",
+      "log": "logs/ioq-fcfs-mock.log"
+    }
+  ]
+}
