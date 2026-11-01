@@ -1,9 +1,14 @@
-// W2-G01 compile check for kernel/io_request.h.
+// W2-G01 compile check for kernel/io_request.h (updated for the W2-I01 include
+// convention: xv6 headers do not include each other, include deps first).
 // Run from repo root:
 //   riscv64-linux-gnu-gcc -Wall -Werror -std=gnu11 -march=rv64gc -ffreestanding
 //     -fno-common -nostdlib -I kernel -fsyntax-only
 //     results/week02/g01-contract-2026-10-30/io_hdr_check.c
 // (one command line; wrapped here only for readability)
+#include "types.h"
+#include "param.h"
+#include "fs.h"
+#include "spinlock.h"
 #include "io_request.h"
 
 // Confirm the contract's memory-budget claim: 14 x 4-byte fields + BSIZE.

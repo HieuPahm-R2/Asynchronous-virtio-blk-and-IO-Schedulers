@@ -28,6 +28,10 @@ main()
     iinit();            // inode table
     fileinit();         // file table
     virtio_disk_init(); // emulated hard disk
+    io_init();          // async request pool (W2-I01)
+#ifdef IO_SELFTEST
+    io_selftest();      // kernel self-test, only with `make test-io`
+#endif
     userinit();         // first user process
 
     __atomic_store_n(&started, 1, __ATOMIC_RELEASE);

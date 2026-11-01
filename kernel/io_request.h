@@ -32,10 +32,11 @@
 #ifndef _IO_REQUEST_H_
 #define _IO_REQUEST_H_
 
-#include "types.h"
-#include "param.h"
-#include "fs.h"
-#include "spinlock.h"
+// Include order (xv6 convention: headers do not include each other):
+//   types.h, param.h, fs.h (BSIZE), spinlock.h, then this header.
+// This keeps the project aligned with buf.h/virtio.h and avoids double-including
+// upstream headers that have no include guards.
+struct spinlock; // defined in spinlock.h; only a pointer is used here
 
 // Number of software request slots. Finite on purpose: a full pool must return
 // IO_EAGAIN, not sleep, not panic. Slot bytes: 16 * sizeof(struct io_request)
@@ -203,6 +204,34 @@ void io_get_stats(struct io_stats *out);
 // Snapshot of driver counters (descriptor pressure, owner split, head reuse).
 // Process context; takes io_lock. Implemented in virtio_disk.c by W2-H02.
 void virtio_disk_get_stats(struct io_desc_stats *out);
+
+// ---------------------------------------------------------------------------
+// Request-layer internal helpers (W2-I01, implemented in kernel/io_request.c).
+// Callers MUST hold io_lock; the _locked suffix states that precondition.
+// These are the primitives that aio_read_submit()/aio_poll()/aio_wait()/
+// aio_release() (W2-I02) and the kernel sefltest build on. They never sleep,
+// never allocate and never touch the device.
+// ---------------------------------------------------------------------------
+
+// Pick a FREE slot, mark it IO_ALLOCATED, initialise every field (staging
+// buffer zeroed, head/next = IO_NIL) and return it. The generation is NOT
+// bumped here: it belongs to the slot and changes only on release, so a handle
+// from an older occupancy stays stale across reuse.
+// Returns NULL when all IO_NREQ slots are in use and increments
+// stats.eagain_pool; the caller maps that to IO_EAGAIN.
+struct io_request *io_alloc_slot_locked(void);
+
+// Validate (id in range, slot in use, generation match) and return the slot.
+// Never dereferences an out-of-range index. Returns NULL for a stale/invalid
+// handle and increments stats.stale_handle; callers map that to IO_ENOENT.
+struct io_request *io_lookup_handle_locked(struct io_handle h);
+
+// Release a terminal slot (DONE/ERROR only, waiters == 0) back to the pool:
+// bump the generation (never 0), reset the slot to FREE, invalidate the handle.
+// Returns 0, IO_EBUSY (still live or has a waiter) or IO_ENOENT (stale).
+// Descriptor chains are already reclaimed by the IRQ before DONE, so this
+// function never touches virtqueue state (contract D7).
+int io_release_locked(struct io_handle h);
 
 // ---------------------------------------------------------------------------
 // Request <-> queue contract. Implemented in kernel/io_queue.c (W2-L01).

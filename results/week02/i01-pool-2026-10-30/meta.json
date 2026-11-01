@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "run": "i01-pool-2026-10-30",
+  "card": "W2-I01",
+  "started_at": "2026-10-30T12:20:00+07:00",
+  "git": {
+    "commit": "c5adc4f",
+    "branch": "week2/hieu-request",
+    "dirty": true,
+    "note": "Bằng chứng chạy trên cây làm việc của W2-I01 (base c5adc4f + thay đổi chưa commit ở thời điểm chạy). Hash commit của PR ghi trong summary.md sau khi commit."
+  },
+  "xv6_pin": "f780d7850765d74cbdcd1fff4b822d8829f7c9bd",
+  "host": {
+    "platform": "Windows 11 + WSL2 Ubuntu-24.04",
+    "cpus": 6,
+    "wsl_distro": "Ubuntu-24.04"
+  },
+  "toolchain": {
+    "riscv_gcc": "riscv64-linux-gnu-gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "qemu": "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)",
+    "make": "GNU Make 4.3",
+    "python": "3.12.3"
+  },
+  "scope": "W2-I01 only: finite request pool + generation handles + slot release + counters + kernel selftest. No queue/driver/wait implementation.",
+  "checks": [
+    {
+      "name": "header-contract-syntax",
+      "command": "riscv64-linux-gnu-gcc -Wall -Werror -std=gnu11 -march=rv64gc -ffreestanding -fno-common -nostdlib -I kernel -fsyntax-only results/week02/g01-contract-2026-10-30/io_hdr_check.c",
+      "status": "PASS",
+      "coverage": "io_request.h + helper prototypes compile clean; _Static_assert sizeof(struct io_request)==1080, IO_NREQ==16, IO_SECTORS_PER_BLOCK==2",
+      "log": "logs/header-check.log"
+    },
+    {
+      "name": "production-build",
+      "command": "make clean && make -j6",
+      "status": "PASS",
+      "coverage": "build production (không -DIO_SELFTEST), gồm kernel/io_request.o + io_request_test.o stub",
+      "log": "logs/production-build.log"
+    },
+    {
+      "name": "test-fast",
+      "command": "LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONIOENCODING=utf-8 make test-fast",
+      "status": "PASS",
+      "cases": ["boot-smoke", "shell-fs-cpus3"],
+      "passed": 2,
+      "failed": 0,
+      "coverage": "io_init() thêm vào boot không làm hỏng boot/shell",
+      "log": "logs/test-fast.log"
+    },
+    {
+      "name": "kernel-selftest",
+      "command": "LANG=C.UTF-8 LC_ALL=C.UTF-8 make test-io",
+      "status": "PASS",
+      "coverage": "T02 pool-exhaustion, T03 stale-handle, T04 release-active, T11 accounting-drain (10 vòng) + buffer address stability; serial có 'IO-SELFTEST: PASS (T02/T03/T04/T11, failures=0)'",
+      "log": "logs/selftest-serial.log",
+      "make_log": "logs/test-io.log"
+    },
+    {
+      "name": "negative-control",
+      "command": "patch tạm: bỏ so sánh generation trong io_lookup_handle_locked; make test-io; restore; make test-io",
+      "status": "PASS",
+      "coverage": "Bug cố ý làm 4 assertion T03 FAIL và make exit ≠ 0; restore làm selftest PASS lại. Chứng minh test không 'PASS vô điều kiện'.",
+      "negative_log": "logs/negative-control-selftest.log",
+      "restored_log": "logs/positive-control-selftest.log"
+    },
+    {
+      "name": "restore-production-build",
+      "command": "make clean && make -j6",
+      "status": "PASS",
+      "coverage": "trả workspace về build production sau test-io",
+      "log": "logs/restore-production-build.log"
+    }
+  ],
+  "not_run": [
+    "T01, T05-T10, T12, T13: cần queue/driver/wait (I02/H01/H02/L01) - chưa có implementation",
+    "T04 dạng concurrent/IRQ thật: selftest chạy boot CPU trước scheduler; bản QEMU hook thuộc I02/H02",
+    "make test / make test-slow / make baseline: không cần cho card I01",
+    "review của Hoàng: PENDING"
+  ]
+}

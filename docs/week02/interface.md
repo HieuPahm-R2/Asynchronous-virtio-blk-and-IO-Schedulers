@@ -345,6 +345,9 @@ là phần nghiệm thu "mỗi hàm ghi context/khóa/trả về khi hết tài 
 | `aio_release(h)` | process | không giữ → không giữ | không | `-ENOENT/-EBUSY` |
 | `aio_data(h)` | process | acquire ngắn để validate → release | không | `NULL` nếu handle lỗi |
 | `io_get_stats(*out)` | process | không giữ → không giữ | không | không |
+| `io_alloc_slot_locked()` | process/IRQ, **giữ io_lock** | giữ → giữ | không | `NULL` + `eagain_pool++` khi pool đầy |
+| `io_lookup_handle_locked(h)` | process/IRQ, **giữ io_lock** | giữ → giữ | không | `NULL` + `stale_handle++` khi handle stale/không hợp lệ |
+| `io_release_locked(h)` | process/IRQ, **giữ io_lock** | giữ → giữ | không | `-EBUSY` (chưa terminal/còn waiter), `-ENOENT` (stale) |
 | `io_queue_enqueue_locked(req)` | process/IRQ, **giữ io_lock** | giữ → giữ | không | không (queue hữu hạn = pool) |
 | `io_dispatch_locked()` | process/IRQ, **giữ io_lock** | giữ → giữ | **không** | EAGAIN nội bộ ⇒ dừng dispatch, request ở lại QUEUED |
 | `virtio_disk_try_submit_read(req)` | process, **giữ io_lock** | giữ → giữ | **không** | `-EAGAIN` khi thiếu 3 desc; rollback toàn bộ |
@@ -356,6 +359,13 @@ là phần nghiệm thu "mỗi hàm ghi context/khóa/trả về khi hết tài 
 Ngân sách bộ nhớ: `sizeof(struct io_request) = 1080 B` (14 field 4B + 1024B
 data), `IO_NREQ=16` ⇒ **17 280 B** BSS tĩnh (đã kiểm bằng `_Static_assert` trong
 `results/.../logs/header-check.log`). Không `kalloc` trên đường async.
+
+> **Cập nhật implementation 2026-10-30 (W2-I01, additive):** ba helper nội bộ
+> `io_alloc_slot_locked()`/`io_lookup_handle_locked()`/`io_release_locked()` đã
+> được bổ sung vào header và triển khai trong `kernel/io_request.c` để I02 dùng
+> lại; `aio_release()` được triển khai sớm ở I01 vì T03/T04/T11 cần thu hồi
+> slot. Semantics/khóa/lỗi giữ đúng bảng trên. Chi tiết + bằng chứng:
+> [`progress-i01.md`](progress-i01.md).
 
 ## 4. State machine và bất biến request/descriptor
 
@@ -549,7 +559,7 @@ comment W2-G01 trước khi đóng card.
 
 | Lệnh | Kết quả | Log |
 | --- | --- | --- |
-| `riscv64-linux-gnu-gcc -fsyntax-only ... results/local/io_hdr_check.c` (gnu11, `-Wall -Werror`, 3 `_Static_assert` về size/NREQ/sector) | PASS | `results/week02/g01-contract-2026-10-30/logs/header-check.log` |
+| `riscv64-linux-gnu-gcc -fsyntax-only ... results/week02/g01-contract-2026-10-30/io_hdr_check.c` (gnu11, `-Wall -Werror`, 3 `_Static_assert` về size/NREQ/sector) | PASS | `results/week02/g01-contract-2026-10-30/logs/header-check.log` |
 | `make clean && make -j$(nproc)` (base + header, header chưa vào build) | PASS | `.../logs/build.log` |
 | `make check-text` | PASS | `.../logs/check-text.log` |
 | `make test-fast` (2 case smoke, CPUS=3) | PASS | `.../logs/test-fast.log` |

@@ -179,8 +179,13 @@ void            plic_complete(int);
 
 // virtio_disk.c
 void            virtio_disk_init(void);
+struct spinlock* virtio_disk_io_lock(void);
 void            virtio_disk_rw(struct buf *, int);
 void            virtio_disk_intr(void);
+
+// io_request.c
+void            io_init(void);
+void            io_selftest(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x) / sizeof((x)[0]))

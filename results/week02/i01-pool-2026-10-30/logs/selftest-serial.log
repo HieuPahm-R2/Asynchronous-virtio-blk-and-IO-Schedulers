@@ -1,0 +1,17 @@
+make[1]: Entering directory '/mnt/e/ET4290'
+qemu-system-riscv64 -machine virt -bios none -kernel kernel/kernel -m 128M -smp 1 -nographic -global virtio-mmio.force-legacy=false -drive file=fs.img,if=none,format=raw,id=x0 -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0
+
+xv6 kernel is booting
+
+IO-SELFTEST: begin (NREQ=16, BSIZE=1024)
+IO-SELFTEST: T02 pool-exhaustion ...
+IO-SELFTEST: T02 pool-exhaustion PASS
+IO-SELFTEST: T03 stale-handle ...
+IO-SELFTEST: T03 stale-handle PASS
+IO-SELFTEST: T04 release-active ...
+IO-SELFTEST: T04 release-active PASS
+IO-SELFTEST: T11 accounting-drain ...
+IO-SELFTEST: T11 accounting-drain PASS
+IO-SELFTEST: PASS (T02/T03/T04/T11, failures=0)
+init: starting sh
+$ qemu-system-riscv64: terminating on signal 15 from pid 2431 (bash)

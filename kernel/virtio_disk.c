@@ -152,6 +152,17 @@ virtio_disk_init(void)
   // plic.c and trap.c arrange for interrupts from VIRTIO0_IRQ.
 }
 
+// The single lock domain for the async request layer (W2-G01 contract D6).
+// This is the lock the stock driver already uses for disk.free[], the rings,
+// disk.used_idx, info[head] and b->disk; io_request.c/io_queue.c must use the
+// same lock so there is no queue<->driver lock-order inversion.
+// Early W2-H01 slice landed with W2-I01 to unblock the pool test.
+struct spinlock *
+virtio_disk_io_lock(void)
+{
+  return &disk.vdisk_lock;
+}
+
 // find a free descriptor, mark it non-free, return its index.
 static int
 alloc_desc()
