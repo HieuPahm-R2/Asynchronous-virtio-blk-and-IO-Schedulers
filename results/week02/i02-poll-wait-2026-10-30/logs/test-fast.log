@@ -1,0 +1,10 @@
+$ make test-fast
+== ET4290 test runner — 2 case ==
+   kết quả: /mnt/e/ET4290/results/local/tests-2026-11-01_121541
+--- [1/2] boot-smoke (CPUS=1) ... PASS (8.1s)
+--- [2/2] shell-fs-cpus3 (CPUS=3) ... PASS (4.1s)
+
+== Kết quả: 2 PASS / 0 FAIL ==
+   meta:     /mnt/e/ET4290/results/local/tests-2026-11-01_121541/meta.json
+   summary:  /mnt/e/ET4290/results/local/tests-2026-11-01_121541/summary.md
+RESULT: PASS

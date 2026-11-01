@@ -171,6 +171,12 @@ clockintr()
     ticks++;
     wakeup(&ticks);
     release(&tickslock);
+#ifdef IO_SELFTEST
+    // W2-I02 test-only: optionally complete an armed request so a really
+    // sleeping waiter is woken by a timer interrupt (T06b). No-op unless the
+    // selftest armed it.
+    io_test_timer_tick();
+#endif
   }
 
   // ask for the next timer interrupt. this also clears

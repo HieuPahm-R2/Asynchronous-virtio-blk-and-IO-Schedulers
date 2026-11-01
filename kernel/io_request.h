@@ -285,4 +285,26 @@ int virtio_disk_try_submit_read(struct io_request *req);
 // then calls io_dispatch_locked(). IRQ context, io_lock held, no sleep.
 void io_async_completed_locked(struct io_request *req, int dev_status);
 
+// ---------------------------------------------------------------------------
+// TEST-ONLY hooks for `make test-io` (W2-I02). Compiled only with
+// -DIO_SELFTEST; never present in a production kernel. They let the kernel
+// selftest drive completion deterministically without a real device/IRQ:
+//   - a one-shot hook called INSIDE aio_wait(), after sleep_prepare() and
+//     before release()+sleep(), to exercise the lost-wakeup window (T06a);
+//   - a timer-tick completion so a real sleeping waiter is woken by an
+//     interrupt (T06b, controlled by a tick countdown, not a lucky delay);
+//   - a flag the selftest uses to prove the sleep path was entered.
+// ---------------------------------------------------------------------------
+#ifdef IO_SELFTEST
+// fn(req) runs with io_lock held, in process context, must not sleep.
+void io_test_set_wait_hook(void (*fn)(struct io_request *));
+// Arm completion of h after delay_ticks timer ticks (status 0 = DONE, else
+// ERROR). Must be called from process context; the request must be INFLIGHT.
+void io_test_arm_timer_completion(struct io_handle h, int status, int delay_ticks);
+// 1 if the last aio_wait() reached the sleep() path; clears the flag.
+int io_test_take_slept_flag(void);
+// Called from clockintr() on every timer tick in a -DIO_SELFTEST build.
+void io_test_timer_tick(void);
+#endif
+
 #endif // _IO_REQUEST_H_

@@ -255,6 +255,170 @@ io_selftest(void)
     printk("IO-SELFTEST: PASS (T02/T03/T04/T11, failures=0)\n");
   else
     printk("IO-SELFTEST: FAIL (failures=%d)\n", io_selftest_failures);
+
+  // -------------------------------------------------------------------------
+  // Process-context tests (W2-I02): poll/wait/release with controlled
+  // completion. They run later, from init via the test-only SYS_io_selftest
+  // syscall, because aio_wait() must not sleep in boot/IRQ context.
+  // -------------------------------------------------------------------------
+}
+
+static int io_user_failures;
+
+static void
+ucheck(int cond, const char *test, const char *what)
+{
+  if (cond)
+    return;
+  io_user_failures++;
+  printk("IO-SELFTEST: USER %s FAIL: %s\n", test, what);
+}
+
+static void
+uend(const char *name, int before)
+{
+  if (io_user_failures == before)
+    printk("IO-SELFTEST: USER %s PASS\n", name);
+}
+
+// Gap hook: runs inside aio_wait() after sleep_prepare() and before sleep(),
+// with io_lock held. Completing here must not lose the wakeup (T06a).
+static void
+io_test_complete_ok(struct io_request *req)
+{
+  io_async_completed_locked(req, 0);
+}
+
+static int
+io_user_selftest(void)
+{
+  struct spinlock *lk = virtio_disk_io_lock();
+  struct io_request *req;
+  struct io_handle h;
+  struct io_handle bad;
+  struct io_stats st;
+  uint t0;
+  int before;
+  int rc;
+
+  io_user_failures = 0;
+  printk("IO-SELFTEST: USER begin (process context, W2-I02)\n");
+
+  // --- T05: completion before wait (DONE + ERROR paths + stale handles) ---
+  before = io_user_failures;
+  acquire(lk);
+  req = io_alloc_slot_locked();
+  ucheck(req != 0, "T05", "alloc for complete-before-wait");
+  h = io_handle_of(req);
+  req->state = IO_INFLIGHT;
+  io_async_completed_locked(req, 0);
+  release(lk);
+
+  ucheck(aio_poll(h) == 1, "T05", "poll after DONE returns 1");
+  ucheck(aio_wait(h) == 0, "T05", "wait after DONE returns 0 immediately");
+  ucheck(io_test_take_slept_flag() == 0, "T05", "wait took the fast path (no sleep)");
+  ucheck(aio_data(h) != 0, "T05", "aio_data returns staging buffer after DONE");
+  ucheck(aio_release(h) == 0, "T05", "release DONE request");
+  ucheck(aio_poll(h) == IO_ENOENT, "T05", "poll stale handle -> ENOENT");
+  ucheck(aio_wait(h) == IO_ENOENT, "T05", "wait stale handle -> ENOENT");
+  ucheck(aio_release(h) == IO_ENOENT, "T05", "release stale handle -> ENOENT");
+  ucheck(aio_data(h) == 0, "T05", "aio_data stale handle -> NULL");
+
+  // --- T05b: ERROR path: EIO surfaces, release still allowed ---
+  acquire(lk);
+  req = io_alloc_slot_locked();
+  ucheck(req != 0, "T05", "alloc for error path");
+  h = io_handle_of(req);
+  req->state = IO_INFLIGHT;
+  io_async_completed_locked(req, 1); // virtio status 1 = IOERR
+  release(lk);
+  ucheck(aio_poll(h) == IO_EIO, "T05", "poll ERROR returns EIO");
+  ucheck(aio_wait(h) == IO_EIO, "T05", "wait ERROR returns EIO");
+  ucheck(aio_release(h) == 0, "T05", "release ERROR request");
+  uend("T05 complete-before-wait", before);
+
+  // --- T04 process context: release while INFLIGHT is refused ---
+  before = io_user_failures;
+  acquire(lk);
+  req = io_alloc_slot_locked();
+  ucheck(req != 0, "T04", "alloc for release-active");
+  h = io_handle_of(req);
+  req->state = IO_INFLIGHT;
+  release(lk);
+  ucheck(aio_poll(h) == 0, "T04", "poll INFLIGHT returns 0 (pending)");
+  ucheck(aio_release(h) == IO_EBUSY, "T04", "release INFLIGHT -> EBUSY");
+  acquire(lk);
+  req = io_lookup_handle_locked(h);
+  ucheck(req != 0, "T04", "INFLIGHT handle still valid after refused release");
+  if (req != 0)
+    io_async_completed_locked(req, 0);
+  release(lk);
+  ucheck(aio_wait(h) == 0, "T04", "wait after completion returns 0");
+  ucheck(aio_release(h) == 0, "T04", "release after completion");
+  uend("T04 release-active", before);
+
+  // --- T06a: completion inside the sleep_prepare()->sleep() gap ---
+  before = io_user_failures;
+  acquire(lk);
+  req = io_alloc_slot_locked();
+  ucheck(req != 0, "T06a", "alloc for gap completion");
+  h = io_handle_of(req);
+  req->state = IO_INFLIGHT;
+  release(lk);
+  io_test_set_wait_hook(io_test_complete_ok);
+  rc = aio_wait(h);
+  ucheck(rc == 0, "T06a", "wait returns 0 when completion lands in prepare/sleep gap");
+  ucheck(io_test_take_slept_flag() == 1, "T06a", "wait reached the sleep path");
+  ucheck(aio_poll(h) == 1, "T06a", "poll DONE after gap completion");
+  ucheck(aio_release(h) == 0, "T06a", "release after gap completion");
+  uend("T06a gap-completion", before);
+
+  // --- T06b: real sleeping waiter woken by a timer-tick completion ---
+  before = io_user_failures;
+  acquire(lk);
+  req = io_alloc_slot_locked();
+  ucheck(req != 0, "T06b", "alloc for timer completion");
+  h = io_handle_of(req);
+  req->state = IO_INFLIGHT;
+  release(lk);
+  t0 = ticks;
+  io_test_arm_timer_completion(h, 0, 2);
+  rc = aio_wait(h);
+  ucheck(rc == 0, "T06b", "wait before completion is woken and does not hang");
+  ucheck(ticks != t0, "T06b", "completion happened on a later timer tick (real sleep)");
+  ucheck(aio_poll(h) == 1, "T06b", "poll DONE after wakeup");
+  ucheck(aio_release(h) == 0, "T06b", "release after wakeup");
+  printk("IO-SELFTEST: USER T06b slept >= %d tick(s) before wakeup\n",
+         ticks - t0);
+  uend("T06b sleep-wakeup", before);
+
+  // --- T03 invalid handle forms never panic or dereference wrongly ---
+  before = io_user_failures;
+  bad.id = -1;
+  bad.gen = 1;
+  ucheck(aio_poll(bad) == IO_ENOENT, "T03", "poll negative id -> ENOENT");
+  ucheck(aio_wait(bad) == IO_ENOENT, "T03", "wait negative id -> ENOENT");
+  ucheck(aio_release(bad) == IO_ENOENT, "T03", "release negative id -> ENOENT");
+  bad.id = IO_NREQ;
+  ucheck(aio_poll(bad) == IO_ENOENT, "T03", "poll id==NREQ -> ENOENT");
+  bad.id = 0;
+  bad.gen = 0;
+  ucheck(aio_poll(bad) == IO_ENOENT, "T03", "poll generation 0 -> ENOENT");
+  uend("T03 stale-handle-invalid-forms", before);
+
+  // --- accounting after the process-context slice ---
+  before = io_user_failures;
+  io_get_stats(&st);
+  ucheck(st.free_req == IO_NREQ, "T11", "pool drained after process-context tests");
+  ucheck(st.inflight == 0, "T11", "inflight==0 after process-context tests");
+  ucheck(st.queued == 0, "T11", "queued==0 after process-context tests");
+  uend("T11 accounting-drain-user", before);
+
+  if (io_user_failures == 0)
+    printk("IO-SELFTEST: USER PASS (T03/T04/T05/T06, failures=0)\n");
+  else
+    printk("IO-SELFTEST: USER FAIL (failures=%d)\n", io_user_failures);
+  return io_user_failures;
 }
 
 #else // !IO_SELFTEST
@@ -265,3 +429,17 @@ io_selftest(void)
 }
 
 #endif // IO_SELFTEST
+
+// Test-only syscall entry (SYS_io_selftest): runs the process-context tests
+// from init and returns the failure count. In a production build it is not
+// reachable because init.c only calls it under -DIO_SELFTEST; return -1 anyway.
+uint64
+sys_io_selftest(void)
+{
+#ifdef IO_SELFTEST
+  return (uint64)io_user_selftest();
+#else
+  return (uint64)-1;
+#endif
+}
+

@@ -366,6 +366,12 @@ data), `IO_NREQ=16` ⇒ **17 280 B** BSS tĩnh (đã kiểm bằng `_Static_asse
 > lại; `aio_release()` được triển khai sớm ở I01 vì T03/T04/T11 cần thu hồi
 > slot. Semantics/khóa/lỗi giữ đúng bảng trên. Chi tiết + bằng chứng:
 > [`progress-i01.md`](progress-i01.md).
+>
+> **Cập nhật implementation 2026-10-30 (W2-I02, additive):** `aio_poll()`,
+> `aio_wait()`, `aio_release()` (đã có từ I01), `aio_data()` và
+> `io_async_completed_locked()` đã triển khai đúng bảng trên; `io_wait_gap_hook`
+> là hook **test-only** (`#ifdef IO_SELFTEST`) dùng cho T06a/T06b, không có
+> trong production. Chi tiết + bằng chứng: [`progress-i02.md`](progress-i02.md).
 
 ## 4. State machine và bất biến request/descriptor
 

@@ -65,11 +65,14 @@ test-io:
 	@echo "== build kernel với -DIO_SELFTEST =="
 	$(MAKE) IO_SELFTEST=1 kernel/kernel fs.img
 	@echo "== boot QEMU (CPUS=1, timeout $(IO_TEST_TIMEOUT)s) + kernel selftest =="
-	@bash scripts/run-qemu.sh --no-build --cpus 1 --timeout $(IO_TEST_TIMEOUT) \
+	@bash scripts/io-selftest.sh --cpus 1 --timeout $(IO_TEST_TIMEOUT) \
 		--log results/local/io-selftest.log > /dev/null 2>&1 || true
 	@grep -q "IO-SELFTEST: PASS" results/local/io-selftest.log \
-		&& echo "== IO selftest: PASS (log: results/local/io-selftest.log) ==" \
-		|| { echo "== IO selftest: FAIL =="; tail -n 40 results/local/io-selftest.log; exit 1; }
+		&& grep -q "IO-SELFTEST: USER PASS" results/local/io-selftest.log \
+		&& grep -q "IO-USER-TEST: PASS" results/local/io-selftest.log \
+		&& ! grep -q "IO-SELFTEST: .*FAIL" results/local/io-selftest.log \
+		&& echo "== IO selftest: PASS (boot pool + process-context poll/wait; log: results/local/io-selftest.log) ==" \
+		|| { echo "== IO selftest: FAIL =="; grep -E "IO-SELFTEST|IO-USER-TEST" results/local/io-selftest.log; tail -n 40 results/local/io-selftest.log; exit 1; }
 	@echo "Lưu ý: build hiện có -DIO_SELFTEST; chạy 'make clean && make' để về production."
 
 baseline:

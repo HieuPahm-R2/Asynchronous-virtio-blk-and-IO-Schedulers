@@ -21,3 +21,7 @@
 #define SYS_mkdir  20
 #define SYS_close  21
 #define SYS_sync   22
+// Test-only syscall (W2-I02, only actionable in -DIO_SELFTEST builds): runs the
+// kernel request-layer poll/wait selftest from process context. Production
+// builds return -1. Used by user/init.c under -DIO_SELFTEST.
+#define SYS_io_selftest 23

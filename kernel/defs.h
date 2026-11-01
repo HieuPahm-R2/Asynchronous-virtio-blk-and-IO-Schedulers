@@ -187,5 +187,11 @@ void            virtio_disk_intr(void);
 void            io_init(void);
 void            io_selftest(void);
 
+// io_request.c test-only hooks: defined and called only in -DIO_SELFTEST
+// builds (`make test-io`). A production kernel never contains these symbols.
+#ifdef IO_SELFTEST
+void            io_test_timer_tick(void);
+#endif
+
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x) / sizeof((x)[0]))
