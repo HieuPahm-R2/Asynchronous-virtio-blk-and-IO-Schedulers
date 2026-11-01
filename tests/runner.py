@@ -48,7 +48,7 @@ from qemu import (  # noqa: E402
 CASES_DIR = HERE / "cases"
 DEFAULT_TIMEOUT = 120.0
 DEFAULT_BOOT_TIMEOUT = 60.0
-EXCLUDED_BY_DEFAULT = {"slow", "stress"}
+EXCLUDED_BY_DEFAULT = {"slow", "stress","selftest"}
 
 # Shell xv6 in "$ " (không xuống dòng) khi sẵn sàng nhận lệnh. Chờ prompt sau
 # mỗi lệnh để không gửi chen vào lúc shell còn in output.

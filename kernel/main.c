@@ -3,6 +3,7 @@
 #include "memlayout.h"
 #include "riscv.h"
 #include "defs.h"
+#include "io_queue_test.h"
 
 volatile static int started = 0;
 
@@ -28,6 +29,9 @@ main()
     iinit();            // inode table
     fileinit();         // file table
     virtio_disk_init(); // emulated hard disk
+  #ifdef IOQ_SELFTEST
+    ioq_selftest();     // W2-L02: chỉ trong build test, không đụng đĩa
+  #endif
     userinit();         // first user process
 
     __atomic_store_n(&started, 1, __ATOMIC_RELEASE);
