@@ -3,6 +3,7 @@
 #include "memlayout.h"
 #include "riscv.h"
 #include "defs.h"
+#include "io_queue_test.h"
 
 volatile static int started = 0;
 
@@ -31,6 +32,9 @@ main()
     io_init();          // async request pool (W2-I01)
 #ifdef IO_SELFTEST
     io_selftest();      // kernel self-test, only with `make test-io`
+#endif
+#ifdef IOQ_SELFTEST
+    ioq_selftest();     // W2-L02: chỉ trong build test, không đụng đĩa
 #endif
     userinit();         // first user process
 
