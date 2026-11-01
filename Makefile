@@ -32,7 +32,8 @@ OBJS = \
   $K/io_request.o \
   $K/io_request_test.o \
   $K/io_queue.o \
-  $K/io_queue_test.o
+  $K/io_queue_test.o \
+  $K/io_hw_test.o
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
 #TOOLPREFIX = 
@@ -90,6 +91,9 @@ CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 &
 # boots QEMU). Normal `make` boots do not run it.
 ifdef IO_SELFTEST
 CFLAGS += -DIO_SELFTEST
+endif
+ifdef IO_HW_SELFTEST
+CFLAGS += -DIO_HW_SELFTEST
 endif
 
 # Disable PIE when possible (for Ubuntu 16.10 toolchain)

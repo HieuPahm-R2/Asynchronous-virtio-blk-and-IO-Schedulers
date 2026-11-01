@@ -80,3 +80,8 @@ baseline:
 
 clean-all: clean
 	rm -rf results/local
+
+# Hoàng: real virtio READ + independent pool/queue suites, then production build.
+.PHONY: test-week02
+test-week02:
+	python3 scripts/check-week02-hoang.py $(WEEK02_ARGS)

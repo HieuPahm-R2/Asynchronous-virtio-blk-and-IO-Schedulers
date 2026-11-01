@@ -438,6 +438,8 @@ sys_io_selftest(void)
 {
 #ifdef IO_SELFTEST
   return (uint64)io_user_selftest();
+#elif defined(IO_HW_SELFTEST)
+  return (uint64)io_hw_selftest();
 #else
   return (uint64)-1;
 #endif

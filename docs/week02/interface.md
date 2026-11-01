@@ -3,7 +3,7 @@
 > **Mã công việc:** W2-G01 (CARD 1/9) — *Chốt interface request, buffer ownership và quy tắc khóa*.  
 > **Người thực hiện:** Phạm Trung Hiếu (MSSV: 20233402) · **Nhánh làm việc:** `week2/hieu-request`.  
 > **Base commit:** `e809500` (origin/main sau tuần 1) · **Pin xv6 tạm thời:** `f780d785…` (chờ GV xác nhận tag chính thức).  
-> **Người rà soát (Reviewers):** Nguyễn Văn Hoàng (G01/I01/I02), Lê Minh Lợi (G01) — *Trạng thái: PENDING*.  
+> **Người rà soát (Reviewers):** Nguyễn Văn Hoàng (G01/I01/I02), Phạm Quý Lợi (G01) — *Trạng thái: PENDING*.
 > **File mã nguồn nguồn sự thật (Single Source of Truth):** [`kernel/io_request.h`](../../kernel/io_request.h).
 
 ---
@@ -76,7 +76,7 @@ Hệ thống phân định độc lập hai vòng đời:
 - **Quyết định:** Sử dụng đúng **một spinlock duy nhất** cho toàn bộ nguyên mẫu: `io_lock` (đồng nhất với `disk.vdisk_lock`, truy cập qua hàm `virtio_disk_io_lock()`).
 - **Phạm vi bảo vệ:** (1) Request pool, state, gen, waiters; (2) Pending queue, thứ tự FCFS; (3) Allocator descriptor, avail/used ring; (4) Bản đồ sở hữu `info[head]`; (5) Cơ chế đồng bộ `b->disk` của stock.
 - **Lý do loại bỏ phương án hai khóa riêng (`ioq.lock` và `vdisk_lock`):**  
-  Thao tác submit nạp request đi theo chiều `ioq.lock → vdisk_lock`. Nếu ngắt IRQ completion giữ `vdisk_lock` rồi lấy `ioq.lock` để đánh thức tiến trình, sẽ tạo ra chu kỳ nghịch chiều `vdisk_lock → ioq.lock` gây **deadlock AB-BA**. Quy về một khóa đảm bảo tính đúng đắn tuyệt đối.
+  Thao tác submit nạp request đi theo chiều `ioq.lock → vdisk_lock`. Nếu ngắt IRQ completion giữ `vdisk_lock` rồi lấy `ioq.lock` để đánh thức tiến trình, sẽ tạo ra chu kỳ nghịch chiều `vdisk_lock → ioq.lock` gây **deadlock AB-BA**. Quy về một khóa loại bỏ chu kỳ đảo thứ tự giữa khóa queue và khóa driver; vẫn cần kiểm thử các bất biến và luồng wakeup.
 - **Thứ tự khóa một chiều (không lồng nhau):**  
   `bcache.lock (độc lập)` · `buf.lock (sleeplock) → io_lock → proc->lock`. Cấm ngủ khi đang giữ `io_lock`.
 
@@ -112,9 +112,12 @@ Hệ thống phân định độc lập hai vòng đời:
 
 ### D10 — Bộ đếm thống kê và Bất biến kế toán
 Hệ thống duy trì các bất biến kiểm tra được bằng test tự động:
-1. `submitted == queued + inflight + done + error`.
-2. `free_req == IO_NREQ - (queued + inflight + done + error)`. Khi pool đầy, submit trả `-EAGAIN` và chỉ tăng biến đếm `eagain_pool`, không làm thay đổi các biến khác.
-3. Sau khi xả sạch hàng đợi và giải phóng hết: `free_req == IO_NREQ` (16) và `free_desc == NUM` (8).
+Các phương trình dưới đây áp dụng cho luồng API thật, snapshot dưới `io_lock`; `ALLOCATED` chỉ là trạng thái nội bộ chưa quan sát được. Các test unit cấp slot/chuyển state trực tiếp không dùng phương trình cumulative này.
+1. `submitted == queued + inflight + completed + errors`, trong đó `submitted/completed/errors` là bộ đếm tích lũy.
+2. `completed + errors == released + done + error`, trong đó `done/error` là số slot terminal hiện đang giữ, còn `released` là bộ đếm tích lũy.
+3. `free_req == IO_NREQ - (queued + inflight + done + error)`. Khi pool đầy, submit trả `-EAGAIN`, tăng `eagain_pool`, không sửa output handle.
+4. Sau khi xả sạch và release hết: `submitted == completed + errors == released`, `free_req == 16`, `free_desc == 8`.
+5. `max_inflight` đo số request đã publish nhưng phần mềm chưa reap. Đây không phải bằng chứng thiết bị thực thi song song hay tăng tốc I/O.
 
 ---
 
@@ -160,7 +163,7 @@ Ngân sách bộ nhớ: `sizeof(struct io_request) = 1080 B` × 16 slots = **17.
 | `aio_poll(h)` | Mọi ngữ cảnh không ngủ | Tự acquire → release | Không | Trả 1 (DONE), 0 (bận), `-EIO` (lỗi đĩa), `-ENOENT` (stale) |
 | `aio_wait(h)` | **Chỉ Process** | Acquire → nhả khi ngủ → acquire | **Có** | Trả 0 (DONE), `-EIO` (lỗi đĩa), `-EBUSY`, `-ENOENT`, `-EINVAL` |
 | `aio_release(h)` | Tiến trình (Process) | Tự acquire → release | Không | Trả `-EBUSY` nếu chưa terminal / còn waiter; `-ENOENT` |
-| `aio_data(h)` | Tiến trình (Process) | Acquire ngắn validate | Không | Trả con trỏ `req->data` hoặc `NULL` nếu handle lỗi |
+| `aio_data(h)` | Tiến trình (Process) | Acquire ngắn validate | Không | Trả con trỏ `req->data` chỉ khi DONE; NULL nếu pending, ERROR hoặc handle lỗi |
 | `io_get_stats(*out)` | Tiến trình (Process) | Tự acquire → release | Không | Truy vấn snapshot số liệu kế toán |
 | `io_alloc_slot_locked()` | Nội bộ, **giữ io_lock** | Giữ → Giữ | Không | Trả `NULL` và tăng `eagain_pool++` khi hết slot |
 | `io_lookup_handle_locked(h)` | Nội bộ, **giữ io_lock** | Giữ → Giữ | Không | Trả `NULL` và tăng `stale_handle++` nếu handle stale/sai |
@@ -298,7 +301,7 @@ Mỗi PR bắt buộc phải vượt qua biên dịch sạch (`make clean && mak
 | **Q7** | Có cần mở rộng độ dài virtqueue (`NUM`) để chứng minh mức độ song song `max_inflight > 2`? | Hoàng | **PENDING** | Tuần 2 ghi nhận số đo thực tế của phần cứng, không đưa ra cam kết ảo. |
 
 ### 9.2 Đối chiếu trạng thái các Task trên Jira (PTO Tracker)
-Do môi trường làm việc không tích hợp quyền truy cập hệ thống Jira, thành viên **Lê Minh Lợi** chịu trách nhiệm mở tracker, đối chiếu các mã nhiệm vụ Tuần 1 với minh chứng cụ thể trong kho mã nguồn:
+Do môi trường làm việc không tích hợp quyền truy cập hệ thống Jira, thành viên **Phạm Quý Lợi** chịu trách nhiệm mở tracker, đối chiếu các mã nhiệm vụ Tuần 1 với minh chứng cụ thể trong kho mã nguồn:
 - **PTO-4, PTO-9, PTO-10, PTO-11:** Đối chiếu trực tiếp với các tài liệu đã nộp tại [`docs/week01/io-path.md`](../week01/io-path.md), [`docs/week01/decisions_report.md`](../week01/decisions_report.md), [`docs/week01/test-plan.md`](../week01/test-plan.md) và các PR tuần 1 đã merge vào base `e809500`.
 
 ---
@@ -325,3 +328,7 @@ Do môi trường làm việc không tích hợp quyền truy cập hệ thống
 ---
 
 > **Cam kết nghiệm thu:** Tài liệu này là căn cứ kỹ thuật ràng buộc trách nhiệm giữa các thành viên phụ trách các card W2-I01, W2-I02, W2-L01, W2-H01 và W2-H02. Mọi thay đổi về chữ ký hàm, cơ chế sở hữu bộ đệm hoặc quy tắc khóa đều phải được thông qua bằng cách cập nhật đồng bộ file này và header `kernel/io_request.h` trong cùng một Pull Request.
+
+### 10.3 Tích hợp của Hoàng ngày 2026-11-01
+
+PTO-12/13/19 bổ sung `released`, gauge `done/error`, `io_started_locked(req, head)` và chuẩn hóa `aio_data()` chỉ trả dữ liệu DONE. Driver try-submit có thể được dispatcher gọi từ process hoặc IRQ khi giữ `io_lock`. Sửa D10 để phân biệt bộ đếm tích lũy và số slot hiện tại. Xem [báo cáo Hoàng](hoang.md) để biết kết quả kiểm thử và giới hạn; chưa có peer review.

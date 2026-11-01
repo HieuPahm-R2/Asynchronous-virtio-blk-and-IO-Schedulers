@@ -15,6 +15,7 @@
 #include "fs.h"
 #include "buf.h"
 #include "virtio.h"
+#include "io_request.h"
 
 // the address of virtio mmio register r.
 #define R(r) ((volatile uint32 *)(VIRTIO0 + (r)))
@@ -47,8 +48,26 @@ static struct disk {
   // indexed by first descriptor index of chain.
   struct {
     struct buf *b;
-    char status;
+    struct io_request *req;
+    uint gen;
+    enum io_head_owner owner;
+    uchar status;
   } info[NUM];
+
+  // A completed request retains its result until release even if its head is
+  // reused. Pool addresses are static; generation validates this old pointer.
+  struct {
+    struct io_request *req;
+    uint gen;
+  } last_async[NUM];
+  struct io_desc_stats stats;
+#ifdef IO_HW_SELFTEST
+  int hold_used;
+  int reverse_pair;
+  uint reversed;
+  int override_valid[NUM];
+  int override_status[NUM];
+#endif
 
   // disk command headers.
   // one-for-one with descriptors, for convenience.
@@ -281,6 +300,7 @@ virtio_disk_rw(struct buf *b, int write)
   // record struct buf for virtio_disk_intr().
   b->disk = 1;
   disk.info[idx[0]].b = b;
+  disk.info[idx[0]].owner = IO_HEAD_STOCK;
 
   // tell the device the first index in our chain of descriptors.
   disk.avail->ring[disk.avail->idx % NUM] = idx[0];
@@ -303,9 +323,138 @@ virtio_disk_rw(struct buf *b, int write)
   }
 
   disk.info[idx[0]].b = 0;
+  disk.info[idx[0]].owner = IO_HEAD_FREE;
   free_chain(idx[0]);
 
+  // Stock chains are reclaimed here, not in IRQ. This can unblock an async
+  // request even when no producer makes another submit call (contract D7).
+  io_dispatch_locked();
+
   release(&disk.vdisk_lock);
+}
+
+// PTO-12: publish exactly one READ without waiting. The same allocator and
+// lock are shared with stock; alloc3_desc rolls back a partial reservation.
+int
+virtio_disk_try_submit_read(struct io_request *req)
+{
+  int idx[3];
+
+  if (!holding(&disk.vdisk_lock) || req == 0 ||
+      req->state != IO_QUEUED || req->op != IO_OP_READ ||
+      req->dev != ROOTDEV || req->blockno >= FSSIZE)
+    panic("virtio async submit");
+  if (alloc3_desc(idx) < 0) {
+    disk.stats.eagain_desc++;
+    return IO_EAGAIN;
+  }
+  int head = idx[0];
+  if (disk.info[head].owner != IO_HEAD_FREE)
+    panic("virtio async owner");
+
+  struct io_request *old = disk.last_async[head].req;
+  if (old != 0 && old->gen == disk.last_async[head].gen &&
+      (old->state == IO_DONE || old->state == IO_ERROR))
+    disk.stats.head_reuse++;
+
+  struct virtio_blk_req *op = &disk.ops[head];
+  op->type = VIRTIO_BLK_T_IN;
+  op->reserved = 0;
+  op->sector = (uint64)req->blockno * IO_SECTORS_PER_BLOCK;
+  disk.desc[head].addr = (uint64)op;
+  disk.desc[head].len = sizeof(*op);
+  disk.desc[head].flags = VRING_DESC_F_NEXT;
+  disk.desc[head].next = idx[1];
+  disk.desc[idx[1]].addr = (uint64)req->data;
+  disk.desc[idx[1]].len = BSIZE;
+  disk.desc[idx[1]].flags = VRING_DESC_F_WRITE | VRING_DESC_F_NEXT;
+  disk.desc[idx[1]].next = idx[2];
+  disk.info[head].status = 0xff;
+  disk.desc[idx[2]].addr = (uint64)&disk.info[head].status;
+  disk.desc[idx[2]].len = 1;
+  disk.desc[idx[2]].flags = VRING_DESC_F_WRITE;
+  disk.desc[idx[2]].next = 0;
+
+  // Publish the owner and state first: the device may complete immediately.
+  disk.info[head].b = 0;
+  disk.info[head].req = req;
+  disk.info[head].gen = req->gen;
+  disk.info[head].owner = IO_HEAD_ASYNC;
+  io_started_locked(req, head);
+  disk.avail->ring[disk.avail->idx % NUM] = head;
+  io_fence();
+  disk.avail->idx++;
+  io_fence();
+  *R(VIRTIO_MMIO_QUEUE_NOTIFY) = 0;
+  return 0;
+}
+
+// PTO-13: never infer a request from completion order. Only the owner of this
+// exact used head can reclaim its chain. The pool/result lifetime is separate.
+static void
+reap_head_locked(uint head)
+{
+  if (head >= NUM || disk.free[head])
+    panic("virtio used head");
+  int status = disk.info[head].status;
+  if (disk.info[head].owner == IO_HEAD_STOCK) {
+    struct buf *b = disk.info[head].b;
+    if (status != 0)
+      panic("virtio_disk_intr status"); // preserve stock semantics
+    if (b == 0 || b->disk != 1)
+      panic("virtio stock completion");
+    b->disk = 0;
+    disk.stats.completed_stock++;
+    wakeup(b);
+  } else if (disk.info[head].owner == IO_HEAD_ASYNC) {
+    struct io_request *req = disk.info[head].req;
+    if (req == 0 || req->gen != disk.info[head].gen ||
+        req->state != IO_INFLIGHT || req->head != (int)head)
+      panic("virtio async mapping");
+#ifdef IO_HW_SELFTEST
+    if (disk.override_valid[head]) {
+      status = disk.override_status[head];
+      disk.override_valid[head] = 0;
+    }
+#endif
+    disk.last_async[head].req = req;
+    disk.last_async[head].gen = req->gen;
+    disk.info[head].req = 0;
+    disk.info[head].gen = 0;
+    disk.info[head].owner = IO_HEAD_FREE;
+    req->head = IO_NIL;
+    free_chain(head); // hardware already placed this head in the used ring
+    disk.stats.completed_async++;
+    io_async_completed_locked(req, status); // terminal status before wakeup
+  } else {
+    panic("virtio completion owner");
+  }
+}
+
+static void
+drain_used_locked(void)
+{
+  while (disk.used_idx != disk.used->idx) {
+    io_fence();
+#ifdef IO_HW_SELFTEST
+    // Test-only: reverse consumption of TWO REAL used entries after DMA. This
+    // tests mapping, not a claim that QEMU itself completed out of order.
+    if (disk.reverse_pair && (uint16)(disk.used->idx - disk.used_idx) >= 2) {
+      uint a = disk.used->ring[disk.used_idx % NUM].id;
+      uint b = disk.used->ring[(disk.used_idx + 1) % NUM].id;
+      disk.used_idx += 2;
+      disk.reverse_pair = 0;
+      disk.reversed++;
+      reap_head_locked(b);
+      reap_head_locked(a);
+      continue;
+    }
+#endif
+    uint head = disk.used->ring[disk.used_idx % NUM].id;
+    disk.used_idx++;
+    reap_head_locked(head);
+  }
+  io_dispatch_locked();
 }
 
 void
@@ -322,23 +471,87 @@ virtio_disk_intr()
   *R(VIRTIO_MMIO_INTERRUPT_ACK) = *R(VIRTIO_MMIO_INTERRUPT_STATUS) & 0x3;
 
   io_fence();
-
-  // the device increments disk.used->idx when it
-  // adds an entry to the used ring.
-
-  while (disk.used_idx != disk.used->idx) {
-    io_fence();
-    int id = disk.used->ring[disk.used_idx % NUM].id;
-
-    if (disk.info[id].status != 0)
-      panic("virtio_disk_intr status");
-
-    struct buf *b = disk.info[id].b;
-    b->disk = 0; // disk is done with buf
-    wakeup(b);
-
-    disk.used_idx += 1;
-  }
-
+#ifdef IO_HW_SELFTEST
+  if (!disk.hold_used)
+#endif
+    drain_used_locked();
   release(&disk.vdisk_lock);
 }
+
+void
+virtio_disk_get_stats(struct io_desc_stats *out)
+{
+  if (out == 0)
+    return;
+  acquire(&disk.vdisk_lock);
+  *out = disk.stats;
+  out->free_desc = 0;
+  for (int i = 0; i < NUM; i++)
+    out->free_desc += disk.free[i] != 0;
+  release(&disk.vdisk_lock);
+}
+
+#ifdef IO_HW_SELFTEST
+void
+virtio_test_hold_used(int hold)
+{
+  acquire(&disk.vdisk_lock);
+  disk.hold_used = hold;
+  // IRQ was acknowledged while held, so explicitly reap real entries that
+  // arrived in that interval. No hardware/DMA completion is fabricated.
+  if (!hold) {
+    io_fence();
+    drain_used_locked();
+  }
+  release(&disk.vdisk_lock);
+}
+
+void
+virtio_test_unhold_locked(void)
+{
+  if (!holding(&disk.vdisk_lock))
+    panic("test unhold lock");
+  disk.hold_used = 0;
+  io_fence();
+  drain_used_locked();
+}
+
+uint
+virtio_test_used_count(void)
+{
+  acquire(&disk.vdisk_lock);
+  io_fence();
+  uint n = (uint16)(disk.used->idx - disk.used_idx);
+  release(&disk.vdisk_lock);
+  return n;
+}
+
+void
+virtio_test_reverse_pair(void)
+{
+  acquire(&disk.vdisk_lock);
+  disk.reverse_pair = 1;
+  release(&disk.vdisk_lock);
+}
+
+uint
+virtio_test_reversed(void)
+{
+  acquire(&disk.vdisk_lock);
+  uint n = disk.reversed;
+  release(&disk.vdisk_lock);
+  return n;
+}
+
+void
+virtio_test_status(struct io_handle h, int status)
+{
+  acquire(&disk.vdisk_lock);
+  struct io_request *req = io_lookup_handle_locked(h);
+  if (req == 0 || req->state != IO_INFLIGHT || req->head < 0)
+    panic("virtio test status");
+  disk.override_valid[req->head] = 1;
+  disk.override_status[req->head] = status;
+  release(&disk.vdisk_lock);
+}
+#endif

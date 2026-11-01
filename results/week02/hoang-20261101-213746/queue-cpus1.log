@@ -1,0 +1,16 @@
+
+xv6 kernel is booting
+
+IOQTEST MOCK T07 two-inflight PASS
+IOQTEST MOCK T07 three-queued PASS
+IOQTEST MOCK T07 eagain-seen PASS
+IOQTEST MOCK T07 eagain-keeps-queued PASS
+IOQTEST MOCK T07 progress-after-complete PASS
+IOQTEST MOCK T11 drain-queue-empty PASS
+IOQTEST MOCK T11 drain-no-inflight PASS
+IOQTEST MOCK T11 counters PASS
+IOQTEST MOCK T07 each-dispatched-once PASS
+IOQTEST MOCK T13 seq=1,2,3,4,5
+IOQTEST MOCK T13 blk=7,2,9,1,4
+IOQTEST MOCK DONE fail=0
+init: starting sh

@@ -1,0 +1,13 @@
+# case: grind-smoke-cpus1
+# cpus: 1
+# status: PASS
+# duration_s: 60.80
+# reason: -
+# note: stock grind 60s, fail nếu panic (không phải PASS tuyệt đối)
+# --- serial console ---
+
+xv6 kernel is booting
+
+init: starting sh
+$ grind
+BABABABA

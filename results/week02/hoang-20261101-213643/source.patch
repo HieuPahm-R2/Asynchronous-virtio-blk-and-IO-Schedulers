@@ -1,0 +1,584 @@
+diff --git a/Makefile b/Makefile
+index 73f9496..1326024 100644
+--- a/Makefile
++++ b/Makefile
+@@ -32,7 +32,8 @@ OBJS = \
+   $K/io_request.o \
+   $K/io_request_test.o \
+   $K/io_queue.o \
+-  $K/io_queue_test.o
++  $K/io_queue_test.o \
++  $K/io_hw_test.o
+ # riscv64-unknown-elf- or riscv64-linux-gnu-
+ # perhaps in /opt/riscv/bin
+ #TOOLPREFIX = 
+@@ -91,6 +92,9 @@ CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 &
+ ifdef IO_SELFTEST
+ CFLAGS += -DIO_SELFTEST
+ endif
++ifdef IO_HW_SELFTEST
++CFLAGS += -DIO_HW_SELFTEST
++endif
+ 
+ # Disable PIE when possible (for Ubuntu 16.10 toolchain)
+ ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]no-pie'),)
+diff --git a/kernel/io_queue.c b/kernel/io_queue.c
+index 4c757f3..a05e9f8 100644
+--- a/kernel/io_queue.c
++++ b/kernel/io_queue.c
+@@ -10,6 +10,7 @@
+ #include "param.h"
+ #include "riscv.h"
+ #include "defs.h"
++#include "fs.h"
+ #include "io_request.h"
+ #include "io_queue_test.h"
+ 
+diff --git a/kernel/io_queue_test.c b/kernel/io_queue_test.c
+index 545e0b2..d9f8220 100644
+--- a/kernel/io_queue_test.c
++++ b/kernel/io_queue_test.c
+@@ -9,6 +9,8 @@
+ #include "param.h"
+ #include "riscv.h"
+ #include "defs.h"
++#include "spinlock.h"
++#include "fs.h"
+ #include "io_request.h"
+ #include "io_queue_test.h"
+ 
+diff --git a/kernel/io_request.c b/kernel/io_request.c
+index 4d28c3f..a3a5838 100644
+--- a/kernel/io_request.c
++++ b/kernel/io_request.c
+@@ -2,8 +2,7 @@
+ // kernel/io_request.c
+ // Finite asynchronous request pool with generation handles
+ //
+-// This card implements the pool + handle primitives only. It deliberately does
+-// NOT talk to the queue or the device yet:
++// Pool/wait implementation by Hiếu, integrated with queue/driver for PTO-19:
+ //   - W2-L01 adds the pending queue and will call io_queue_init() from io_init();
+ //   - W2-I02 adds poll/wait/submit wiring on top of these primitives;
+ //   - W2-H01/H02 add try-submit, completion and descriptor reclaim.
+@@ -27,6 +26,19 @@ static struct io_request io_pool[IO_NREQ];
+ // on demand so they cannot drift from the pool.
+ static struct io_stats io_counters;
+ 
++#ifdef IO_HW_SELFTEST
++static void (*io_hw_wait_hook)(void);
++
++void
++io_hw_set_wait_hook(void (*fn)(void))
++{
++  struct spinlock *lk = virtio_disk_io_lock();
++  acquire(lk);
++  io_hw_wait_hook = fn;
++  release(lk);
++}
++#endif
++
+ #ifdef IO_SELFTEST
+ // TEST-ONLY: hooks used by kernel/io_request_test.c
+ // to drive completion deterministically. Declared here because aio_wait() uses
+@@ -70,8 +82,55 @@ io_init(void)
+     req->next = IO_NIL;
+     req->head = IO_NIL;
+   }
++  io_queue_init();
++  release(lk);
++}
++
++// Public unit is blockno. Validate before consuming a slot or modifying *out.
++// Queue/driver share this lock, so IRQ cannot see a half-initialised request.
++int
++aio_read_submit(uint dev, uint blockno, struct io_handle *out)
++{
++  struct spinlock *lk = virtio_disk_io_lock();
++  struct io_request *req;
++
++  if (out == 0 || myproc() == 0)
++    return IO_EINVAL;
++  if (dev != ROOTDEV)
++    return IO_ENODEV;
++  if (blockno >= FSSIZE)
++    return IO_ERANGE;
++  acquire(lk);
++  req = io_alloc_slot_locked();
++  if (req == 0) {
++    release(lk);
++    return IO_EAGAIN;
++  }
++  req->dev = dev;
++  req->blockno = blockno;
++  io_counters.submitted++;
++  io_queue_enqueue_locked(req);
++  out->id = req->id;
++  out->gen = req->gen;
++  io_dispatch_locked();
+   release(lk);
+-  // W2-L01: call io_queue_init() here once kernel/io_queue.c lands.
++  return 0;
++}
++
++void
++io_started_locked(struct io_request *req, int head)
++{
++  uint n = 0;
++
++  if (!holding(virtio_disk_io_lock()) || req->state != IO_QUEUED)
++    panic("io_started");
++  req->head = head;
++  req->state = IO_INFLIGHT;
++  req->t_dispatch = ticks; // debug ticks only, not a latency benchmark
++  for (int i = 0; i < IO_NREQ; i++)
++    n += io_pool[i].state == IO_INFLIGHT;
++  if (n > io_counters.max_inflight)
++    io_counters.max_inflight = n;
+ }
+ 
+ // Try to take a FREE slot. Returns NULL if the pool is full: no sleep, no
+@@ -138,6 +197,7 @@ io_release_locked(struct io_handle h)
+   if (req->waiters != 0)
+     return IO_EBUSY;
+ 
++  io_counters.released++;
+   req->gen = io_next_gen(req->gen);
+   req->state = IO_SLOT_FREE;
+   req->op = IO_OP_READ;
+@@ -183,6 +243,8 @@ io_get_stats(struct io_stats *out)
+   s.queued = 0;
+   s.inflight = 0;
+   s.free_req = 0;
++  s.done = 0;
++  s.error = 0;
+   for (int i = 0; i < IO_NREQ; i++) {
+     switch (io_pool[i].state) {
+     case IO_SLOT_FREE:
+@@ -194,6 +256,12 @@ io_get_stats(struct io_stats *out)
+     case IO_INFLIGHT:
+       s.inflight++;
+       break;
++    case IO_DONE:
++      s.done++;
++      break;
++    case IO_ERROR:
++      s.error++;
++      break;
+     default:
+       break;
+     }
+@@ -254,6 +322,13 @@ aio_wait(struct io_handle h)
+ 
+   while (req->state == IO_QUEUED || req->state == IO_INFLIGHT) {
+     sleep_prepare(req); // register the channel while still holding io_lock
++#ifdef IO_HW_SELFTEST
++    if (io_hw_wait_hook != 0) {
++      void (*fn)(void) = io_hw_wait_hook;
++      io_hw_wait_hook = 0;
++      fn(); // controlled reaping of an already-used real DMA chain
++    }
++#endif
+ #ifdef IO_SELFTEST
+     io_test_wait_gap_hook(req); // one-shot completion in the prepare->sleep gap
+     io_test_slept = 1;
+@@ -287,7 +362,7 @@ aio_data(struct io_handle h)
+ 
+   acquire(lk);
+   req = io_lookup_handle_locked(h);
+-  data = (req == 0) ? 0 : req->data;
++  data = (req != 0 && req->state == IO_DONE) ? req->data : 0;
+   release(lk);
+   return data;
+ }
+diff --git a/kernel/io_request.h b/kernel/io_request.h
+index 0549ef9..abbe321 100644
+--- a/kernel/io_request.h
++++ b/kernel/io_request.h
+@@ -2,7 +2,7 @@
+ // kernel/io_request.h
+ // W2-G01 contract: asynchronous block READ request layer for xv6-riscv.
+ //
+-// STATUS: CONTRACT ONLY (no implementation in this revision). This header is
++// Implemented by the integrated week-2 request, queue and driver layers. This header is
+ // the single source of truth for the week-2 async interface, buffer ownership
+ // and locking rules. The prose contract is docs/week02/interface.md; if the two
+ // ever disagree, fix both in the same PR.
+@@ -137,6 +137,9 @@ struct io_stats {
+   uint free_req;      // IO_NREQ - (submitted - released)
+   uint eagain_pool;   // rejected submits due to a full pool
+   uint stale_handle;  // calls rejected with IO_ENOENT
++  uint released;      // cumulative terminal slots released (not a gauge)
++  uint done;          // current DONE slots, still owned until release
++  uint error;         // current ERROR slots, still owned until release
+ };
+ 
+ // Driver counters for T08/T11 (owner: W2-H02). Filled in process context by
+@@ -192,8 +195,8 @@ int aio_wait(struct io_handle h);
+ // the data pointer from aio_data() is invalid from this point on.
+ int aio_release(struct io_handle h);
+ 
+-// Return the request's staging buffer (BSIZE bytes), or NULL for an invalid
+-// handle. The pointer is stable from successful submit until aio_release().
++// Return the request's staging buffer (BSIZE bytes) only in DONE; NULL for
++// pending/error/invalid handles. The pointer stays valid until aio_release().
+ // Contents are defined only after DONE (aio_wait()==0 / aio_poll()==1) and the
+ // caller must treat them as read-only; the pool frees the slot, not the caller.
+ void *aio_data(struct io_handle h);
+@@ -274,7 +277,7 @@ struct spinlock *virtio_disk_io_lock(void);
+ // the device and returns 0. On shortage of descriptors it rolls back every
+ // descriptor it took, leaves the request untouched (still QUEUED) and returns
+ // IO_EAGAIN. Never sleeps, never partially publishes. Context: io_lock held,
+-// process context (called only from the dispatcher on the current CPU).
++// process or IRQ context (the dispatcher runs from both); never sleeps.
+ int virtio_disk_try_submit_read(struct io_request *req);
+ 
+ // Complete one async request that the driver just reaped from the used ring.
+@@ -285,6 +288,23 @@ int virtio_disk_try_submit_read(struct io_request *req);
+ // then calls io_dispatch_locked(). IRQ context, io_lock held, no sleep.
+ void io_async_completed_locked(struct io_request *req, int dev_status);
+ 
++// Driver transition before publishing the chain. Same io_lock held; updates
++// max_inflight while simultaneous INFLIGHT states are still observable.
++void io_started_locked(struct io_request *req, int head);
++
++#ifdef IO_HW_SELFTEST
++// Test-only controls over real device completions. Holding used processing
++// does not prevent DMA: buffers/chains stay live until actual reaping.
++void virtio_test_hold_used(int hold);
++uint virtio_test_used_count(void);
++void virtio_test_reverse_pair(void);
++uint virtio_test_reversed(void);
++void virtio_test_status(struct io_handle h, int status);
++void virtio_test_unhold_locked(void);
++void io_hw_set_wait_hook(void (*fn)(void));
++int io_hw_selftest(void);
++#endif
++
+ // ---------------------------------------------------------------------------
+ // TEST-ONLY hooks for `make test-io` (W2-I02). Compiled only with
+ // -DIO_SELFTEST; never present in a production kernel. They let the kernel
+diff --git a/kernel/io_request_test.c b/kernel/io_request_test.c
+index d43ba56..88c0b37 100644
+--- a/kernel/io_request_test.c
++++ b/kernel/io_request_test.c
+@@ -438,6 +438,8 @@ sys_io_selftest(void)
+ {
+ #ifdef IO_SELFTEST
+   return (uint64)io_user_selftest();
++#elif defined(IO_HW_SELFTEST)
++  return (uint64)io_hw_selftest();
+ #else
+   return (uint64)-1;
+ #endif
+diff --git a/kernel/virtio_disk.c b/kernel/virtio_disk.c
+index 1350b19..18b078e 100644
+--- a/kernel/virtio_disk.c
++++ b/kernel/virtio_disk.c
+@@ -15,6 +15,7 @@
+ #include "fs.h"
+ #include "buf.h"
+ #include "virtio.h"
++#include "io_request.h"
+ 
+ // the address of virtio mmio register r.
+ #define R(r) ((volatile uint32 *)(VIRTIO0 + (r)))
+@@ -47,9 +48,27 @@ static struct disk {
+   // indexed by first descriptor index of chain.
+   struct {
+     struct buf *b;
+-    char status;
++    struct io_request *req;
++    uint gen;
++    enum io_head_owner owner;
++    uchar status;
+   } info[NUM];
+ 
++  // A completed request retains its result until release even if its head is
++  // reused. Pool addresses are static; generation validates this old pointer.
++  struct {
++    struct io_request *req;
++    uint gen;
++  } last_async[NUM];
++  struct io_desc_stats stats;
++#ifdef IO_HW_SELFTEST
++  int hold_used;
++  int reverse_pair;
++  uint reversed;
++  int override_valid[NUM];
++  int override_status[NUM];
++#endif
++
+   // disk command headers.
+   // one-for-one with descriptors, for convenience.
+   struct virtio_blk_req ops[NUM];
+@@ -281,6 +300,7 @@ virtio_disk_rw(struct buf *b, int write)
+   // record struct buf for virtio_disk_intr().
+   b->disk = 1;
+   disk.info[idx[0]].b = b;
++  disk.info[idx[0]].owner = IO_HEAD_STOCK;
+ 
+   // tell the device the first index in our chain of descriptors.
+   disk.avail->ring[disk.avail->idx % NUM] = idx[0];
+@@ -303,11 +323,140 @@ virtio_disk_rw(struct buf *b, int write)
+   }
+ 
+   disk.info[idx[0]].b = 0;
++  disk.info[idx[0]].owner = IO_HEAD_FREE;
+   free_chain(idx[0]);
+ 
++  // Stock chains are reclaimed here, not in IRQ. This can unblock an async
++  // request even when no producer makes another submit call (contract D7).
++  io_dispatch_locked();
++
+   release(&disk.vdisk_lock);
+ }
+ 
++// PTO-12: publish exactly one READ without waiting. The same allocator and
++// lock are shared with stock; alloc3_desc rolls back a partial reservation.
++int
++virtio_disk_try_submit_read(struct io_request *req)
++{
++  int idx[3];
++
++  if (!holding(&disk.vdisk_lock) || req == 0 ||
++      req->state != IO_QUEUED || req->op != IO_OP_READ ||
++      req->dev != ROOTDEV || req->blockno >= FSSIZE)
++    panic("virtio async submit");
++  if (alloc3_desc(idx) < 0) {
++    disk.stats.eagain_desc++;
++    return IO_EAGAIN;
++  }
++  int head = idx[0];
++  if (disk.info[head].owner != IO_HEAD_FREE)
++    panic("virtio async owner");
++
++  struct io_request *old = disk.last_async[head].req;
++  if (old != 0 && old->gen == disk.last_async[head].gen &&
++      (old->state == IO_DONE || old->state == IO_ERROR))
++    disk.stats.head_reuse++;
++
++  struct virtio_blk_req *op = &disk.ops[head];
++  op->type = VIRTIO_BLK_T_IN;
++  op->reserved = 0;
++  op->sector = (uint64)req->blockno * IO_SECTORS_PER_BLOCK;
++  disk.desc[head].addr = (uint64)op;
++  disk.desc[head].len = sizeof(*op);
++  disk.desc[head].flags = VRING_DESC_F_NEXT;
++  disk.desc[head].next = idx[1];
++  disk.desc[idx[1]].addr = (uint64)req->data;
++  disk.desc[idx[1]].len = BSIZE;
++  disk.desc[idx[1]].flags = VRING_DESC_F_WRITE | VRING_DESC_F_NEXT;
++  disk.desc[idx[1]].next = idx[2];
++  disk.info[head].status = 0xff;
++  disk.desc[idx[2]].addr = (uint64)&disk.info[head].status;
++  disk.desc[idx[2]].len = 1;
++  disk.desc[idx[2]].flags = VRING_DESC_F_WRITE;
++  disk.desc[idx[2]].next = 0;
++
++  // Publish the owner and state first: the device may complete immediately.
++  disk.info[head].b = 0;
++  disk.info[head].req = req;
++  disk.info[head].gen = req->gen;
++  disk.info[head].owner = IO_HEAD_ASYNC;
++  io_started_locked(req, head);
++  disk.avail->ring[disk.avail->idx % NUM] = head;
++  io_fence();
++  disk.avail->idx++;
++  io_fence();
++  *R(VIRTIO_MMIO_QUEUE_NOTIFY) = 0;
++  return 0;
++}
++
++// PTO-13: never infer a request from completion order. Only the owner of this
++// exact used head can reclaim its chain. The pool/result lifetime is separate.
++static void
++reap_head_locked(uint head)
++{
++  if (head >= NUM || disk.free[head])
++    panic("virtio used head");
++  int status = disk.info[head].status;
++  if (disk.info[head].owner == IO_HEAD_STOCK) {
++    struct buf *b = disk.info[head].b;
++    if (status != 0)
++      panic("virtio_disk_intr status"); // preserve stock semantics
++    if (b == 0 || b->disk != 1)
++      panic("virtio stock completion");
++    b->disk = 0;
++    disk.stats.completed_stock++;
++    wakeup(b);
++  } else if (disk.info[head].owner == IO_HEAD_ASYNC) {
++    struct io_request *req = disk.info[head].req;
++    if (req == 0 || req->gen != disk.info[head].gen ||
++        req->state != IO_INFLIGHT || req->head != (int)head)
++      panic("virtio async mapping");
++#ifdef IO_HW_SELFTEST
++    if (disk.override_valid[head]) {
++      status = disk.override_status[head];
++      disk.override_valid[head] = 0;
++    }
++#endif
++    disk.last_async[head].req = req;
++    disk.last_async[head].gen = req->gen;
++    disk.info[head].req = 0;
++    disk.info[head].gen = 0;
++    disk.info[head].owner = IO_HEAD_FREE;
++    req->head = IO_NIL;
++    free_chain(head); // hardware already placed this head in the used ring
++    disk.stats.completed_async++;
++    io_async_completed_locked(req, status); // terminal status before wakeup
++  } else {
++    panic("virtio completion owner");
++  }
++}
++
++static void
++drain_used_locked(void)
++{
++  while (disk.used_idx != disk.used->idx) {
++    io_fence();
++#ifdef IO_HW_SELFTEST
++    // Test-only: reverse consumption of TWO REAL used entries after DMA. This
++    // tests mapping, not a claim that QEMU itself completed out of order.
++    if (disk.reverse_pair && (uint16)(disk.used->idx - disk.used_idx) >= 2) {
++      uint a = disk.used->ring[disk.used_idx % NUM].id;
++      uint b = disk.used->ring[(disk.used_idx + 1) % NUM].id;
++      disk.used_idx += 2;
++      disk.reverse_pair = 0;
++      disk.reversed++;
++      reap_head_locked(b);
++      reap_head_locked(a);
++      continue;
++    }
++#endif
++    uint head = disk.used->ring[disk.used_idx % NUM].id;
++    disk.used_idx++;
++    reap_head_locked(head);
++  }
++  io_dispatch_locked();
++}
++
+ void
+ virtio_disk_intr()
+ {
+@@ -322,23 +471,87 @@ virtio_disk_intr()
+   *R(VIRTIO_MMIO_INTERRUPT_ACK) = *R(VIRTIO_MMIO_INTERRUPT_STATUS) & 0x3;
+ 
+   io_fence();
++#ifdef IO_HW_SELFTEST
++  if (!disk.hold_used)
++#endif
++    drain_used_locked();
++  release(&disk.vdisk_lock);
++}
+ 
+-  // the device increments disk.used->idx when it
+-  // adds an entry to the used ring.
++void
++virtio_disk_get_stats(struct io_desc_stats *out)
++{
++  if (out == 0)
++    return;
++  acquire(&disk.vdisk_lock);
++  *out = disk.stats;
++  out->free_desc = 0;
++  for (int i = 0; i < NUM; i++)
++    out->free_desc += disk.free[i] != 0;
++  release(&disk.vdisk_lock);
++}
+ 
+-  while (disk.used_idx != disk.used->idx) {
++#ifdef IO_HW_SELFTEST
++void
++virtio_test_hold_used(int hold)
++{
++  acquire(&disk.vdisk_lock);
++  disk.hold_used = hold;
++  // IRQ was acknowledged while held, so explicitly reap real entries that
++  // arrived in that interval. No hardware/DMA completion is fabricated.
++  if (!hold) {
+     io_fence();
+-    int id = disk.used->ring[disk.used_idx % NUM].id;
++    drain_used_locked();
++  }
++  release(&disk.vdisk_lock);
++}
+ 
+-    if (disk.info[id].status != 0)
+-      panic("virtio_disk_intr status");
++void
++virtio_test_unhold_locked(void)
++{
++  if (!holding(&disk.vdisk_lock))
++    panic("test unhold lock");
++  disk.hold_used = 0;
++  io_fence();
++  drain_used_locked();
++}
+ 
+-    struct buf *b = disk.info[id].b;
+-    b->disk = 0; // disk is done with buf
+-    wakeup(b);
++uint
++virtio_test_used_count(void)
++{
++  acquire(&disk.vdisk_lock);
++  io_fence();
++  uint n = (uint16)(disk.used->idx - disk.used_idx);
++  release(&disk.vdisk_lock);
++  return n;
++}
+ 
+-    disk.used_idx += 1;
+-  }
++void
++virtio_test_reverse_pair(void)
++{
++  acquire(&disk.vdisk_lock);
++  disk.reverse_pair = 1;
++  release(&disk.vdisk_lock);
++}
+ 
++uint
++virtio_test_reversed(void)
++{
++  acquire(&disk.vdisk_lock);
++  uint n = disk.reversed;
++  release(&disk.vdisk_lock);
++  return n;
++}
++
++void
++virtio_test_status(struct io_handle h, int status)
++{
++  acquire(&disk.vdisk_lock);
++  struct io_request *req = io_lookup_handle_locked(h);
++  if (req == 0 || req->state != IO_INFLIGHT || req->head < 0)
++    panic("virtio test status");
++  disk.override_valid[req->head] = 1;
++  disk.override_status[req->head] = status;
+   release(&disk.vdisk_lock);
+ }
++#endif
+diff --git a/user/init.c b/user/init.c
+index 9e822e4..780f2de 100644
+--- a/user/init.c
++++ b/user/init.c
+@@ -9,7 +9,7 @@
+ #include "user/user.h"
+ #include "kernel/fcntl.h"
+ 
+-#ifdef IO_SELFTEST
++#if defined(IO_SELFTEST) || defined(IO_HW_SELFTEST)
+ // Test-only syscall (W2-I02): runs the kernel request-layer poll/wait selftest
+ // from process context. Only embedded/called when built with `make test-io`
+ // (-DIO_SELFTEST); production init never references it.
+@@ -30,7 +30,7 @@ main(void)
+   dup(0); // stdout
+   dup(0); // stderr
+ 
+-#ifdef IO_SELFTEST
++#if defined(IO_SELFTEST) || defined(IO_HW_SELFTEST)
+   {
+     int rc = io_selftest();
+     printf("IO-USER-TEST: %s (rc=%d)\n", rc == 0 ? "PASS" : "FAIL", rc);

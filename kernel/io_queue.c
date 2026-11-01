@@ -10,6 +10,7 @@
 #include "param.h"
 #include "riscv.h"
 #include "defs.h"
+#include "fs.h"
 #include "io_request.h"
 #include "io_queue_test.h"
 

@@ -1,0 +1,8 @@
+== ET4290 test runner — 6 case ==
+   kết quả: /home/ubuntu/2026.1/HDH/Asynchronous-virtio-blk-and-IO-Schedulers-week02-hoang-2026-11-01/results/week02/hoang-20261101-213746/regression
+--- [1/6] boot-smoke (CPUS=1) ... PASS (0.9s)
+--- [2/6] shell-fs-cpus3 (CPUS=3) ... PASS (1.3s)
+--- [3/6] usertests-quick-cpus1 (CPUS=1) ... PASS (83.2s)
+--- [4/6] usertests-quick-cpus4 (CPUS=4) ... PASS (91.6s)
+--- [5/6] grind-smoke-cpus1 (CPUS=1) ... PASS (60.8s)
+--- [6/6] grind-smoke-cpus4 (CPUS=4) ... 

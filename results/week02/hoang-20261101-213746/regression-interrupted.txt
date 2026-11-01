@@ -1,0 +1,1 @@
+Initial runner session ended with exit 143 before final grind case/log/summary. First five case serial logs are retained; final acceptance uses separate regression-final run. No kernel panic observed in saved logs.
