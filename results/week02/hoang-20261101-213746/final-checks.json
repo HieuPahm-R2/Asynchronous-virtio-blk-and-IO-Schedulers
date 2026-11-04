@@ -1,0 +1,26 @@
+[
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "make",
+      "check-text"
+    ],
+    "rc": 0,
+    "stdout": "\n== check-text: PASS — 226 file UTF-8 sạch, không mojibake ==\n",
+    "stderr": ""
+  },
+  {
+    "check": "production symbols absent",
+    "status": "PASS",
+    "kernel_sha256": "f6c3d47483f133c296f437aea3b811892613e606a4d338b8cdf2021fce034681"
+  }
+]

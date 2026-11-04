@@ -9,6 +9,13 @@
 #include "user/user.h"
 #include "kernel/fcntl.h"
 
+#if defined(IO_SELFTEST) || defined(IO_HW_SELFTEST)
+// Test-only syscall (W2-I02): runs the kernel request-layer poll/wait selftest
+// from process context. Only embedded/called when built with `make test-io`
+// (-DIO_SELFTEST); production init never references it.
+int io_selftest(void);
+#endif
+
 char *argv[] = {"sh", 0};
 
 int
@@ -22,6 +29,13 @@ main(void)
   }
   dup(0); // stdout
   dup(0); // stderr
+
+#if defined(IO_SELFTEST) || defined(IO_HW_SELFTEST)
+  {
+    int rc = io_selftest();
+    printf("IO-USER-TEST: %s (rc=%d)\n", rc == 0 ? "PASS" : "FAIL", rc);
+  }
+#endif
 
   for (;;) {
     printf("init: starting sh\n");

@@ -2,8 +2,7 @@
 
 Tài liệu này mô tả **hiện trạng** đường I/O của xv6-riscv đang pin
 (`f780d785`) và **thiết kế đề xuất** cho đề tài: async virtio-blk + scheduler
-FCFS/SCAN/deadline + request merging. Đây là bản nháp kỹ thuật cho proposal
-tuần 3, không phải đặc tả đã chốt với giảng viên.
+FCFS/SCAN/deadline + request merging.
 
 ## 1. Đường I/O hiện tại (stock xv6)
 
@@ -253,7 +252,7 @@ minh hoạ**. Bản base hiện tại chưa thêm syscall nào.
 - Outstanding = đã submit device nhưng chưa complete; **khác** pending phần mềm.
 - Timer tick quá thô thì dùng timebase/counter phù hợp và ghi cách quy đổi.
 
-## 3. Rủi ro kỹ thuật (từ kế hoạch)
+## 3. Rủi ro kỹ thuật
 
 | Rủi ro | Giảm thiểu |
 | --- | --- |

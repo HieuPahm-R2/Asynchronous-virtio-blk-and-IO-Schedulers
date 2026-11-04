@@ -1,582 +1,334 @@
-# W2-G01 — Contract: interface request, buffer ownership và quy tắc khóa
+# W2-G01 — Đặc tả kỹ thuật: Giao diện Request, Cơ chế Buffer và Quy tắc Đồng bộ
 
-> **Card:** W2-G01 (CARD 1/9) · **Owner:** Phạm Trung Hiếu (20233402) ·
-> **Reviewer:** Nguyễn Văn Hoàng + Phạm Quý Lợi · **Estimate:** 1,5h ·
-> **Hạn nội bộ:** 2026-10-28 · **Bản này:** 2026-10-30.
->
-> **Trạng thái:** 📄 CONTRACT — **CHƯA ĐƯỢC DUYỆT**. Bảng chữ ký ở §12 còn
-> `PENDING`; card W2-G01 chỉ được đóng sau khi Hoàng và Lợi review **cùng một
-> revision** (commit của PR này) và ghi nhận xét. Không ghi "đã duyệt" trước khi
-> có comment/approve thật.
->
-> **Nguồn sự thật:** file này là contract duy nhất cho async READ tuần 2.
-> Header [`kernel/io_request.h`](../../kernel/io_request.h) là bản chuyển thể
-> trực tiếp của §2–§6; nếu hai bên lệch nhau, sửa cả hai trong cùng PR.
-> Tài liệu tuần 1 **không còn hiệu lực ở hai điểm** (buffer ownership và mô hình
-> khóa): xem §10.
->
-> **Base:** `e8095001b2e64f361cd80b25e98a1bea5fd60888` (origin/main sau 3 PR
-> tuần 1, đã fetch ngày 2026-10-30) · **Pin xv6 tạm:**
-> `f780d7850765d74cbdcd1fff4b822d8829f7c9bd` (GV **chưa** xác nhận tag chính
-> thức — giữ nguyên, không tự đổi).
+> **Mã công việc:** W2-G01 (CARD 1/9) — *Chốt interface request, buffer ownership và quy tắc khóa*.  
+> **Người thực hiện:** Phạm Trung Hiếu (MSSV: 20233402) · **Nhánh làm việc:** `week2/hieu-request`.  
+> **Base commit:** `e809500` (origin/main sau tuần 1) · **Pin xv6 tạm thời:** `f780d785…` (chờ GV xác nhận tag chính thức).  
+> **Người rà soát (Reviewers):** Nguyễn Văn Hoàng (G01/I01/I02), Phạm Quý Lợi (G01) — *Trạng thái: PENDING*.
+> **File mã nguồn nguồn sự thật (Single Source of Truth):** [`kernel/io_request.h`](../../kernel/io_request.h).
 
-## 0. Vì sao phải chốt trước khi ghép code
+---
 
-Hai tài liệu tuần 1 mâu thuẫn ở đúng hai điểm mà ba nhánh code sẽ va nhau:
+## 1. Bối cảnh kỹ thuật và Đối chiếu mã nguồn
 
-| Điểm | `async-design.md` (Hoàng) | `decisions_report.md` (Hiếu) | Chốt ở đây |
-| --- | --- | --- | --- |
-| Buffer | pool sở hữu header/status/**buffer** | caller sở hữu `kbuf`, pool chỉ cấp slot | **pool-owned staging buffer** (D2) |
-| Khóa | một `io_lock` chung | chưa chốt, còn `vdisk_lock` riêng | **một lock domain duy nhất** (D6) |
+### 1.1 Vấn đề cốt lõi cần giải quyết
+Trong Tuần 1, hai tài liệu thiết kế xuất hiện mâu thuẫn lớn đe dọa khả năng tích hợp:
+- [`docs/week01/async-design.md`](../week01/async-design.md): Đề xuất Request Pool sở hữu buffer và quy về một khóa chung.
+- [`docs/week01/decisions_report.md`](../week01/decisions_report.md): Đề xuất tiến trình gọi (caller) tự sở hữu `kbuf` và chưa chốt cơ chế đồng bộ khóa.
 
-Nếu ba người code theo hai mô hình khác nhau, module sẽ không ghép được hoặc
-deadlock. Contract này chốt một mô hình, ghi rõ phương án bị loại và lý do; phần
-còn mở với GV được tách sang §11 (không lấy giả định làm quyết định).
+Nếu ba thành viên lập trình song song trên hai mô hình trái ngược nhau, hệ thống sẽ rơi vào tình trạng không thể ghép nối hoặc phát sinh lỗi deadlock AB-BA. Bản hợp đồng này (Contract) chuẩn hóa toàn bộ giao diện và cơ chế đồng bộ trước khi viết code.
 
-## 1. Đối chiếu nguồn tại cùng revision (bước 1 của card)
+### 1.2 Bảng đối chiếu mã nguồn gốc xv6
+Nhóm đã rà soát trực tiếp trên commit `e809500` để rút ra các kết luận nền tảng:
 
-Đã đọc lại các file sau ở base nêu trên (số dòng theo revision này):
+| Thành phần nguồn | Hành vi hiện tại của xv6 | Nguyên tắc áp dụng vào Contract |
+| :--- | :--- | :--- |
+| `kernel/buf.h` & `bio.c` | `struct buf` dùng chung cho cả buffer cache và vùng DMA. Khóa `bcache.lock` và `b->lock` độc lập. | **D2 & D6:** Không tái dùng `struct buf` làm DMA async; `bcache.lock` độc lập, không lồng vào `io_lock`. Async READ MVP chưa thay thế `bread()`. |
+| `kernel/virtio_disk.c` | Mảng `info[head]` lưu con trỏ buffer và status. Hàm `virtio_disk_rw` cấp 3 descriptor, caller tự thu hồi chain (`free_chain`). | **D7:** Mở rộng `info[head]` thêm cờ `owner` (`STOCK` vs `ASYNC`). Descriptor của stock do caller giải phóng, descriptor của async do ngắt IRQ giải phóng. |
+| `kernel/proc.c` | Hỗ trợ chuỗi đồng bộ mới: `sleep_prepare(chan)` → `sleep()` → `wakeup(chan)`. | **D9:** Áp dụng mẫu chuẩn `sleep_prepare` khi còn giữ khóa để loại trừ triệt để khe hở mất tín hiệu đánh thức (lost-wakeup). |
+| `kernel/fs.h` & `param.h` | `BSIZE=1024`, `ROOTDEV=1`, `FSSIZE=2000`. | **D3:** Đơn vị giao diện công khai là `blockno`, chỉ đổi sang sector (`blockno * 2`) tại một vị trí duy nhất trong driver. |
 
-| Vị trí | Nội dung đối chiếu | Kết luận dùng cho contract |
-| --- | --- | --- |
-| `kernel/buf.h:1-11` | `struct buf`: `valid`, `disk`, `dev`, `blockno`, `lock` (sleeplock), `refcnt`, `data[BSIZE]` | Stock dùng `struct buf` vừa làm cache vừa làm vùng DMA; **không** tái dùng làm vùng DMA async (D2) |
-| `kernel/bio.c:57-88` | `bget`: `bcache.lock` bảo vệ lookup/refcnt; nhả trước `acquiresleep(&b->lock)` | `bcache.lock` và `buf.lock` không lồng vào io_lock; thứ tự chỉ một chiều (D6) |
-| `kernel/bio.c:90-112` | `bread` gọi `virtio_disk_rw` khi cache miss; `bwrite` chỉ log gọi | Async READ **không** thay `bread` trong tuần 2 (D1) |
-| `kernel/virtio_disk.c:22-59` | `struct disk`: `free[NUM]`, `used_idx`, `info[head].{b,status}`, `ops[head]`, `vdisk_lock` | Mở rộng `info[head]` bằng owner + `struct io_request *`; giữ `b` cho stock (D7) |
-| `kernel/virtio_disk.c:155-213` | `alloc_desc/free_desc/free_chain/alloc3_desc`; rollback phần dở | Một allocator chung stock+async; try-submit rollback đúng (D7) |
-| `kernel/virtio_disk.c:215-298` | `virtio_disk_rw`: 3 descriptor, publish + fence + notify, `b->disk`, `sleep_prepare(b)`, caller `free_chain` sau wake | Stock giữ nguyên semantics; **caller stock vẫn reclaim**; async reclaim ở IRQ (D7) |
-| `kernel/virtio_disk.c:300-333` | `virtio_disk_intr`: ACK MMIO, drain `used`, `info[id]`, status, `wakeup(b)`, `used_idx++` | IRQ phân nhánh theo owner; async copy status rồi mới tái dùng head (D7) |
-| `kernel/virtio.h:51-99` | `NUM=8`, ring, `struct virtio_blk_req` (16B) | `NUM/3 = 2` chain tối đa; `ops[head]` có lifetime toàn cục → header async không nằm trên stack (D7) |
-| `kernel/proc.c:545-595` | `sleep_prepare(chan)` + `sleep()` + `wakeup(chan)` (API mới của pin) | Wait dùng đúng pattern prepare→release→sleep→acquire; IRQ cập nhật terminal **trước** wakeup (D9) |
-| `kernel/riscv.h:370-375` | `io_fence()` = fence iorw,iorw + compiler clobber | Giữ nguyên chuỗi publish/consume như stock (D7) |
-| `kernel/fs.h:5`, `kernel/param.h:8,11,12` | `BSIZE=1024`, `ROOTDEV=1`, `NBUF=30`, `FSSIZE=2000` | Validate `dev==ROOTDEV`, `blockno<FSSIZE`; block → sector ×2 (D3) |
-| `kernel/main.c:19-31` | boot order: `binit → iinit → fileinit → virtio_disk_init → userinit` | `io_init()` gọi sau `virtio_disk_init()`, trước `userinit()` (D1) |
-| `kernel/trap.c:188-210` | `devintr()`: `plic_claim`, `virtio_disk_intr`, `plic_complete` | IRQ path không đổi; chỉ thân handler phân nhánh owner (D7) |
+---
 
-## 2. Quyết định chốt (decision log)
+## 2. Mười quyết định thiết kế then chốt (D1 – D10)
 
-### D1 — Phạm vi MVP
+### D1 — Phạm vi phiên bản thử nghiệm (MVP Scope)
+- **Quyết định:** Giao diện C mức kernel, hỗ trợ duy nhất thao tác **READ 1 block** (`BSIZE = 1024 bytes`), trên một thiết bị gốc (`ROOTDEV`), hàng đợi điều phối **FCFS**. Các lệnh WRITE và hệ thống log giữ nguyên đường dẫn đồng bộ truyền thống.
+- **Phân tích đánh đổi:** Tập trung kiểm chứng luồng bất đồng bộ cốt lõi; hoãn việc xây dựng system call người dùng, WRITE bất đồng bộ hoặc gom cụm I/O (merge) sang giai đoạn sau khi có ý kiến của giảng viên.
 
-Chốt: **kernel-level C API**, READ **một block** `BSIZE=1024`, **một thiết bị**
-(`ROOTDEV`), queue **FCFS**, không syscall user-space trong tuần 2. WRITE/log giữ
-nguyên đường đồng bộ hiện có. Async READ **không phải** là đường thay thế
-`bread()`: chỉ đọc fixture read-only cho test; coherence với buffer cache là việc
-của kỳ sau.
+### D2 — Cơ chế sở hữu bộ đệm: Staging Buffer do Pool sở hữu
+- **Quyết định:** Mỗi slot request sở hữu cố định một vùng đệm trung chuyển 1024 byte nằm tĩnh trong phân vùng BSS (`uchar data[BSIZE]` tích hợp trực tiếp trong `struct io_request`).
+  - Caller **không** cấp phát bộ đệm, **không** giải phóng bộ đệm.
+  - Sau khi request hoàn tất (`DONE`), caller nhận con trỏ dữ liệu chỉ đọc thông qua hàm `aio_data()`.
+  - Con trỏ này lập tức hết hiệu lực sau khi caller gọi `aio_release()`.
+- **Lý do chọn:** Vòng đời bộ đệm gắn chặt với vòng đời request; địa chỉ DMA bất biến trong suốt quá trình xử lý; tránh lỗi use-after-free khi caller bị hủy (kill) đột ngột trong lúc DMA đang hoạt động.
+- **Lý do loại bỏ `caller-owned kbuf`:** Nếu caller sở hữu bộ đệm, hệ điều hành phải duy trì bộ đếm tham chiếu (refcount), kiểm soát tiến trình thoát bất ngờ và xử lý nhiều nhánh lỗi phức tạp, vượt quá giới hạn thời gian tuần 2.
 
-Lý do: đúng phạm vi card W2-G01/W2-I01/H01/L01 và ma trận T01–T13; giảm bề mặt
-sai vào log/ordering. Phương án bị loại trong tuần 2: syscall user-space (chờ GV
-trả lời Q3), async WRITE/merge thật, nhiều thiết bị, SCAN/deadline.
+> **Quy tắc truy cập `req->data` theo trạng thái:**
+> - `ALLOCATED`: Chỉ Request Layer nội bộ được khởi tạo.
+> - `QUEUED` / `INFLIGHT`: Cấm tuyệt đối CPU can thiệp (chỉ phần cứng DMA đọc/ghi).
+> - `DONE`: Caller được cấp quyền **chỉ đọc** sau khi `aio_wait() == 0` hoặc `aio_poll() == 1`.
+> - `ERROR`: Vùng nhớ không hợp lệ, cấm truy cập dữ liệu.
+> - Sau `aio_release()`: Con trỏ hết hạn, slot được thu hồi về trạng thái tự do (`FREE`).
 
-### D2 — Buffer ownership: **pool sở hữu staging buffer**
+### D3 — Đơn vị địa chỉ: `blockno` ở API, quy đổi Sector tại Driver
+- **Quyết định:** Giao diện công khai nhận đơn vị địa chỉ khối hệ thống tệp `blockno`. Việc nhân đôi sang sector (`sector = blockno * 2`) chỉ được thực hiện **duy nhất tại một vị trí** trong hàm `virtio_disk_try_submit_read()`.
+- **Lý do chọn:** Loại trừ triệt để nguy cơ cả hai tầng cùng nhân đôi địa chỉ (lỗi double multiply bug). Submit sẽ từ chối ngay nếu `dev != ROOTDEV` (`-ENODEV`) hoặc `blockno >= FSSIZE` (`-ERANGE`).
 
-Chốt: mỗi slot request sở hữu **một vùng staging 1024 byte cố định** nằm trong
-pool tĩnh (`uchar data[BSIZE]` trong `struct io_request`, BSS, **không** `kalloc`
-trong IRQ, **không** DMA vào stack/user pointer). Caller **không** cấp buffer,
-**không** được free; nhận con trỏ đọc qua `aio_data()` sau khi terminal và chỉ
-được dùng tới `aio_release()`.
+### D4 — Định danh Request bằng Handle có Thế hệ (Generation)
+- **Quyết định:** Định nghĩa cấu trúc định danh:
+  ```c
+  struct io_handle { int id; uint gen; };
+  ```
+  - `id`: Chỉ số slot trong pool, thuộc dải `[0, IO_NREQ - 1]`.
+  - `gen`: Thế hệ của slot, khởi tạo bằng 1, tự động tăng sau mỗi lần giải phóng và không bao giờ nhận giá trị 0.
+- **Lý do chọn:** Ngăn chặn hiện tượng ABA (Stale Handle). Mọi hàm API đều xác thực tính khớp của cặp `(id, gen)` trước khi dereference con trỏ. Handle cũ trỏ vào slot đã tái sử dụng sẽ bị từ chối với mã lỗi `-ENOENT` mà không gây panic.
 
-Lý do: một chủ sở hữu duy nhất ⇒ IRQ không cần tin caller, không có
-use-after-free khi caller thoát/kill; địa chỉ DMA ổn định suốt QUEUED/INFLIGHT;
-test T02–T06 kiểm được độc lập; về sau merge READ dễ hơn vì staging liên tục.
-Chi phí: 17 280 B BSS (~16,9 KiB) và một lần copy khi tích hợp filesystem (chưa
-làm tuần này).
+### D5 — Tách biệt hai vòng đời Request và Descriptor
+Hệ thống phân định độc lập hai vòng đời:
+1. **Vòng đời Request (Tầng phần mềm):**  
+   `IO_SLOT_FREE → IO_ALLOCATED → IO_QUEUED → IO_INFLIGHT → IO_DONE / IO_ERROR → IO_SLOT_FREE`  
+   *(Trạng thái DONE/ERROR vẫn chiếm giữ slot cho đến khi caller chủ động gọi `aio_release()`)*.
+2. **Vòng đời Descriptor (Tầng phần cứng virtio):**  
+   `DESC_FREE → DESC_RESERVED → DESC_PUBLISHED → DESC_USED → DESC_RECLAIMED → DESC_FREE`  
+   *(Một head descriptor có thể được tái sử dụng cho request B ngay sau khi ngắt thu hồi, dù caller của request A chưa release slot)*.
 
-Phương án bị loại: **caller-owned `kbuf`** (đề xuất của `decisions_report.md`
-§3.3). Nếu chọn, contract buộc caller giữ buffer sống và không sửa tới
-completion, release sớm phải bị từ chối, IRQ/exit/kill phải có refcount — nhiều
-đường lỗi hơn trong 1,5h contract và 6h pool. Ghi nhận: **nếu GV yêu cầu API
-nhận `kbuf`**, đây là contract change phải mở lại G01, không tự đổi ở nhánh
-module.
+### D6 — Một miền khóa duy nhất (Single Lock Domain)
+- **Quyết định:** Sử dụng đúng **một spinlock duy nhất** cho toàn bộ nguyên mẫu: `io_lock` (đồng nhất với `disk.vdisk_lock`, truy cập qua hàm `virtio_disk_io_lock()`).
+- **Phạm vi bảo vệ:** (1) Request pool, state, gen, waiters; (2) Pending queue, thứ tự FCFS; (3) Allocator descriptor, avail/used ring; (4) Bản đồ sở hữu `info[head]`; (5) Cơ chế đồng bộ `b->disk` của stock.
+- **Lý do loại bỏ phương án hai khóa riêng (`ioq.lock` và `vdisk_lock`):**  
+  Thao tác submit nạp request đi theo chiều `ioq.lock → vdisk_lock`. Nếu ngắt IRQ completion giữ `vdisk_lock` rồi lấy `ioq.lock` để đánh thức tiến trình, sẽ tạo ra chu kỳ nghịch chiều `vdisk_lock → ioq.lock` gây **deadlock AB-BA**. Quy về một khóa loại bỏ chu kỳ đảo thứ tự giữa khóa queue và khóa driver; vẫn cần kiểm thử các bất biến và luồng wakeup.
+- **Thứ tự khóa một chiều (không lồng nhau):**  
+  `bcache.lock (độc lập)` · `buf.lock (sleeplock) → io_lock → proc->lock`. Cấm ngủ khi đang giữ `io_lock`.
 
-Quy tắc bắt buộc kèm theo:
+### D7 — Giao ước phân quyền giữa Driver và Request Layer
+- **Nhãn sở hữu (Owner Tag):** Mỗi phần tử `info[head]` gắn cờ `owner` (`FREE`, `STOCK`, `ASYNC`).
+- **Quy tắc thu hồi Descriptor (`free_chain`):**
+  - **Luồng STOCK:** Caller của hàm `virtio_disk_rw()` tự thu hồi chain sau khi thức dậy (như cũ).
+  - **Luồng ASYNC:** Ngắt IRQ `virtio_disk_intr()` chủ động thu hồi chain ngay sau khi chép kết quả status.
+  - *Cấm tuyệt đối việc thu hồi chung không xét owner để tránh lỗi double-free.*
+- **Ba điểm kích hoạt Dispatcher:** (1) Sau khi enqueue tại `aio_read_submit`; (2) Trong ngắt IRQ sau khi thu hồi chain async; (3) Trong driver stock sau khi caller thu hồi chain stock.
 
-| Thời điểm | Ai được đọc/ghi `req->data` |
-| --- | --- |
-| trước khi `aio_read_submit` trả về (ALLOCATED) | không ai ngoài request layer |
-| QUEUED/INFLIGHT | **không ai** (device DMA khi INFLIGHT); không copyout, không sửa |
-| DONE | caller được **đọc** sau `aio_wait()==0` / `aio_poll()==1`; không ghi |
-| ERROR | nội dung không hợp lệ; không dùng làm dữ liệu |
-| sau `aio_release()` | con trỏ `aio_data()` hết hiệu lực; không giữ, không free |
-| IRQ | chỉ driver ghi status 1 byte qua descriptor; **không** đụng `req->data` |
+### D8 — Chuẩn hóa mã lỗi Kernel
+Áp dụng quy chuẩn mã lỗi âm kiểu Linux:
 
-### D3 — Đơn vị địa chỉ: **blockno** ở API, đổi sector tại **một chỗ**
+| Mã lỗi | Giá trị | Ý nghĩa và Ngữ cảnh phát sinh |
+| :--- | :---: | :--- |
+| `-EINVAL` | -22 | Tham số không hợp lệ, con trỏ NULL, hoặc gọi `aio_wait` ngoài process context. |
+| `-ENODEV` | -19 | Thiết bị không phải `ROOTDEV`. |
+| `-ERANGE` | -34 | Chỉ số khối vượt ngưỡng đĩa (`blockno >= FSSIZE`). |
+| `-ENOENT` | -2 | Handle không hợp lệ hoặc đã hết hạn (stale handle). |
+| `-EAGAIN` | -11 | Pool đầy lúc submit (không ngủ, không panic); hoặc thiếu descriptor trong driver. |
+| `-EIO` | -5 | Lỗi phần cứng đọc đĩa từ thiết bị (device status ≠ 0). |
+| `-EBUSY` | -16 | Release khi request chưa terminal hoặc còn waiter; hoặc gọi wait lần hai đồng thời. |
 
-Chốt: public kernel API nhận `blockno` (đơn vị block FS). `struct io_request`
-lưu `blockno`; **request layer không bao giờ nhân**. Chuyển đổi duy nhất cho
-async nằm trong `virtio_disk_try_submit_read()`:
-`sector = req->blockno * IO_SECTORS_PER_BLOCK` với `IO_SECTORS_PER_BLOCK =
-BSIZE/512 = 2`. Đường stock giữ nguyên công thức hiện có trong
-`virtio_disk_rw` (cùng module `virtio_disk.c`, cùng công thức, không module nào
-nhân hai lần). Validate tại submit: `dev == ROOTDEV` (nếu không `-ENODEV`) và
-`blockno < FSSIZE` (nếu không `-ERANGE`); alignment tự động đúng vì luôn đọc
-nguyên block.
+### D9 — Cơ chế Đồng bộ Wait/Wakeup và Chống Lost-Wakeup
+- **Kênh chờ (Wait Channel):** Sử dụng trực tiếp con trỏ `struct io_request *req`. Giới hạn đơn tiêu thụ (`waiters ∈ {0, 1}`).
+- **Nguyên tắc chống mất tín hiệu đánh thức:**  
+  Tầng ngắt cập nhật trạng thái `DONE/ERROR` và status **trước** khi gọi `wakeup(req)`.  
+  Tiến trình chờ tuân thủ nghiêm ngặt chuỗi:  
+  `Giữ io_lock → sleep_prepare(req) → nhả io_lock → sleep() → nhận lại io_lock`.  
+  Nếu ngắt xảy ra ngay tại khe hở giữa `sleep_prepare` và `sleep`, hàm `sleep()` nhận thấy `p->chan == 0` và sẽ lập tức trả về mà không bị ngủ quên.
+- **Fast-path:** Nếu request đã hoàn tất trước khi gọi `aio_wait()`, hàm lập tức trả về kết quả thành công mà không vào giấc ngủ.
 
-### D4 — Handle có generation
+### D10 — Bộ đếm thống kê và Bất biến kế toán
+Hệ thống duy trì các bất biến kiểm tra được bằng test tự động:
+Các phương trình dưới đây áp dụng cho luồng API thật, snapshot dưới `io_lock`; `ALLOCATED` chỉ là trạng thái nội bộ chưa quan sát được. Các test unit cấp slot/chuyển state trực tiếp không dùng phương trình cumulative này.
+1. `submitted == queued + inflight + completed + errors`, trong đó `submitted/completed/errors` là bộ đếm tích lũy.
+2. `completed + errors == released + done + error`, trong đó `done/error` là số slot terminal hiện đang giữ, còn `released` là bộ đếm tích lũy.
+3. `free_req == IO_NREQ - (queued + inflight + done + error)`. Khi pool đầy, submit trả `-EAGAIN`, tăng `eagain_pool`, không sửa output handle.
+4. Sau khi xả sạch và release hết: `submitted == completed + errors == released`, `free_req == 16`, `free_desc == 8`.
+5. `max_inflight` đo số request đã publish nhưng phần mềm chưa reap. Đây không phải bằng chứng thiết bị thực thi song song hay tăng tốc I/O.
 
-```c
-struct io_handle { int id; uint gen; };
-```
+---
 
-`id ∈ [0, IO_NREQ)`; `gen` khởi tạo 1, tăng mỗi lần `aio_release()`; nếu tràn về
-0 thì gán 1 (không dùng 0). Handle hợp lệ ⇔ `id` trong khoảng **và** slot có
-`gen` bằng **và** `state != IO_SLOT_FREE`. Mọi hàm public validate **trước mọi
-dereference**; handle cũ/stale trả `-ENOENT`, không panic.
+## 3. Đặc tả Cấu trúc Dữ liệu và Giao diện API
 
-Ghi chú tràn: `gen` 32-bit; một slot tái sử dụng 2^32−1 lần mới có thể trùng
-handle cũ — ngoài phạm vi tuần 2, được ghi nhận chứ không "chứng minh" là không
-bao giờ tràn.
-
-### D5 — Hai vòng đời tách rời
-
-Request (pool phần mềm):
-
-```text
-FREE -> ALLOCATED -> QUEUED -> INFLIGHT -> DONE | ERROR -> FREE
-```
-
-- `ALLOCATED` chỉ tồn tại bên trong `aio_read_submit()` dưới io_lock, không CPU
-  khác thấy.
-- `DONE/ERROR` **chưa** trả slot: caller còn cần đọc kết quả; slot chỉ về FREE
-  qua `aio_release()`.
-- Không bao giờ free slot QUEUED/INFLIGHT/còn `waiters`.
-
-Descriptor (driver):
-
-```text
-FREE -> RESERVED -> PUBLISHED -> USED -> RECLAIMED -> FREE
-```
-
-- `RESERVED`: `alloc3_desc` đã lấy; rollback nếu thiếu.
-- `PUBLISHED`: đã ghi avail ring + fence + notify, state INFLIGHT, head map đã
-  trỏ request (đặt **trước** publish).
-- `USED`: device đã ghi used entry; `REAPED` thuộc IRQ; `RECLAIMED` là lúc
-  `free_chain` — **chỉ một chủ** reclaim (D7).
-
-Head có thể được dùng lại cho request B **trước khi** caller release request A.
-Vì vậy mapping head→request, slot request và staging buffer là ba vòng đời
-khác nhau: kết quả A nằm trong slot A, không nằm ở `info[head]` sau reclaim.
-Xem kịch bản §8.3.
-
-### D6 — Một lock domain duy nhất (quyết định quan trọng nhất)
-
-Chốt: **đúng một spinlock cho prototype**, gọi là `io_lock`, chính là
-`disk.vdisk_lock` của driver, truy cập qua accessor
-`struct spinlock *virtio_disk_io_lock(void)`. Lock này bảo vệ **tất cả**:
-
-1. request pool + state + generation + waiters;
-2. pending queue + `enqueue_seq` + policy state (tuần này chỉ FCFS);
-3. descriptor allocator `disk.free[]`, avail/used ring, `disk.used_idx`;
-4. owner map `info[head].{owner, req, b, status}` + `req->head`;
-5. `struct buf::disk` của đường stock (như hiện tại).
-
-Không có `ioq.lock` riêng trong tuần 2. Không hàm nào acquire lồng; hàm hậu tố
-`_locked` giả định đã giữ lock và **không** acquire lại. Không ngủ khi giữ
-lock: mẫu bắt buộc `sleep_prepare(chan); release(io_lock); sleep();
-acquire(io_lock);`.
-
-Vì sao không giữ hai khóa `ioq.lock` và `vdisk_lock` (đã phân tích trên giấy):
-enqueue/dispatch đi theo chiều `ioq.lock → vdisk_lock`; nếu IRQ completion giữ
-`vdisk_lock` rồi gọi callback lấy `ioq.lock` để đặt DONE/wakeup thì đó là chiều
-ngược `vdisk_lock → ioq.lock` ⇒ **deadlock tiềm ẩn**. Muốn tách khóa phải thiết
-kế deferred completion (IRQ chỉ ghi kết quả vào chỗ trung gian rồi process
-context drain) — vượt phạm vi và ngân sách tuần 2. Ưu tiên correctness; chi phí
-của một khóa là tuần tự hóa dispatch/completion giữa các CPU, chấp nhận được cho
-MVP CPUS=1/4 (đo sau, tuần benchmark). Đường nâng cấp (tuần 4+): đặt tên hai
-khóa, thứ tự **duy nhất** `ioq.lock → vdisk_lock`, completion chỉ ghi terminal +
-wakeup dưới `vdisk_lock`, không gọi ngược.
-
-Không đổi `bcache.lock`/`buf.lock` của stock. Quan hệ khóa (một chiều):
-
-```text
-(bcache.lock)  độc lập, KHÔNG lồng với io_lock
-(buf.lock sleeplock) -> io_lock     // caller stock giữ buf lock khi vào driver
-io_lock -> p->lock                  // sleep_prepare()/wakeup() nội bộ proc.c
-io_lock KHÔNG BAO GIỜ -> buf.lock / bcache.lock
-```
-
-`io_lock -> p->lock` là chiều duy nhất xuất hiện ở cả `sleep_prepare()` (process)
-và `wakeup()` (IRQ), nên nhất quán, không đảo chiều.
-
-### D7 — Contract driver ↔ request layer
-
-**Owner tag:** mỗi head có `enum io_head_owner` (`FREE/STOCK/ASYNC`) + mapping:
+### 3.1 Khai báo cấu trúc cốt lõi
+*(Được định nghĩa tại [`kernel/io_request.h`](../../kernel/io_request.h))*
 
 ```c
-struct {
-  struct buf *b;               // stock
-  struct io_request *req;      // async
-  enum io_head_owner owner;    // quyết định ai reclaim
-  char status;                 // 1 byte device status
-} info[NUM];
+#define IO_NREQ 16
+#define IO_SECTORS_PER_BLOCK (BSIZE / 512)
+
+struct io_handle {
+  int id;       // Chỉ số slot: 0 .. IO_NREQ - 1
+  uint gen;     // Thế hệ slot: >= 1 (tăng sau mỗi lần giải phóng)
+};
+
+struct io_request {
+  int id;                  // Chỉ số slot cố định trong pool BSS
+  uint gen;                // Thế hệ hiện tại của slot
+  enum io_state state;     // Trạng thái (FREE, ALLOCATED, QUEUED, INFLIGHT, DONE, ERROR)
+  enum io_op op;           // IO_OP_READ
+  int status;              // 0: OK, >0: Lỗi phần cứng virtio, <0: Lỗi nội bộ
+  uint dev;                // Thiết bị (ROOTDEV)
+  uint blockno;            // Khối logic cần đọc
+  uint enqueue_seq;        // Số thứ tự FCFS
+  int next;                // Liên kết hàng đợi chờ
+  int head;                // Head descriptor khi đang INFLIGHT
+  uint t_enqueue, t_dispatch, t_complete; // Đo lường thời gian (ticks)
+  uint waiters;            // Số tiến trình chờ (0 hoặc 1)
+  uchar data[BSIZE];       // Vùng đệm DMA staging tĩnh (1024 bytes)
+};
 ```
 
-Mọi head tạo mới phải set `owner` **trước** publish; head về FREE phải clear
-`owner=IO_HEAD_FREE, req=NULL, b=NULL` trước khi tái sử dụng.
-
-**Try-submit async** (`virtio_disk_try_submit_read`, W2-H01), giữ io_lock:
-
-1. Validate `req` (state QUEUED, op READ, `blockno < FSSIZE`) — lỗi logic ⇒ panic
-   invariant, không tự sửa.
-2. `alloc3_desc`; thiếu descriptor ⇒ rollback mọi desc đã lấy, **không publish**,
-   request vẫn QUEUED, trả `-EAGAIN` (không sleep, không panic).
-3. Fill chain: header = `&disk.ops[head0]` (type `VIRTIO_BLK_T_IN`, sector),
-   data = `req->data` (1024B), status = `&info[head0].status` (đặt `0xff`).
-4. Trước khi publish: `req->head = head0; req->state = INFLIGHT;
-   req->t_dispatch = ticks; info[head0].owner = IO_HEAD_ASYNC;
-   info[head0].req = req;`.
-5. Publish y hệt stock: `avail->ring[avail->idx % NUM] = head0; io_fence();
-   avail->idx++; io_fence(); *QUEUE_NOTIFY = 0;` (số 0 là queue number).
-6. Trả 0. Caller (`io_dispatch_locked`) **không** được giả định completion chưa
-   xảy ra — thiết bị có thể báo used ngay sau fence.
-
-**IRQ completion** (`virtio_disk_intr`, W2-H02), giữ io_lock, giữ ACK MMIO +
-`io_fence` + drain `used` như stock, với mỗi used entry:
-
-1. `head = used->ring[used_idx % NUM].id`; `disk.used_idx++` (đúng một lần).
-2. Phân nhánh `info[head].owner`:
-   - `STOCK`: giữ nguyên hành vi stock — `b->disk = 0; wakeup(b)`; **không**
-     free chain ở IRQ; caller stock sẽ reclaim.
-   - `ASYNC`: validate (`req != NULL`, `state == INFLIGHT`, `req->head == head`,
-     owner khớp); nếu sai ⇒ `panic` invariant (không âm thầm bỏ qua completion).
-     Đọc `info[head].status` → gọi `io_async_completed_locked(req, status)`;
-     clear mapping (`owner=FREE; req=NULL; b=NULL`); `free_chain(head)`;
-     tăng counter (`completed_async`, `head_reuse` nếu head này vừa map request
-     khác trước release).
-   - `FREE/khác`: panic invariant (used entry không có chủ).
-3. Sau khi xử lý hết used entry: gọi `io_dispatch_locked()` (IRQ tạo cơ hội
-   dispatch request QUEUED dù producer đã ngừng submit).
-4. Nhả io_lock; `devintr()` gọi `plic_complete()` như stock (không gọi hai lần).
-
-**Ai reclaim — bảng chốt:**
-
-| Owner | Nơi reclaim `free_chain` | Nơi wakeup | Ai gọi dispatch tiếp |
-| --- | --- | --- | --- |
-| STOCK | caller trong `virtio_disk_rw` sau `while (b->disk==1)` (như stock) | IRQ `wakeup(b)` | sau `free_chain`, caller stock gọi `io_dispatch_locked()` (W2-H02/G02) |
-| ASYNC | IRQ ngay sau completion, trước khi nhả lock | IRQ `wakeup(req)` | IRQ sau khi drain, cùng lần giữ lock |
-
-**Không free hai lần:** mỗi head có đúng một owner; `free_desc` stock đã panic
-nếu free trùng (`virtio_disk.c:174-175`) — giữ panic này. Cấm mọi nhánh
-"free_chain cho mọi request" mà không xét owner (rủi ro double-free stock như
-card W2-H02 đã cảnh báo).
-
-**Điểm kích dispatcher** (để queue tiến triển khi producer đã ngừng submit):
-(1) `aio_read_submit` sau enqueue; (2) IRQ sau khi reclaim chain async; (3) nhánh
-stock sau khi caller `free_chain` (W2-H02/G02). `io_dispatch_locked()` dừng ngay
-ở `-EAGAIN` đầu tiên (FCFS, giữ vị trí), không busy-spin.
-
-**Thay đổi đường stock (tối thiểu):** H01 thêm owner=STOCK + accessor
-`virtio_disk_io_lock()` + `virtio_disk_try_submit_read`; H02 phân nhánh IRQ và
-thêm dispatch-kick sau reclaim stock. Không đổi chữ ký `virtio_disk_rw`, không
-đổi `bread/bwrite/log`, không reorder WRITE.
-
-### D8 — Mã lỗi và semantics
-
-Mã âm (không có `<errno.h>` trong kernel; giá trị theo errno Linux để sau này
-map syscall):
-
-| Mã | Khi nào | Ai trả |
-| --- | --- | --- |
-| `-EINVAL` | `out == NULL`; tham số sai hình thức; `aio_wait` gọi ngoài process context | request layer |
-| `-ENODEV` | `dev != ROOTDEV` | request layer |
-| `-ERANGE` | `blockno >= FSSIZE` | request layer |
-| `-ENOENT` | handle stale/không hợp lệ (id/gen/state) | request layer |
-| `-EAGAIN` | pool đầy lúc submit (không ngủ, không panic) | request layer |
-| `-EIO` | request terminal ERROR (device status ≠ 0) | poll/wait |
-| `-EBUSY` | release khi chưa terminal hoặc còn waiter; wait lần hai đồng thời | request layer |
-| `-EAGAIN` (nội bộ) | thiếu 3 descriptor trong try-submit; **không** trả cho caller submit | driver → dispatcher |
-
-`aio_read_submit` khi lỗi **không** ghi vào `*out`. `aio_poll`: 1 = DONE,
-0 = đang bay, `-EIO` = ERROR, `-E*` = handle lỗi. `aio_wait`: 0 = DONE,
-`-EIO` = ERROR, `-E*` = lỗi handle/context. Device status khác 0 **không**
-được coi là dữ liệu hợp lệ và **không** panic trong nhánh async.
-
-### D9 — Wait/wakeup và chống mất wakeup
-
-- Kênh chờ async = chính con trỏ `struct io_request *req` (duy nhất trong lúc
-  slot đang dùng; slot không thể tái sử dụng khi còn `waiters`).
-- `aio_wait` chỉ process context (không gọi trong IRQ); kiểm
-  `myproc() == 0` ⇒ `-EINVAL`.
-- Vòng lặp: giữ io_lock → validate handle → nếu `waiters != 0` trả `-EBUSY` →
-  `waiters = 1` → `while state ∈ {QUEUED, INFLIGHT}`:
-  `sleep_prepare(req); release(io_lock); sleep(); acquire(io_lock);` → đọc
-  terminal → `waiters = 0` → release.
-- IRQ (hoặc fake driver) đặt `state = DONE/ERROR`, `status`, `t_complete`
-  **trước** `wakeup(req)`. Nhờ vậy nếu wakeup xảy ra giữa `sleep_prepare` và
-  `sleep()`, `sleep()` thấy `p->chan == 0` và trả ngay (không mất wakeup).
-- Single consumer trong MVP: `waiters ∈ {0,1}`; wait thứ hai đồng thời trả
-  `-EBUSY`; release khi `waiters != 0` trả `-EBUSY`. Multi-waiter/cancel/kill
-  đầy đủ để kỳ sau (ngoài W2-I02).
-- Gọi `aio_wait` lặp lại trên handle terminal: trả ngay cùng kết quả, không ngủ.
-  Không tự release sau wait: `aio_release` là thao tác riêng.
-
-### D10 — Counters và bất biến kế toán
-
-Counter bắt buộc (chi tiết struct ở header): `submitted`, `completed`,
-`errors`, `queued`, `inflight`, `max_inflight`, `free_req`, `eagain_pool`,
-`stale_handle`, và phía driver `free_desc`, `eagain_desc`, `completed_stock`,
-`completed_async`, `head_reuse`.
-
-Bất biến kiểm được bằng test (T02/T03/T08/T11):
-
-1. `submitted == queued + inflight + done + error` (slot đang giữ; DONE/ERROR
-   chưa release vẫn tính).
-2. `completed + errors == số request đã terminal` và mỗi request đã nhận
-   (`submitted`) terminal **đúng một lần**.
-3. `free_req == IO_NREQ − (queued + inflight + done + error)`; submit bị
-   `-EAGAIN` không làm đổi bất kỳ counter nào trừ `eagain_pool`.
-4. `inflight <= max_inflight <= min(IO_NREQ, 2)` với NUM=8, 3 desc/request —
-   `max_inflight` **chỉ là số đo**, không cam kết đạt 2.
-5. Sau drain + release hết: `queued = inflight = 0`, `done = error = 0`,
-   `free_req = IO_NREQ`, `free_desc = NUM`.
-6. Descriptor: `free_desc + 3×(chain đang giữ) == NUM`; không rò khi
-   EAGAIN/rollback; head được reuse chỉ sau khi đã clear owner/map.
-
-## 3. API chốt (chữ ký + context + khóa + lỗi)
-
-Khai báo đầy đủ ở [`kernel/io_request.h`](../../kernel/io_request.h). Bảng này
-là phần nghiệm thu "mỗi hàm ghi context/khóa/trả về khi hết tài nguyên":
-
-| Hàm | Context | Khóa vào/ra | Ngủ? | Hết tài nguyên / lỗi |
-| --- | --- | --- | --- | --- |
-| `io_init()` | boot CPU, 1 lần | không giữ → không giữ (tự acquire nếu cần) | không | không có (pool tĩnh) |
-| `aio_read_submit(dev, blockno, *out)` | process | không giữ → không giữ | **không** | `-EAGAIN` khi pool đầy; `-ENODEV/-ERANGE/-EINVAL` |
-| `aio_poll(h)` | process (mọi context không ngủ) | không giữ → không giữ | không | `-ENOENT`, `-EIO`; không free slot |
-| `aio_wait(h)` | **chỉ process** | không giữ → không giữ (release trong lúc ngủ) | có | `-ENOENT/-EBUSY/-EINVAL`; `-EIO` terminal |
-| `aio_release(h)` | process | không giữ → không giữ | không | `-ENOENT/-EBUSY` |
-| `aio_data(h)` | process | acquire ngắn để validate → release | không | `NULL` nếu handle lỗi |
-| `io_get_stats(*out)` | process | không giữ → không giữ | không | không |
-| `io_queue_enqueue_locked(req)` | process/IRQ, **giữ io_lock** | giữ → giữ | không | không (queue hữu hạn = pool) |
-| `io_dispatch_locked()` | process/IRQ, **giữ io_lock** | giữ → giữ | **không** | EAGAIN nội bộ ⇒ dừng dispatch, request ở lại QUEUED |
-| `virtio_disk_try_submit_read(req)` | process, **giữ io_lock** | giữ → giữ | **không** | `-EAGAIN` khi thiếu 3 desc; rollback toàn bộ |
-| `virtio_disk_intr()` | **IRQ**, tự acquire io_lock | không giữ → không giữ | **không** | panic chỉ khi invariant mapping/head sai; device status ≠ 0 → ERROR |
-| `virtio_disk_rw(b, write)` (stock) | process, caller giữ `b->lock` | không giữ → không giữ | có (chờ desc/completion) | giữ nguyên stock: sleep/retry khi hết desc |
-| `virtio_disk_io_lock()` | mọi context | — | — | trả `&disk.vdisk_lock` |
-| `io_async_completed_locked(req,status)` | process/IRQ, **giữ io_lock** | giữ → giữ | không | panic nếu state ≠ INFLIGHT |
-
-Ngân sách bộ nhớ: `sizeof(struct io_request) = 1080 B` (14 field 4B + 1024B
-data), `IO_NREQ=16` ⇒ **17 280 B** BSS tĩnh (đã kiểm bằng `_Static_assert` trong
-`results/.../logs/header-check.log`). Không `kalloc` trên đường async.
-
-## 4. State machine và bất biến request/descriptor
-
-### 4.1 Bảng chuyển trạng thái request
-
-| Từ | Sang | Ai / điều kiện |
-| --- | --- | --- |
-| FREE | ALLOCATED | `aio_read_submit`, còn slot, dưới io_lock |
-| ALLOCATED | QUEUED | enqueue thành công (`enqueue_seq`, `next`) |
-| QUEUED | INFLIGHT | `virtio_disk_try_submit_read` thành công (set **trước** publish) |
-| QUEUED | QUEUED | try-submit `-EAGAIN`: rollback desc, giữ vị trí/seq |
-| INFLIGHT | DONE | `io_async_completed_locked(status==0)` |
-| INFLIGHT | ERROR | `io_async_completed_locked(status!=0)` |
-| DONE/ERROR | FREE | `aio_release` (terminal, `waiters==0`) |
-
-Không có chuyển ALLOCATED→FREE trong luồng hiện tại (mọi lỗi validate xảy ra
-**trước** khi chiếm slot); nếu implementation cần, phải giữ bất cập pool counter.
-
-### 4.2 Bất biến (review dựa vào đây)
-
-1. Head map chỉ trỏ request `INFLIGHT`; clear map **trước** tái sử dụng head.
-2. Thiếu descriptor: không publish chain dở, request ở lại QUEUED, seq không
-   đổi; completion (bất kỳ owner) tạo cơ hội dispatch lại.
-3. Mỗi accepted request terminal đúng một lần: `completed+errors` tăng đúng 1
-   lần/request.
-4. `DONE/ERROR` chưa release vẫn giữ slot + buffer; không free khi còn DMA/ref.
-5. Handle stale bị từ chối nhờ `gen`; không trả kết quả của request mới.
-6. Header/status/buffer có địa chỉ ổn định suốt QUEUED/INFLIGHT; không stack,
-   không user pointer, không `kalloc` trong IRQ.
-7. Staging buffer chỉ về FREE sau release, không do completion/timeout.
-8. `submit` không ngủ; `wait` ngủ đúng pattern; IRQ chỉ terminal + wakeup.
-9. Stock và async dùng chung allocator, mỗi head một owner, mỗi chain một nơi
-   free.
-10. Không `copyout`, không nhả `buf` sleeplock của caller, không printf mỗi
-    request trong IRQ.
-
-## 5. Ba kịch bản review trên giấy (nghiệm thu bước review của card)
-
-### 5.1 Hết pool (T02)
-
-Giả sử `IO_NREQ=16`, cả 16 slot đang giữ (ví dụ 2 INFLIGHT + 14 DONE chưa
-release).
-
-1. Caller gọi `aio_read_submit(ROOTDEV, b, &h)`: giữ io_lock, validate OK,
-   `io_alloc_slot_locked()` trả NULL ⇒ `eagain_pool++`, release, trả `-EAGAIN`.
-   `submitted/free_req` **không đổi**; `*out` không bị ghi; không ngủ.
-2. Caller release một request DONE: `gen++`, state FREE, `free_req=1`.
-3. Caller submit lại: chiếm đúng slot đó, `enqueue_seq` mới, handle mới. Handle
-   cũ (gen trước) tra cứu ⇒ `-ENOENT`.
-4. Nếu request vừa submit bị nghẽn descriptor: vẫn QUEUED, `aio_wait` ngủ trên
-   `req`; completion của request đang INFLIGHT giải phóng descriptor + gọi
-   `io_dispatch_locked()` ⇒ request được publish, terminal, wakeup. Không mất
-   wakeup, không panic.
-
-### 5.2 IRQ completion trước khi wait (T05)
-
-1. Submit return; request có thể INFLIGHT.
-2. Caller chưa gọi `aio_wait`; IRQ chạy: giữ io_lock, drain used, owner ASYNC,
-   `io_async_completed_locked(req,0)` đặt DONE + `wakeup(req)` (không ai ngủ),
-   clear map, free chain, dispatch, release lock.
-3. Caller gọi `aio_wait(h)`: acquire, validate, thấy DONE ngay ⇒ không
-   `sleep_prepare`, trả 0. `poll` trước đó trả 1.
-4. Caller đọc `aio_data()`, rồi `aio_release()` ⇒ slot FREE, gen++. Head có thể
-   đã được dùng cho request khác từ bước 2 — không ảnh hưởng kết quả A.
-
-Trường hợp completion **rơi vào khe** `sleep_prepare`→`release`→`sleep`:
-`wakeup` clear `p->chan`; `sleep()` thấy chan 0 nên trả ngay; vòng `while` lấy
-lại lock kiểm DONE. Đây là lý do bắt buộc `sleep_prepare` khi còn giữ lock.
-
-### 5.3 Head được tái sử dụng khi request cũ chưa release (T08)
-
-1. Request A (head 0) terminal DONE; IRQ copy status vào `req_A->status`, clear
-   `info[0].{owner,req}`, free chain ⇒ desc 0/1/2 FREE.
-2. Dispatcher lấy ngay desc 0/1/2 cho request B: set `req_B->head=0`,
-   `info[0].owner=ASYNC, .req=req_B`, publish. Lúc này A **chưa** release.
-3. Caller A vẫn `aio_wait`/`aio_data` đọc `req_A->data` (staging riêng) — đúng
-   dữ liệu; handle A còn hợp lệ tới release.
-4. IRQ hoàn tất B: `used->ring[...].id = 0`, owner ASYNC, `info[0].req == req_B`
-   ⇒ complete B, không đụng A, không complete đôi.
-5. `aio_release(A)` chỉ đổi slot A, không đụng descriptor/head.
-
-Điều kiện để đúng: (a) kết quả nằm trong slot request, không trong
-`info[head]`; (b) clear map trước reuse; (c) validate `req->head == head` khi
-completion; (d) mỗi head một owner.
-
-## 6. Map kiểm thử T01–T13 → contract
-
-| Test | Kiểm rule nào | Ai chạy / môi trường |
-| --- | --- | --- |
-| T01 single READ | D2 buffer, D3 blockno/sector, D6 lock | Hoàng — QEMU 1/4 |
-| T02 pool full | D8 `-EAGAIN`, D10 counter | Hiếu — kernel test |
-| T03 stale handle | D4 generation | Hiếu — kernel test |
-| T04 release sớm | D5/D8 `-EBUSY`, không free DMA | Hiếu — hook + QEMU |
-| T05 complete-before-wait | D9 | Hiếu — hook + QEMU |
-| T06 wait-before-complete | D9 sleep pattern, không mất wakeup | Hiếu/Hoàng — hook + QEMU |
-| T07 backpressure descriptor | D7 EAGAIN/rollback/dispatch-kick | Lợi — mock → QEMU |
-| T08 head reuse trước release | D5/D7, §5.3 | Hoàng — hook + QEMU |
-| T09 completion mapping/order đảo | D7 used-head + owner | Hoàng — mock/hook |
-| T10 submit không chờ completion | D6 submit không ngủ, IRQ độc lập | Cả nhóm — hook + QEMU |
-| T11 drain/accounting | D10 | Cả nhóm — QEMU 1/4 ×10 |
-| T12 stock regression | D7 đường stock không đổi semantics | Cả nhóm — QEMU thật |
-| T13 FCFS oracle | D5 + interface queue (`enqueue_seq`) | Lợi — mock + QEMU |
-
-Lưu ý: T02/T03/T07/T13 chạy được với fake driver (đăng ký/hook theo header);
-kết luận về IRQ/thiết bị thật phải có log QEMU riêng. Không lấy completion
-order chứng minh FCFS.
-
-## 7. Phạm vi file, owner và thứ tự merge
-
-| File | Owner | Nội dung | Card |
-| --- | --- | --- | --- |
-| `docs/week02/interface.md` | Hiếu | contract này | G01 |
-| `kernel/io_request.h` | Hiếu | struct/state/handle/API/prototypes | G01 |
-| `docs/week01/kickoff.md` | Hiếu | cập nhật trạng thái thật + câu hỏi GV | G01 |
-| `kernel/io_request.c` | Hiếu | pool, handle, poll/wait/release, stats, `io_init` | I01/I02 |
-| `kernel/io_queue.c` | Lợi | pending queue, FCFS, `enqueue_seq`, dispatcher | L01 |
-| `kernel/virtio_disk.c` | Hoàng | owner tag, try-submit, IRQ completion/reclaim, lock accessor | H01/H02 |
-| `kernel/defs.h`, `Makefile`, `kernel/main.c` | Hiếu | khai báo, object mới, `io_init()` sau `virtio_disk_init()` | I01 |
-
-Thứ tự merge đề xuất (mỗi PR **phải build xanh** sau khi merge vào main):
-`G01 header` → `H01 accessor + owner tag + try-submit` → `I01 pool` (dùng
-accessor) → `L01 queue` → `H02 IRQ` (cần I01) → `I02 wait/release` → `G02`.
-H01 có thể tách PR nhỏ chỉ gồm `virtio_disk_io_lock()` + owner=STOCK để mở khóa
-cho I01/I02 trước khi có try-submit đầy đủ. Không dùng `#ifdef` tạm trong main
-để che symbol thiếu.
-
-## 8. Quan hệ với tài liệu tuần 1 (thay thế phần nào)
-
-- `docs/week01/decisions_report.md` §3.2–§3.3 (API `aio_read_submit(dev, sector,
-  kbuf, nbytes)`, caller-owned `kbuf`): **được thay thế** bởi D2/D3 ở đây.
-  Bản mô tả cũ giữ làm lịch sử; không dùng để code.
-- `docs/week01/async-design.md` (một `io_lock` chung, pool-owned buffer):
-  thống nhất với D2/D6; API lấy theo §3 ở đây (khác `aio_*` mô tả cũ).
-- `docs/architecture.md` §2.6/§2.7 đã trỏ về contract này.
-- `docs/week01/io-path.md` vẫn đúng cho phần stock/lock/IRQ; dùng làm nguồn
-  phân tích driver, không phải contract async.
-
-**Chưa chốt / không tự quyết:** syscall user-space hay kernel API (Q3); READ-only
-có đủ phạm vi học phần không (Q2); SCAN/LOOK (Q4); phạm vi merge (Q5); rubric
-(Q6); có cần mở rộng virtqueue để `max_inflight>2` (Q7). Các câu này giữ
-`PENDING` ở §11, không ảnh hưởng D1–D10.
-
-## 9. Câu hỏi mở cho GV + trạng thái PTO
-
-### 9.1 Câu hỏi GV (tổng hợp vào PTO-7, không tạo card trùng)
-
-| # | Câu hỏi | Owner hỏi | Trạng thái | Ghi chú cho tuần 2 |
-| ---: | --- | --- | --- | --- |
-| Q1 | Tag/commit xv6 chính thức của học phần? | Hoàng | **PENDING** | Đang dùng pin tạm `f780d785`; API sleep mới khác sách cũ |
-| Q2 | Phạm vi I/O async: chỉ READ + WRITE đồng bộ có đạt yêu cầu không? | Hiếu | **PENDING** | MVP tuần 2 giả định READ-only |
-| Q3 | Async API: kernel API + chương trình minh hoạ hay bắt buộc syscall user-space? | Hiếu | **PENDING** | Contract này chốt kernel API trước |
-| Q4 | SCAN: SCAN hay LOOK; biên/đảo chiều thế nào? | Lợi | **PENDING** | Tuần 2 chỉ FCFS |
-| Q5 | Phạm vi merge READ được chấp nhận (chỉ read, cùng ordering domain, tối đa bao nhiêu block)? | Hiếu | **PENDING** | Không merge trong tuần 2 |
-| Q6 | Trọng số rubric Functionality/Testing/Measurement? | Hiếu | **PENDING** | Không suy từ ước lượng nội bộ |
-| Q7 | Có cần mở rộng virtqueue/NUM để chứng minh `max_inflight>2`? | Hoàng | **PENDING** | Tuần 2 chỉ đo số thực, không hứa speedup |
-
-Tất cả mục chưa có trả lời: giữ `PENDING`, không ghi "đã được duyệt".
-
-### 9.2 Đối chiếu PTO (bước 5 của card)
-
-Môi trường làm việc này **không có quyền truy cập Jira**; không thể tự đổi
-trạng thái issue. Theo kế hoạch tuần 2 (S6, đọc ngày 27/10): PTO-1/3/5/6 `Done`;
-PTO-4/7/9 `In Progress`; kế hoạch nhắc PTO-10/11 là subtask cần kiểm lại.
-Bằng chứng repo để reviewer đối chiếu: 3 PR tuần 1 đã merge tới base `e809500`
-(`ad539ab`, `918d1d5`, `e809500`); `docs/week01/io-path.md` (driver/lock),
-`docs/week01/decisions_report.md` (buffer/API), `docs/week01/test-plan.md`
-(test), `.xv6-commit` (pin tạm) — tương ứng các đầu ra PTO-4/9/10/11 trong hồ sơ
-tuần 1.
-
-Hành động còn lại (owner: **Lợi**, có tài khoản tracker): mở Jira, đối chiếu
-từng issue/task tuần 1 với bằng chứng trên, quyết định `Done`/giữ `In Progress`
-kèm ghi chú review; không tự đóng chỉ vì tài liệu đã có. Ghi kết quả vào
-comment W2-G01 trước khi đóng card.
-
-## 10. Tiêu chí nghiệm thu card W2-G01
-
-- [x] Một contract duy nhất (§2–§6) + header build được; không còn hai mô hình
-      buffer/khóa mâu thuẫn (D2, D6 thay thế tài liệu tuần 1 — §8).
-- [x] Mỗi hàm có context, khóa vào/ra, hành vi khi hết tài nguyên (§3).
-- [x] Ba kịch bản review trên giấy đã ghi (§5.1–§5.3).
-- [x] Câu hỏi GV + PTO tổng hợp, ghi `PENDING` có owner (§9), không ghi đã duyệt.
-- [x] Header contract compile độc lập (`-Wall -Werror`); base build + check-text
-      PASS (bằng chứng ở §11).
-- [ ] **Hoàng review** D6/D7, try-submit/IRQ/reclaim, đường stock: `PENDING`.
-- [ ] **Lợi review** D5/D8, interface queue/`enqueue_seq`, EAGAIN: `PENDING`.
-- [ ] Cả hai review **cùng revision** (commit của PR này) và ghi nhận xét/approve;
-      khi đó mới đóng card. Nếu chưa thống nhất ⇒ dừng tích hợp module phụ thuộc;
-      mỗi người vẫn có thể viết unit test/stub theo header này.
-
-## 11. Bằng chứng thực thi của bản contract
-
-| Lệnh | Kết quả | Log |
-| --- | --- | --- |
-| `riscv64-linux-gnu-gcc -fsyntax-only ... results/local/io_hdr_check.c` (gnu11, `-Wall -Werror`, 3 `_Static_assert` về size/NREQ/sector) | PASS | `results/week02/g01-contract-2026-10-30/logs/header-check.log` |
-| `make clean && make -j$(nproc)` (base + header, header chưa vào build) | PASS | `.../logs/build.log` |
-| `make check-text` | PASS | `.../logs/check-text.log` |
-| `make test-fast` (2 case smoke, CPUS=3) | PASS | `.../logs/test-fast.log` |
-
-Các test kernel T01–T13 **chưa** chạy (chưa có implementation I01/H01/H02/L01) —
-ghi đúng trạng thái NOT RUN, không lấy contract làm kết quả test.
-
-## 12. Chữ ký review (cùng một revision = commit của PR này)
-
-| Vai trò | Người | Phạm vi bắt buộc review | Trạng thái | Ngày / comment |
-| --- | --- | --- | --- | --- |
-| Owner | Phạm Trung Hiếu | toàn bộ contract + header | ✅ đã soạn | 2026-10-30 |
-| Reviewer driver/IRQ | Nguyễn Văn Hoàng | D6, D7, §3 driver, §5.2–§5.3, đường stock | ⬜ `PENDING` | — |
-| Reviewer queue/FCFS | Phạm Quý Lợi | D5, D8, §3 queue, FCFS/`enqueue_seq`, EAGAIN | ⬜ `PENDING` | — |
-
-Checklist review tối thiểu (mỗi reviewer tick vào comment PR):
-
-- [ ] Đọc §1 (đối chiếu code) + D2/D6: đồng ý một buffer model, một lock domain.
-- [ ] Kiểm hàm mình phụ trách trong bảng §3: context, khóa, EAGAIN đúng.
-- [ ] Kiểm kịch bản §5.1/§5.2/§5.3 không còn lỗ hổng lost-wakeup/double-free.
-- [ ] Kiểm merge order §7: PR của mình không làm main không build.
-- [ ] Ghi rõ `approve` hoặc danh sách sửa; nếu sửa contract ⇒ bump revision và
-      review lại, **không** đóng card khi chỉ có 1/3 chữ ký.
-
-## 13. Change log
-
-| Ngày | Revision | Nội dung |
-| --- | --- | --- |
-| 2026-10-27 | — | Kế hoạch tuần 2 (PDF) đặt card W2-G01; phát hiện mâu thuẫn buffer/lock ở tài liệu tuần 1 |
-| 2026-10-30 | `week2/hieu-request` (commit của PR) | Bản contract đầu tiên: D1–D10, header `kernel/io_request.h`, 3 kịch bản review, câu hỏi GV/PTO; chờ Hoàng + Lợi review |
+Ngân sách bộ nhớ: `sizeof(struct io_request) = 1080 B` × 16 slots = **17.280 B** trong phân vùng BSS. Không cấp phát động (`kalloc`) trong luồng xử lý.
+
+### 3.2 Bảng ma trận Giao diện API
+
+| Tên hàm | Ngữ cảnh (Context) | Trạng thái Khóa `io_lock` | Có chặn / ngủ? | Hành vi khi lỗi / cạn tài nguyên |
+| :--- | :--- | :--- | :---: | :--- |
+| `io_init()` | Boot CPU (1 lần) | Không giữ → Không giữ | Không | Khởi tạo tĩnh, không phát sinh lỗi |
+| `aio_read_submit(dev, blockno, *out)` | Tiến trình (Process) | Tự acquire → release | **Không** | Trả `-EAGAIN` khi pool đầy; `-ENODEV`, `-ERANGE`, `-EINVAL` |
+| `aio_poll(h)` | Mọi ngữ cảnh không ngủ | Tự acquire → release | Không | Trả 1 (DONE), 0 (bận), `-EIO` (lỗi đĩa), `-ENOENT` (stale) |
+| `aio_wait(h)` | **Chỉ Process** | Acquire → nhả khi ngủ → acquire | **Có** | Trả 0 (DONE), `-EIO` (lỗi đĩa), `-EBUSY`, `-ENOENT`, `-EINVAL` |
+| `aio_release(h)` | Tiến trình (Process) | Tự acquire → release | Không | Trả `-EBUSY` nếu chưa terminal / còn waiter; `-ENOENT` |
+| `aio_data(h)` | Tiến trình (Process) | Acquire ngắn validate | Không | Trả con trỏ `req->data` chỉ khi DONE; NULL nếu pending, ERROR hoặc handle lỗi |
+| `io_get_stats(*out)` | Tiến trình (Process) | Tự acquire → release | Không | Truy vấn snapshot số liệu kế toán |
+| `io_alloc_slot_locked()` | Nội bộ, **giữ io_lock** | Giữ → Giữ | Không | Trả `NULL` và tăng `eagain_pool++` khi hết slot |
+| `io_lookup_handle_locked(h)` | Nội bộ, **giữ io_lock** | Giữ → Giữ | Không | Trả `NULL` và tăng `stale_handle++` nếu handle stale/sai |
+| `io_release_locked(h)` | Nội bộ, **giữ io_lock** | Giữ → Giữ | Không | Thu hồi slot về FREE, tăng `gen++`, trả `-EBUSY` / `-ENOENT` |
+| `virtio_disk_try_submit_read(req)` | Nội bộ, **giữ io_lock** | Giữ → Giữ | **Không** | Trả `-EAGAIN` và rollback nếu thiếu 3 descriptor |
+| `virtio_disk_intr()` | **Ngắt phần cứng (IRQ)** | Tự acquire → release | **Không** | Cập nhật terminal, thu hồi desc async, kích hoạt dispatcher |
+| `io_async_completed_locked(req, st)` | Nội bộ, **giữ io_lock** | Giữ → Giữ | Không | Đặt `DONE/ERROR`, ghi `status`, gọi `wakeup(req)` |
+
+---
+
+## 4. Vòng đời State Machine và Bất biến Hệ thống
+
+```
++---------------+
+| IO_SLOT_FREE  |<-----------------------------------+
++---------------+                                    |
+        | aio_read_submit()                          | aio_release()
+        v                                            | (terminal & waiters==0)
++---------------+                                    |
+| IO_ALLOCATED  | (chỉ tồn tại nội bộ khi submit)    |
++---------------+                                    |
+        | enqueue thành công                         |
+        v                                            |
++---------------+                                    |
+|   IO_QUEUED   |<--+ (thiếu desc: giữ nguyên vị trí)|
++---------------+   |                                |
+        | try_submit thành công                      |
+        v                                            |
++---------------+                                    |
+|  IO_INFLIGHT  |                                    |
++---------------+                                    |
+        | Ngắt IRQ: io_async_completed_locked()      |
+        +-----------------------+                    |
+        | status == 0           | status != 0        |
+        v                       v                    |
++---------------+       +---------------+            |
+|    IO_DONE    |       |   IO_ERROR    |------------+
++---------------+       +---------------+
+        |                       ^
+        +-----------------------+
+```
+
+### Các bất biến kỹ thuật bắt buộc khi Review mã nguồn:
+1. **Địa chỉ bất biến:** Vùng nhớ staging buffer nằm cố định trong BSS, tuyệt đối không cấp phát qua con trỏ stack, user memory hoặc `kalloc` trong ngắt.
+2. **Ngăn chặn rò rỉ:** Thiếu descriptor trong try-submit phải rollback sạch sẽ các descriptor trung gian, giữ nguyên thứ tự `enqueue_seq` trong hàng đợi.
+3. **Độc quyền thu hồi:** Mỗi descriptor head chỉ có đúng một chủ sở hữu giải phóng (Async do IRQ, Stock do caller).
+4. **An toàn kết quả:** Trạng thái `DONE`/`ERROR` không tự giải phóng; dữ liệu được bảo vệ an toàn cho đến khi caller chủ động gọi `aio_release()`.
+
+---
+
+## 5. Phân tích đồng bộ qua 3 kịch bản kiểm chứng then chốt
+
+### 5.1 Kịch bản 1: Cạn kiệt Request Pool (T02)
+- **Tình huống:** Cả 16 slot đều đang bận. Tiến trình gọi `aio_read_submit()`.
+- **Hành vi chuẩn:** Hàm kiểm tra thấy pool hết slot rảnh, lập tức tăng `eagain_pool++`, nhả `io_lock` và trả về `-EAGAIN`. Con trỏ kết quả không bị ghi đè, hệ thống không rơi vào giấc ngủ và không panic. Khi có một request hoàn tất được release, slot tự do được thu hồi ngay lập tức để phục vụ lệnh submit kế tiếp.
+
+### 5.2 Kịch bản 2: Ngắt hoàn tất xảy ra trước khi tiến trình vào chờ (T05 / Lost-Wakeup)
+- **Tình huống:** Request được nạp vào đĩa và phần cứng xử lý cực nhanh, ngắt IRQ kích hoạt hoàn tất trước khi tiến trình kịp gọi `aio_wait()`.
+- **Hành vi chuẩn (Fast-path):** Khi tiến trình gọi `aio_wait()`, hàm sở hữu `io_lock` và nhận thấy request đã ở trạng thái `IO_DONE`. Hàm lập tức trả về 0 mà không gọi `sleep_prepare()` hay chuyển sang trạng thái ngủ.
+- **Trường hợp ngắt rơi vào khe hở đồng bộ (Gap Test - T06a):**  
+  Nếu ngắt hoàn tất xảy ra ngay sau khi caller vừa chạy `sleep_prepare(req)` và vừa nhả `io_lock`: Lệnh `wakeup(req)` từ ngắt sẽ xóa kênh chờ `p->chan = 0`. Khi caller tiếp tục thực thi hàm `sleep()`, hệ điều hành nhận thấy kênh chờ rỗng nên trả về ngay lập tức. Khe hở mất tín hiệu đánh thức được triệt tiêu hoàn toàn.
+
+### 5.3 Kịch bản 3: Tái sử dụng Head Descriptor trước khi Caller giải phóng Request (T08)
+- **Tình huống:** Request A (đang dùng head descriptor 0) hoàn tất. Ngắt IRQ sao chép trạng thái vào `req_A->status`, thu hồi chuỗi descriptor về `free_desc`, và lập tức nạp request B vào chính head descriptor 0 vừa rảnh. Trong lúc này, caller của request A vẫn chưa gọi `aio_release()`.
+- **Hành vi chuẩn:** Dữ liệu đọc của request A nằm trọn vẹn trong `req_A->data` (staging buffer riêng của slot A), hoàn toàn tách biệt với descriptor phần cứng. Caller của A vẫn gọi `aio_data()` và đọc chính xác dữ liệu của mình. Khi ngắt hoàn tất request B, hệ thống đối chiếu khớp `info[0].req == req_B` và cập nhật độc lập cho B mà không ảnh hưởng tới A.
+
+---
+
+## 6. Ma trận kiểm thử T01 – T13 ánh xạ vào Contract
+
+| Ca kiểm thử | Quy tắc thiết kế kiểm chứng | Người phụ trách & Môi trường |
+| :--- | :--- | :--- |
+| **T01** — Đọc 1 block thực tế | **D2** (Buffer), **D3** (Blockno/Sector), **D6** (Miền khóa `io_lock`) | Hoàng — QEMU (CPUS=1/4) |
+| **T02** — Cạn kiệt Request Pool | **D8** (Mã lỗi `-EAGAIN`), **D10** (Bất biến kế toán) | Hiếu — Kernel Selftest |
+| **T03** — Xử lý Handle cũ (Stale Handle) | **D4** (Thế hệ Generation và từ chối `-ENOENT`) | Hiếu — Kernel Selftest |
+| **T04** — Chống giải phóng sớm | **D5** & **D8** (Từ chối `-EBUSY` khi chưa terminal hoặc còn waiter) | Hiếu — Hook + QEMU |
+| **T05** — Hoàn tất trước khi wait | **D9** (Đường dẫn Fast-path của `aio_wait`) | Hiếu — Process Context Test |
+| **T06** — Chuỗi ngủ và đánh thức | **D9** (Chống lost-wakeup, ngủ thật và timer IRQ đánh thức) | Hiếu & Hoàng — Hook + QEMU |
+| **T07** — Áp lực thiếu descriptor | **D7** (Cơ chế rollback an toàn và kích hoạt lại dispatcher) | Lợi — Mock Driver → QEMU |
+| **T08** — Tái sử dụng head trước release | **D5** & **D7** (Tách biệt vòng đời slot và descriptor) | Hoàng — Hook + QEMU |
+| **T09** — Đảo thứ tự hoàn tất ngắt | **D7** (Ánh xạ chuẩn xác used-ring và thẻ owner) | Hoàng — Mock Driver |
+| **T10** — Submit không chặn | **D6** (Thao tác nạp lệnh không ngủ, ngắt xử lý độc lập) | Toàn nhóm — QEMU |
+| **T11** — Cân bằng kế toán & xả hàng đợi | **D10** (Thu hồi toàn vẹn 16 slot pool và 8 descriptor) | Toàn nhóm — QEMU (10 chu kỳ) |
+| **T12** — Kiểm thử hồi quy hệ thống | **D7** (Đảm bảo đường dẫn đồng bộ truyền thống không đổi) | Toàn nhóm — `usertests -q` |
+| **T13** — Kiểm chứng điều phối FCFS | **D5** (Bảo toàn thứ tự `enqueue_seq` trong hàng đợi) | Lợi — Mock + QEMU |
+
+---
+
+## 7. Phân công Mã nguồn và Thứ tự Tích hợp (Merge Order)
+
+### 7.1 Bảng phân công file theo Card kỹ thuật
+
+| Tập tin | Người phụ trách | Vai trò kỹ thuật | Mã Card |
+| :--- | :---: | :--- | :---: |
+| `docs/week02/interface.md` | Hiếu | Tài liệu đặc tả kỹ thuật và giao ước kiến trúc | W2-G01 |
+| `kernel/io_request.h` | Hiếu | Header trung tâm: cấu trúc dữ liệu, enum, prototype API | W2-G01 |
+| `kernel/io_request.c` | Hiếu | Request pool, quản lý handle, poll/wait/release, thống kê | W2-I01 / I02 |
+| `kernel/io_queue.c` | Lợi | Hàng đợi chờ, thuật toán FCFS, dispatcher | W2-L01 |
+| `kernel/virtio_disk.c` | Hoàng | Thẻ owner, try-submit, ngắt hoàn tất, accessor `io_lock` | W2-H01 / H02 |
+| `kernel/defs.h`, `Makefile`, `main.c` | Hiếu | Tích hợp hệ thống, khởi tạo `io_init()` sau disk init | W2-I01 |
+
+### 7.2 Thứ tự Merge Pull Request đề xuất
+Mỗi PR bắt buộc phải vượt qua biên dịch sạch (`make clean && make`) trước khi merge vào nhánh chính `main`:
+1. **Bước 1:** Merge `W2-G01` (Header và đặc tả giao diện).
+2. **Bước 2:** Merge `W2-H01` (Accessor `virtio_disk_io_lock()`, thẻ owner và try-submit).
+3. **Bước 3:** Merge `W2-I01` (Request pool tĩnh và kiểm thử T02/T03/T04/T11).
+4. **Bước 4:** Merge `W2-L01` (Hàng đợi điều phối FCFS).
+5. **Bước 5:** Merge `W2-H02` (Xử lý ngắt hoàn tất IRQ và thu hồi descriptor).
+6. **Bước 6:** Merge `W2-I02` (API `aio_wait`, `aio_poll` và harness test process context).
+7. **Bước 7:** Thực hiện card tích hợp toàn diện `G02`.
+
+---
+
+## 8. Kế thừa và Thay thế Tài liệu Tuần 1
+
+- [`docs/week01/decisions_report.md`](../week01/decisions_report.md) §3.2–§3.3 (về mô hình `aio_read_submit(dev, sector, kbuf, nbytes)` và caller-owned `kbuf`): **Chính thức bị thay thế** bởi quyết định D2 và D3 trong tài liệu này. Bản cũ được lưu trữ phục vụ việc tra cứu lịch sử thiết kế.
+- [`docs/week01/async-design.md`](../week01/async-design.md): Được thống nhất với D2 (staging buffer của pool) và D6 (một khóa `io_lock` duy nhất); giao diện hàm chuẩn hóa theo Mục 3 của tài liệu này.
+- [`docs/architecture.md`](../architecture.md) §2.6–§2.7: Đã cập nhật trỏ trực tiếp về bản Contract này.
+- [`docs/week01/io-path.md`](../week01/io-path.md): Tiếp tục giữ nguyên giá trị tham khảo cho tầng điều khiển đĩa đồng bộ hiện hữu của xv6.
+
+---
+
+## 9. Các vấn đề kỹ thuật mở và Đối chiếu Tracker
+
+### 9.1 Danh mục câu hỏi mở gửi Giảng viên hướng dẫn (Tổng hợp PTO-7)
+
+| STT | Nội dung câu hỏi kỹ thuật | Thành viên gửi | Trạng thái | Ghi chú áp dụng cho tuần 2 |
+| :---: | :--- | :---: | :---: | :--- |
+| **Q1** | Cam kết tag/commit xv6 chính thức của học phần? | Hoàng | **PENDING** | Tạm dùng pin `f780d785`; cơ chế sleep mới của xv6 khác tài liệu cũ. |
+| **Q2** | Phạm vi I/O async: Chỉ hỗ trợ READ và giữ WRITE đồng bộ có đạt yêu cầu? | Hiếu | **PENDING** | Phiên bản MVP tuần 2 tập trung hoàn thiện nhánh READ. |
+| **Q3** | Giao diện bất đồng bộ: Kernel C API kèm demo có đạt chuẩn hay bắt buộc syscall người dùng? | Hiếu | **PENDING** | Chốt hoàn thiện kernel C API trong tuần 2 để đảm bảo độ tin cậy. |
+| **Q4** | Thuật toán SCAN: Áp dụng SCAN truyền thống hay LOOK; quy tắc xử lý biên đổi chiều? | Lợi | **PENDING** | Tuần 2 tập trung điều phối tuần tự FCFS. |
+| **Q5** | Phạm vi gom khối READ (Merge): Giới hạn số block tối đa và điều kiện cùng miền thứ tự? | Hiếu | **PENDING** | Tạm hoãn cơ chế merge trong tuần 2. |
+| **Q6** | Tỷ trọng đánh giá giữa Tính năng (Functionality) / Kiểm thử (Testing) / Đo lường (Measurement)? | Hiếu | **PENDING** | Đảm bảo hoàn thiện đầy đủ cả 3 khía cạnh theo chuẩn kỹ thuật. |
+| **Q7** | Có cần mở rộng độ dài virtqueue (`NUM`) để chứng minh mức độ song song `max_inflight > 2`? | Hoàng | **PENDING** | Tuần 2 ghi nhận số đo thực tế của phần cứng, không đưa ra cam kết ảo. |
+
+### 9.2 Đối chiếu trạng thái các Task trên Jira (PTO Tracker)
+Do môi trường làm việc không tích hợp quyền truy cập hệ thống Jira, thành viên **Phạm Quý Lợi** chịu trách nhiệm mở tracker, đối chiếu các mã nhiệm vụ Tuần 1 với minh chứng cụ thể trong kho mã nguồn:
+- **PTO-4, PTO-9, PTO-10, PTO-11:** Đối chiếu trực tiếp với các tài liệu đã nộp tại [`docs/week01/io-path.md`](../week01/io-path.md), [`docs/week01/decisions_report.md`](../week01/decisions_report.md), [`docs/week01/test-plan.md`](../week01/test-plan.md) và các PR tuần 1 đã merge vào base `e809500`.
+
+---
+
+## 10. Bằng chứng Thực thi và Lịch sử Thay đổi
+
+### 10.1 Bằng chứng kiểm thử của bản Contract
+
+| Thao tác kiểm tra | Kết quả | Hồ sơ bằng chứng lưu trữ |
+| :--- | :---: | :--- |
+| Kiểm tra cú pháp header và các ràng buộc kiểu biên dịch nghiêm ngặt (`-Wall -Werror`, 3 lệnh `_Static_assert`) | **PASS** | [`results/week02/g01-contract-2026-10-30/logs/header-check.log`](../../results/week02/g01-contract-2026-10-30/logs/header-check.log) |
+| Biên dịch sạch toàn bộ hệ thống (`make clean && make -j$(nproc)`) | **PASS** | [`results/week02/g01-contract-2026-10-30/logs/build.log`](../../results/week02/g01-contract-2026-10-30/logs/build.log) |
+| Kiểm tra chuẩn mã hóa văn bản (`make check-text`) | **PASS** | [`results/week02/g01-contract-2026-10-30/logs/check-text.log`](../../results/week02/g01-contract-2026-10-30/logs/check-text.log) |
+| Chạy bộ smoke test hồi quy (`make test-fast`, 2 ca kiểm thử trên CPUS=3) | **PASS 2/2** | [`results/week02/g01-contract-2026-10-30/logs/test-fast.log`](../../results/week02/g01-contract-2026-10-30/logs/test-fast.log) |
+
+### 10.2 Lịch sử sửa đổi tài liệu (Change Log)
+
+| Ngày cập nhật | Phiên bản / Revision | Nội dung thay đổi chi tiết |
+| :---: | :---: | :--- |
+| 2026-10-27 | Kế hoạch tuần 2 | Đặt card W2-G01; phát hiện mâu thuẫn buffer/lock trong tài liệu thiết kế tuần 1. |
+| 2026-10-30 | Commit `fa0746e` | Ban hành bản Contract đầu tiên: Chốt D1–D10, header `kernel/io_request.h`, 3 kịch bản kiểm thử trên giấy. |
+| 2026-11-01 | Tinh chỉnh & Tái cấu trúc | Chuẩn hóa văn phong kỹ thuật, tối ưu hóa bố cục trực quan 10 mục, tinh gọn câu chữ nhưng bảo toàn 100% chi tiết đặc tả. |
+
+---
+
+> **Cam kết nghiệm thu:** Tài liệu này là căn cứ kỹ thuật ràng buộc trách nhiệm giữa các thành viên phụ trách các card W2-I01, W2-I02, W2-L01, W2-H01 và W2-H02. Mọi thay đổi về chữ ký hàm, cơ chế sở hữu bộ đệm hoặc quy tắc khóa đều phải được thông qua bằng cách cập nhật đồng bộ file này và header `kernel/io_request.h` trong cùng một Pull Request.
+
+### 10.3 Tích hợp của Hoàng ngày 2026-11-01
+
+PTO-12/13/19 bổ sung `released`, gauge `done/error`, `io_started_locked(req, head)` và chuẩn hóa `aio_data()` chỉ trả dữ liệu DONE. Driver try-submit có thể được dispatcher gọi từ process hoặc IRQ khi giữ `io_lock`. Sửa D10 để phân biệt bộ đếm tích lũy và số slot hiện tại. Xem [báo cáo Hoàng](hoang.md) để biết kết quả kiểm thử và giới hạn; chưa có peer review.

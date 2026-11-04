@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "run": "i02-poll-wait-2026-10-30",
+  "card": "W2-I02",
+  "started_at": "2026-10-30T12:55:00+07:00",
+  "git": {
+    "commit": "5296c92",
+    "branch": "week2/hieu-request",
+    "dirty": true,
+    "note": "Bằng chứng chạy trên cây làm việc của W2-I02 (base 5296c92 + thay đổi chưa commit tại thời điểm chạy; gồm cả thay đổi W2-I02). Hash commit PR được ghi trong summary.md sau khi commit."
+  },
+  "xv6_pin": "f780d7850765d74cbdcd1fff4b822d8829f7c9bd",
+  "host": {
+    "platform": "Windows 11 + WSL2 Ubuntu-24.04",
+    "cpus": 6,
+    "wsl_distro": "Ubuntu-24.04"
+  },
+  "toolchain": {
+    "riscv_gcc": "riscv64-linux-gnu-gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "qemu": "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)",
+    "make": "GNU Make 4.3",
+    "python": "3.12.3"
+  },
+  "scope": "W2-I02 only: aio_poll/aio_wait/aio_data/release semantics + io_async_completed_locked transition + test-only process-context harness. No queue/driver/IRQ implementation; no syscall API for callers (test-only syscall under -DIO_SELFTEST).",
+  "checks": [
+    {
+      "name": "header-contract-syntax",
+      "command": "riscv64-linux-gnu-gcc -Wall -Werror -std=gnu11 -march=rv64gc -ffreestanding -fno-common -nostdlib -I kernel -fsyntax-only [ -DIO_SELFTEST ] results/week02/g01-contract-2026-10-30/io_hdr_check.c",
+      "status": "PASS",
+      "coverage": "io_request.h compiles in production mode and with -DIO_SELFTEST (test-only hook declarations); _Static_assert size 1080 / NREQ 16 / sectorx2",
+      "log": "logs/header-check.log"
+    },
+    {
+      "name": "production-build",
+      "command": "make clean && make -j6",
+      "status": "PASS",
+      "coverage": "production build (không -DIO_SELFTEST): syscall 23 returns -1, init không gọi test, clockintr không có hook",
+      "log": "logs/production-build.log"
+    },
+    {
+      "name": "test-fast",
+      "command": "LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONIOENCODING=utf-8 make test-fast",
+      "status": "PASS",
+      "cases": ["boot-smoke", "shell-fs-cpus3"],
+      "passed": 2,
+      "failed": 0,
+      "coverage": "boot/shell production không bị ảnh hưởng bởi I02",
+      "log": "logs/test-fast.log"
+    },
+    {
+      "name": "kernel-selftest-process-context",
+      "command": "LANG=C.UTF-8 LC_ALL=C.UTF-8 make test-io",
+      "status": "PASS",
+      "coverage": "boot pool T02/T03/T04/T11 + process-context T05 complete-before-wait (DONE+ERROR+stale), T04 release-active, T06a gap-completion, T06b sleep/wakeup bằng timer IRQ (>=3 tick), T03 invalid handle, T11 drain. Serial có 'IO-SELFTEST: USER PASS' và 'IO-USER-TEST: PASS'",
+      "log": "logs/selftest-serial.log",
+      "make_log": "logs/test-io.log"
+    },
+    {
+      "name": "negative-control-lost-wakeup",
+      "command": "patch tạm: bỏ wakeup(req) trong io_async_completed_locked; make test-io IO_TEST_TIMEOUT=20; restore; make test-io",
+      "status": "PASS",
+      "coverage": "Bug cố ý (mất wakeup) làm T06a treo: serial không có T06a PASS/IO-USER-TEST PASS, make exit != 0; restore PASS lại. Chứng minh test T06 thực sự kiểm lost-wakeup.",
+      "negative_log": "logs/negative-control-selftest.log",
+      "restored_log": "logs/positive-control-selftest.log"
+    },
+    {
+      "name": "restore-production-build",
+      "command": "make clean && make -j6",
+      "status": "PASS",
+      "coverage": "trả workspace về build production sau test-io",
+      "log": "logs/restore-production-build.log"
+    }
+  ],
+  "not_run": [
+    "Completion qua IRQ/used-ring thật (driver H02): test dùng fake completion hook + timer IRQ, chưa có try-submit/descriptor mapping",
+    "T06 trên CPUS=4 / nhiều waiter / kill-exit / cancel: K04 đầy đủ để kỳ sau",
+    "aio_read_submit: cần queue L01 + try-submit H01/G02, chưa có",
+    "T01/T07-T10/T12/T13: cần queue/driver",
+    "review của Hoàng: PENDING"
+  ]
+}

@@ -8,8 +8,9 @@ PYTHON ?= python3
 TEST_ARGS ?=
 BASELINE_ARGS ?=
 DEMO_ARGS ?=
+IO_TEST_TIMEOUT ?= 30
 
-.PHONY: help env-check list-tests demo test test-fast test-slow baseline clean-all check-text check-mermaid
+.PHONY: help env-check list-tests demo test test-fast test-slow baseline clean-all check-text check-mermaid test-io
 
 help:
 	@echo "ET4290 — Async virtio-blk & I/O schedulers trên xv6-riscv"
@@ -21,6 +22,7 @@ help:
 	@echo "  make test              suite mặc định (nhanh + stock usertests -q, CPUS=1/4)"
 	@echo "  make test-fast         smoke test: boot + shell (~8 giây)"
 	@echo "  make test-slow         stock usertests đầy đủ (rất lâu, chạy có chủ đích)"
+	@echo "  make test-io           build -DIO_SELFTEST + boot QEMU, chạy kernel selftest pool/handle (W2-I01)"
 	@echo "  make baseline          đo baseline stock, ghi kết quả vào results/baseline/"
 	@echo "  make list-tests        liệt kê test case đã đăng ký"
 	@echo "  make check-text        kiểm tra encoding tài liệu/script (UTF-8, mojibake, CRLF)"
@@ -53,8 +55,33 @@ test-fast:
 test-slow:
 	@$(PYTHON) tests/runner.py --tag slow $(TEST_ARGS)
 
+# W2-I01: kernel self-test cho request pool + generation handle.
+# Build riêng với -DIO_SELFTEST (không nằm trong build production), boot QEMU
+# với CPUS=1, chờ kernel in các dòng IO-SELFTEST rồi kiểm kết quả PASS/FAIL.
+# Lưu ý: mục tiêu này để lại kernel build bằng -DIO_SELFTEST;
+# chạy `make clean && make` để trở về build production.
+test-io:
+	$(MAKE) clean
+	@echo "== build kernel với -DIO_SELFTEST =="
+	$(MAKE) IO_SELFTEST=1 kernel/kernel fs.img
+	@echo "== boot QEMU (CPUS=1, timeout $(IO_TEST_TIMEOUT)s) + kernel selftest =="
+	@bash scripts/io-selftest.sh --cpus 1 --timeout $(IO_TEST_TIMEOUT) \
+		--log results/local/io-selftest.log > /dev/null 2>&1 || true
+	@grep -q "IO-SELFTEST: PASS" results/local/io-selftest.log \
+		&& grep -q "IO-SELFTEST: USER PASS" results/local/io-selftest.log \
+		&& grep -q "IO-USER-TEST: PASS" results/local/io-selftest.log \
+		&& ! grep -q "IO-SELFTEST: .*FAIL" results/local/io-selftest.log \
+		&& echo "== IO selftest: PASS (boot pool + process-context poll/wait; log: results/local/io-selftest.log) ==" \
+		|| { echo "== IO selftest: FAIL =="; grep -E "IO-SELFTEST|IO-USER-TEST" results/local/io-selftest.log; tail -n 40 results/local/io-selftest.log; exit 1; }
+	@echo "Lưu ý: build hiện có -DIO_SELFTEST; chạy 'make clean && make' để về production."
+
 baseline:
 	@bash scripts/baseline.sh $(BASELINE_ARGS)
 
 clean-all: clean
 	rm -rf results/local
+
+# Hoàng: real virtio READ + independent pool/queue suites, then production build.
+.PHONY: test-week02
+test-week02:
+	python3 scripts/check-week02-hoang.py $(WEEK02_ARGS)

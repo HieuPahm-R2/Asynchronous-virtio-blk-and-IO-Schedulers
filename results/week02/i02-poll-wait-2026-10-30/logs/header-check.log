@@ -1,0 +1,4 @@
+$ riscv64-linux-gnu-gcc -Wall -Werror -std=gnu11 -march=rv64gc -ffreestanding -fno-common -nostdlib -I kernel -fsyntax-only results/week02/g01-contract-2026-10-30/io_hdr_check.c
+MODE production: PASS (io_request.h + I01 helper prototypes; _Static_assert size=1080, NREQ=16, sectorx2)
+$ riscv64-linux-gnu-gcc -Wall -Werror -std=gnu11 -march=rv64gc -ffreestanding -fno-common -nostdlib -I kernel -fsyntax-only -DIO_SELFTEST results/week02/g01-contract-2026-10-30/io_hdr_check.c
+MODE IO_SELFTEST: PASS (I02 test-only hook declarations compile)

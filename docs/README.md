@@ -14,6 +14,9 @@
 | [`week1.md`](week1.md) | Việc tuần 1: môi trường, baseline, thiết kế, phân công |
 | [`week01/README.md`](week01/README.md) | **Hồ sơ tuần 1** + hướng dẫn từng bước cho Hiếu/Hoàng/Lợi, template điền dần |
 | [`week02/interface.md`](week02/interface.md) | **Contract W2-G01** (30/10): interface async READ, buffer ownership, lock domain, state machine, 3 kịch bản review, câu hỏi GV/PTO |
+| [`week02/progress-i01.md`](week02/progress-i01.md) | **Tiến độ W2-I01** (30/10): request pool hữu hạn, handle + generation, kernel selftest `make test-io`, bằng chứng PASS/negative-control |
+| [`week02/progress-i02.md`](week02/progress-i02.md) | **Tiến độ W2-I02** (30/10): `aio_poll`/`aio_wait`/`aio_release` + harness test process-context (T05/T06a/T06b, negative control lost-wakeup) |
+| [`week02/report-hieu.md`](week02/report-hieu.md) | **Báo cáo phần việc của Hiếu** (01/11): W2-G01/I01/I02, bằng chứng/test, việc tuần 1, blocker và kế hoạch tiếp theo |
 
 ## Quy ước
 

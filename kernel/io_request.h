@@ -2,7 +2,7 @@
 // kernel/io_request.h
 // W2-G01 contract: asynchronous block READ request layer for xv6-riscv.
 //
-// STATUS: CONTRACT ONLY (no implementation in this revision). This header is
+// Implemented by the integrated week-2 request, queue and driver layers. This header is
 // the single source of truth for the week-2 async interface, buffer ownership
 // and locking rules. The prose contract is docs/week02/interface.md; if the two
 // ever disagree, fix both in the same PR.
@@ -32,10 +32,11 @@
 #ifndef _IO_REQUEST_H_
 #define _IO_REQUEST_H_
 
-#include "types.h"
-#include "param.h"
-#include "fs.h"
-#include "spinlock.h"
+// Include order (xv6 convention: headers do not include each other):
+//   types.h, param.h, fs.h (BSIZE), spinlock.h, then this header.
+// This keeps the project aligned with buf.h/virtio.h and avoids double-including
+// upstream headers that have no include guards.
+struct spinlock; // defined in spinlock.h; only a pointer is used here
 
 // Number of software request slots. Finite on purpose: a full pool must return
 // IO_EAGAIN, not sleep, not panic. Slot bytes: 16 * sizeof(struct io_request)
@@ -136,6 +137,9 @@ struct io_stats {
   uint free_req;      // IO_NREQ - (submitted - released)
   uint eagain_pool;   // rejected submits due to a full pool
   uint stale_handle;  // calls rejected with IO_ENOENT
+  uint released;      // cumulative terminal slots released (not a gauge)
+  uint done;          // current DONE slots, still owned until release
+  uint error;         // current ERROR slots, still owned until release
 };
 
 // Driver counters for T08/T11 (owner: W2-H02). Filled in process context by
@@ -191,8 +195,8 @@ int aio_wait(struct io_handle h);
 // the data pointer from aio_data() is invalid from this point on.
 int aio_release(struct io_handle h);
 
-// Return the request's staging buffer (BSIZE bytes), or NULL for an invalid
-// handle. The pointer is stable from successful submit until aio_release().
+// Return the request's staging buffer (BSIZE bytes) only in DONE; NULL for
+// pending/error/invalid handles. The pointer stays valid until aio_release().
 // Contents are defined only after DONE (aio_wait()==0 / aio_poll()==1) and the
 // caller must treat them as read-only; the pool frees the slot, not the caller.
 void *aio_data(struct io_handle h);
@@ -203,6 +207,34 @@ void io_get_stats(struct io_stats *out);
 // Snapshot of driver counters (descriptor pressure, owner split, head reuse).
 // Process context; takes io_lock. Implemented in virtio_disk.c by W2-H02.
 void virtio_disk_get_stats(struct io_desc_stats *out);
+
+// ---------------------------------------------------------------------------
+// Request-layer internal helpers (W2-I01, implemented in kernel/io_request.c).
+// Callers MUST hold io_lock; the _locked suffix states that precondition.
+// These are the primitives that aio_read_submit()/aio_poll()/aio_wait()/
+// aio_release() (W2-I02) and the kernel sefltest build on. They never sleep,
+// never allocate and never touch the device.
+// ---------------------------------------------------------------------------
+
+// Pick a FREE slot, mark it IO_ALLOCATED, initialise every field (staging
+// buffer zeroed, head/next = IO_NIL) and return it. The generation is NOT
+// bumped here: it belongs to the slot and changes only on release, so a handle
+// from an older occupancy stays stale across reuse.
+// Returns NULL when all IO_NREQ slots are in use and increments
+// stats.eagain_pool; the caller maps that to IO_EAGAIN.
+struct io_request *io_alloc_slot_locked(void);
+
+// Validate (id in range, slot in use, generation match) and return the slot.
+// Never dereferences an out-of-range index. Returns NULL for a stale/invalid
+// handle and increments stats.stale_handle; callers map that to IO_ENOENT.
+struct io_request *io_lookup_handle_locked(struct io_handle h);
+
+// Release a terminal slot (DONE/ERROR only, waiters == 0) back to the pool:
+// bump the generation (never 0), reset the slot to FREE, invalidate the handle.
+// Returns 0, IO_EBUSY (still live or has a waiter) or IO_ENOENT (stale).
+// Descriptor chains are already reclaimed by the IRQ before DONE, so this
+// function never touches virtqueue state (contract D7).
+int io_release_locked(struct io_handle h);
 
 // ---------------------------------------------------------------------------
 // Request <-> queue contract. Implemented in kernel/io_queue.c (W2-L01).
@@ -245,7 +277,7 @@ struct spinlock *virtio_disk_io_lock(void);
 // the device and returns 0. On shortage of descriptors it rolls back every
 // descriptor it took, leaves the request untouched (still QUEUED) and returns
 // IO_EAGAIN. Never sleeps, never partially publishes. Context: io_lock held,
-// process context (called only from the dispatcher on the current CPU).
+// process or IRQ context (the dispatcher runs from both); never sleeps.
 int virtio_disk_try_submit_read(struct io_request *req);
 
 // Complete one async request that the driver just reaped from the used ring.
@@ -255,5 +287,44 @@ int virtio_disk_try_submit_read(struct io_request *req);
 // touch descriptors and does not dispatch; the caller handles the chain and
 // then calls io_dispatch_locked(). IRQ context, io_lock held, no sleep.
 void io_async_completed_locked(struct io_request *req, int dev_status);
+
+// Driver transition before publishing the chain. Same io_lock held; updates
+// max_inflight while simultaneous INFLIGHT states are still observable.
+void io_started_locked(struct io_request *req, int head);
+
+#ifdef IO_HW_SELFTEST
+// Test-only controls over real device completions. Holding used processing
+// does not prevent DMA: buffers/chains stay live until actual reaping.
+void virtio_test_hold_used(int hold);
+uint virtio_test_used_count(void);
+void virtio_test_reverse_pair(void);
+uint virtio_test_reversed(void);
+void virtio_test_status(struct io_handle h, int status);
+void virtio_test_unhold_locked(void);
+void io_hw_set_wait_hook(void (*fn)(void));
+int io_hw_selftest(void);
+#endif
+
+// ---------------------------------------------------------------------------
+// TEST-ONLY hooks for `make test-io` (W2-I02). Compiled only with
+// -DIO_SELFTEST; never present in a production kernel. They let the kernel
+// selftest drive completion deterministically without a real device/IRQ:
+//   - a one-shot hook called INSIDE aio_wait(), after sleep_prepare() and
+//     before release()+sleep(), to exercise the lost-wakeup window (T06a);
+//   - a timer-tick completion so a real sleeping waiter is woken by an
+//     interrupt (T06b, controlled by a tick countdown, not a lucky delay);
+//   - a flag the selftest uses to prove the sleep path was entered.
+// ---------------------------------------------------------------------------
+#ifdef IO_SELFTEST
+// fn(req) runs with io_lock held, in process context, must not sleep.
+void io_test_set_wait_hook(void (*fn)(struct io_request *));
+// Arm completion of h after delay_ticks timer ticks (status 0 = DONE, else
+// ERROR). Must be called from process context; the request must be INFLIGHT.
+void io_test_arm_timer_completion(struct io_handle h, int status, int delay_ticks);
+// 1 if the last aio_wait() reached the sleep() path; clears the flag.
+int io_test_take_slept_flag(void);
+// Called from clockintr() on every timer tick in a -DIO_SELFTEST build.
+void io_test_timer_tick(void);
+#endif
 
 #endif // _IO_REQUEST_H_

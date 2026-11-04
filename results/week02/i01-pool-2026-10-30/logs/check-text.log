@@ -1,0 +1,6 @@
+$ LANG=C.UTF-8 LC_ALL=C.UTF-8 make check-text
+make: Warning: File 'mk/project.mk' has modification time 1040 s in the future
+
+== check-text: PASS — 193 file UTF-8 sạch, không mojibake ==
+make: warning:  Clock skew detected.  Your build may be incomplete.
+RESULT: PASS

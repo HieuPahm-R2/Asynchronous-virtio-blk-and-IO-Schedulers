@@ -1,0 +1,17 @@
+
+xv6 kernel is booting
+
+IO-SELFTEST: begin (NREQ=16, BSIZE=1024)
+IO-SELFTEST: T02 pool-exhaustion ...
+IO-SELFTEST: T02 pool-exhaustion PASS
+IO-SELFTEST: T03 stale-handle ...
+IO-SELFTEST: T03 stale-handle PASS
+IO-SELFTEST: T04 release-active ...
+IO-SELFTEST: T04 release-active PASS
+IO-SELFTEST: T11 accounting-drain ...
+IO-SELFTEST: T11 accounting-drain PASS
+IO-SELFTEST: PASS (T02/T03/T04/T11, failures=0)
+IO-SELFTEST: USER begin (process context, W2-I02)
+IO-SELFTEST: USER T05 complete-before-wait PASS
+IO-SELFTEST: USER T04 release-active PASS
+qemu-system-riscv64: terminating on signal 15 from pid 1537 (bash)
