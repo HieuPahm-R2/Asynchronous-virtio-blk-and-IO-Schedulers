@@ -171,19 +171,21 @@ Bất biến:
 | Policy | Quy tắc chọn | Test oracle |
 | --- | --- | --- |
 | FCFS | `enqueue_seq` nhỏ nhất trong QUEUED | thứ tự dispatch đúng trace |
-| SCAN | sector theo chiều hiện tại; đến biên capacity thì đảo chiều; lưu `head_pos`, `direction` | trace dispatch có đầu đọc logic + chiều; phân biệt LOOK |
+| SCAN | chọn `blockno` gần `logical_head` theo chiều hiện tại; không còn ứng viên theo chiều thì ghi **sự kiện biên logic** tại `0`/`FSSIZE-1` rồi đảo chiều; chỉ commit head/direction khi `try-submit` thành công; `EAGAIN` không commit | trace dispatch + boundary/head/direction; phân biệt LOOK |
 | Deadline | request quá hạn trước; còn lại theo sector trong batch giới hạn; tie-break `enqueue_seq` | test request quá hạn trong luồng request mới liên tục; không starvation |
 
 Ghi chú:
 
-- **Biên SCAN lấy từ device capacity** (sector), không nhầm block/sector; không
-  tạo I/O giả tới biên.
+- **Biên SCAN là biên logic trên miền `blockno` của filesystem MVP** (`0..FSSIZE-1`),
+  không nhầm block/sector; không tạo I/O giả tới biên. Quy tắc đầy đủ (D11–D20):
+  [`week03/interface.md`](week03/interface.md).
 - Nếu "quay đầu ngay tại request cuối" thì đó là **LOOK** — phải gọi đúng tên
-  hoặc xin giảng viên chấp thuận.
+  hoặc xin giảng viên chấp thuận (đang **PENDING**, PTO-7/Q4).
 - Deadline là chính sách phần mềm giảm nguy cơ đói; **không cam kết** real-time.
 - Đổi policy khi đang chạy: dưới cùng lock queue; giữ id/arrival/state; reset
   state riêng của policy theo quy tắc công bố; `INFLIGHT` tiếp tục hoàn thành;
   tăng `policy_switch`. Phải test đổi khi **QUEUED và INFLIGHT đều khác rỗng**.
+  Tuần 3 **chưa** làm việc này; policy SCAN chỉ chọn ở test config, mặc định FCFS.
 
 ### 2.5 Merge request (read trước)
 
@@ -252,8 +254,28 @@ minh hoạ**. Bản base hiện tại chưa thêm syscall nào.
 - Outstanding = đã submit device nhưng chưa complete; **khác** pending phần mềm.
 - Timer tick quá thô thì dùng timebase/counter phù hợp và ghi cách quy đổi.
 
-## 3. Rủi ro kỹ thuật
+### 2.9 Trạng thái tuần 3: contract SCAN và lifecycle (W3-G01 / W3-I01)
 
+Nhánh `week3/hieu-contract-lifecycle-proposal` (base `49557bf`, 2026-11-07) bổ sung
+**contract**, chưa bổ sung hiện thực SCAN:
+
+- **SCAN contract (W3-G01):** quyết định D11–D20 — SCAN logic tạm thời (LOOK là
+  phương án thay thế, GV chưa xác nhận), miền `blockno 0..FSSIZE-1`, `head = 0`/
+  `direction = +` lúc khởi tạo, chọn gần head theo chiều + tie-break `enqueue_seq`,
+  ghi **biên logic** rồi đảo chiều (không I/O giả), chỉ commit head/direction/trace
+  sau khi `try-submit` thành công (`EAGAIN` giữ nguyên queue/seq/head), gỡ request
+  tại mọi vị trí, trace hữu hạn + oracle độc lập, production mặc định FCFS. Xem
+  [`week03/interface.md`](week03/interface.md); khai báo kiểu/prototype ở
+  [`kernel/io_request.h`](../kernel/io_request.h).
+- **Lifecycle/kill-cancel (W3-I01):** rà soát hiện trạng cho thấy kill/exit làm
+  **rò rỉ slot** (không UAF vì buffer thuộc BSS); đề xuất `owner_pid` + orphan
+  reclaim + `aio_cancel`/`aio_abandon`/`io_owner_exit` và `aio_wait` trả `EINTR`.
+  **Chưa triển khai, chưa test** — backlog tuần 4+. Xem
+  [`week03/lifecycle-review.md`](week03/lifecycle-review.md).
+- **Chưa thay đổi:** driver ownership/descriptor lifecycle, `bread`/`bwrite`, một
+  `io_lock`, staging buffer do pool sở hữu. FCFS production không đổi hành vi.
+
+## 3. Rủi ro kỹ thuật
 | Rủi ro | Giảm thiểu |
 | --- | --- |
 | Mất wakeup / deadlock | dùng đúng `sleep_prepare`+`sleep`; test complete-before-wait; CPUS=1/4 |

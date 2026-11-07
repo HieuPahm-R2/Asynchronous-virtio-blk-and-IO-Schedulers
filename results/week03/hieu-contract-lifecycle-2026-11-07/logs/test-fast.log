@@ -1,0 +1,9 @@
+== ET4290 test runner — 2 case ==
+   kết quả: /mnt/e/ET4290/results/local/tests-2026-11-07_163033
+--- [1/2] boot-smoke (CPUS=1) ... PASS (3.5s)
+--- [2/2] shell-fs-cpus3 (CPUS=3) ... PASS (4.1s)
+
+== Kết quả: 2 PASS / 0 FAIL ==
+   meta:     /mnt/e/ET4290/results/local/tests-2026-11-07_163033/meta.json
+   summary:  /mnt/e/ET4290/results/local/tests-2026-11-07_163033/summary.md
+test-fast exit=0
