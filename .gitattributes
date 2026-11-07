@@ -16,3 +16,6 @@ Makefile text eol=lf
 # Raw week-1 logs keep shell prompts and tool output byte-for-byte.
 # Ignore trailing whitespace in evidence logs only, not source files.
 results/week01/**/*.log -whitespace
+
+# SVG do matplotlib sinh ra: path data có trailing space, không phải lỗi whitespace.
+*.svg -whitespace

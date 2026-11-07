@@ -7,6 +7,11 @@
 // and locking rules. The prose contract is docs/week02/interface.md; if the two
 // ever disagree, fix both in the same PR.
 //
+// Week 3 (W3-G01) extends this header with the SCAN policy contract types and
+// queue primitives (see "W3-G01" blocks below and docs/week03/interface.md
+// D11-D20). Those declarations are a contract for W3-L01; the queue still runs
+// FCFS in this revision and killing/cancelling requests is design-only (W3-I01).
+//
 // Who implements what (week 2):
 //   io_request.c  - pool/state/handle, poll/wait/release, stats   (Hiếu, W2-I01/I02)
 //   io_queue.c    - pending queue, FCFS dispatcher, enqueue_seq   (Lợi,  W2-L01)
@@ -153,6 +158,54 @@ struct io_desc_stats {
 };
 
 // ---------------------------------------------------------------------------
+// W3-G01 (week 3): SCAN policy contract. Semantics are in
+// docs/week03/interface.md D11-D20; the declarations below are the interface
+// that W3-L01 implements in kernel/io_queue.c. They are a contract only: the
+// queue/dispatcher in this revision still runs FCFS. Production default stays
+// FCFS; SCAN may only be selected in a test build before the first enqueue
+// (D19). Do not add a runtime policy switch here before the week-4 contract.
+// ---------------------------------------------------------------------------
+enum io_policy {
+  IO_POLICY_FCFS = 0,
+  IO_POLICY_SCAN = 1,
+};
+
+// Logical seek direction. +1 = increasing blockno, -1 = decreasing blockno.
+enum io_dir {
+  IO_DIR_DOWN = -1,
+  IO_DIR_UP = 1,
+};
+
+// Bounded committed-event trace for the SCAN oracle (D18). Events are written
+// under io_lock and copied out in process context; the IRQ path never prints.
+#define IOQ_TRACE_N 64
+
+enum ioq_event_kind {
+  IOQ_EV_DISPATCH = 1, // one request committed to the driver
+  IOQ_EV_BOUNDARY = 2, // logical boundary hit; direction flips after commit
+};
+
+struct ioq_trace_ev {
+  enum ioq_event_kind kind;
+  enum io_policy policy;
+  uint seq;         // enqueue_seq of the dispatched request; 0 for BOUNDARY
+  uint blockno;     // blockno of the dispatched request; 0 for BOUNDARY
+  uint head_before; // logical head before the committed event
+  uint head_after;  // logical head after the committed event
+  enum io_dir dir_before;
+  enum io_dir dir_after;
+  uint boundary; // 0 or FSSIZE-1 for BOUNDARY; 0 otherwise
+};
+
+// Observable SCAN state for review/tests (snapshot under io_lock, D18/D20).
+struct ioq_scan_state {
+  enum io_policy policy;
+  uint logical_head; // committed head, 0..FSSIZE-1
+  enum io_dir direction;
+  uint boundary_events; // cumulative committed boundary events
+};
+
+// ---------------------------------------------------------------------------
 // Public async API (kernel context). Implemented in kernel/io_request.c.
 // Context: process context unless stated otherwise. None of these may be called
 // with io_lock held; each takes the lock itself.
@@ -258,6 +311,33 @@ void io_dispatch_locked(void);
 
 // Current number of QUEUED requests. Context: io_lock held.
 int io_queue_count_locked(void);
+
+// ---------------------------------------------------------------------------
+// W3-G01 (week 3): queue additions required by SCAN (implemented by W3-L01).
+// All *_locked functions require io_lock held; they never sleep or allocate.
+// Semantics: docs/week03/interface.md D14-D19.
+// ---------------------------------------------------------------------------
+
+// Remove one QUEUED request from any queue position (D17). Must preserve the
+// head/tail/count/by_id/next invariants and the enqueue_seq of every remaining
+// request. Returns void; it is a contract violation to pass a non-QUEUED
+// request. Used by SCAN tests and by the future cancel/orphan cleanup (W3-I01).
+void io_queue_remove_locked(struct io_request *req);
+
+// Snapshot the committed SCAN state (head/direction/policy/boundary count).
+// Context: io_lock held.
+void io_queue_get_scan_state_locked(struct ioq_scan_state *out);
+
+// Copy up to max committed trace events for the independent oracle (D18).
+// Returns the number of events copied (<= max); context: io_lock held.
+int io_queue_trace_snapshot_locked(struct ioq_trace_ev *out, int max);
+
+#if defined(IOQ_SELFTEST) || defined(IO_HW_SELFTEST)
+// TEST-ONLY: select the policy before the first request is enqueued (queue
+// must be empty; panics in test builds otherwise). A production kernel has no
+// policy switch: it always runs FCFS (W3-G01 D19).
+void io_queue_set_policy(enum io_policy policy);
+#endif
 
 // ---------------------------------------------------------------------------
 // Request <-> driver contract. Implemented in kernel/virtio_disk.c (W2-H01/H02)
