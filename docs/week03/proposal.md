@@ -37,7 +37,7 @@ merge/deadline/coherence khi chưa có bằng chứng.
 
 ## 3. Kiến trúc hiện tại (sau tuần 2, trên `main` 49557bf)
 
-![Pipeline submit → dispatch → virtio → completion → wait/release](diagrams/architecture-pipeline.svg)
+![Pipeline submit → dispatch → virtio → completion → wait/release](diagrams/architecture-pipeline.svg){ width=82% }
 
 *Hình 1 — Pipeline async READ. Nguồn sửa được: [`diagrams/make_diagrams.py`](diagrams/make_diagrams.py)
 sinh [`architecture-pipeline.svg`](diagrams/architecture-pipeline.svg).*
@@ -109,14 +109,12 @@ test. Kiểm nhanh sau merge ngày 07/11 trên base này:
 | Lớp | Cách kiểm | Trạng thái tuần 3 |
 | :--- | :--- | :--- |
 | Contract/header | Compile nghiêm ngặt + `_Static_assert` kích thước/layout | Đã có từ W2-G01 |
-| Pool/handle/wait | Kernel selftest T02–T06, T11, stale/release-active | PASS tuần 2; chạy lại khi sửa |
-| FCFS | Trace cũ `seq=1..5`; 20 boot FCFS sau thay core; `EAGAIN` không mất/lặp | L01/L02/G02 |
-| SCAN | ≥ 8 nhóm oracle độc lập; boundary/tie/unlink; 2 mutant phải bị bắt | L02; **NOT RUN** ở card G01 |
-| READ thật | FCFS/SCAN × CPU1/4, ≥ 1 boot mỗi ô, chạy lại máy thứ hai | G02 |
-| Tài nguyên | Sau drain `free_req=16`, `free_desc=8`, `Q=I=D=X=0`; snapshot một khóa | Hiếu review |
-| Regression | Boot/shell/`usertests -q`/`grind 60s` = 6 case | G02 |
-| Negative control | Fixture sai byte; mutant policy; timeout/thiếu marker = FAIL | Tác giả test |
-| Bất biến kế toán | `submitted = Q+I+D+X`; `C+E = R+D+X`; `16 = F+Q+I+D+X` | Hiếu review |
+| Pool/handle/wait | Selftest T02–T06, T11, stale/release-active | PASS tuần 2; chạy lại khi sửa |
+| FCFS | Trace cũ `seq=1..5`; 20 boot FCFS; `EAGAIN` không mất/lặp | L01/L02/G02 |
+| SCAN | ≥ 8 nhóm oracle độc lập; boundary/tie/unlink; 2 mutant phải bị bắt | L02; **NOT RUN** ở G01 |
+| READ thật + regression | FCFS/SCAN × CPU1/4 chạy lại máy hai; boot/shell/`usertests -q`/`grind 60s` = 6 case | G02 |
+| Tài nguyên + âm bản | Drain `free_req=16`, `free_desc=8`, `Q=I=D=X=0`; fixture sai byte/mutant/timeout = FAIL | Hiếu review |
+| Bất biến kế toán | `submitted = Q+I+D+X`; `C+E = R+D+X`; `16 = F+Q+I+D+X`; snapshot một khóa | Hiếu review |
 
 Instrumentation: `t_enqueue/t_dispatch/t_complete` (tick), counters request-layer +
 driver, `max_inflight`; snapshot dưới `io_lock`, in ngoài IRQ. Tick hẹp hơn thời gian
@@ -130,9 +128,7 @@ I/O thật nên chưa dùng để tuyên bố độ trễ; QEMU không mô phỏ
 | SCAN/LOOK chưa được GV xác nhận | Dùng SCAN logic tạm, ghi Pending PTO-7/Q4; oracle kiểm boundary event |
 | Thiếu descriptor (`NUM=8`) | `EAGAIN` bảo toàn queue/head; test pressure; không mở `NUM` khi chưa có Q7 |
 | Coherence khi cùng block vừa đọc vừa ghi | Chưa giải quyết; chỉ đọc fixture read-only; không thay `bread()` |
-| Mock/timer bị hiểu thành READ thật | Báo riêng loại bằng chứng trong mọi báo cáo |
-| Hạ tầng test khác toolchain | H01 sửa harness prefix; kết quả ghi theo máy/cấu hình |
-| CI đang comment | Không coi CI PASS là bằng chứng; đề xuất bật lại tuần 4 |
+| Bằng chứng/hạ tầng bị hiểu sai | Mock/timer báo riêng, không tính READ thật; kết quả ghi theo máy/toolchain (H01); CI đang comment nên không coi CI PASS là bằng chứng |
 
 ## 8. Lộ trình tuần 4–7 (đề xuất, chưa cam kết kết quả)
 
@@ -147,26 +143,22 @@ Mọi mục tuần 4–7 là **kế hoạch**; chỉ ghi Done khi có review + l
 
 ## 9. Câu hỏi cần GV xác nhận (PTO-7, đang Pending)
 
-1. **Q1** Tag/commit xv6 chính thức (đang pin tạm `f780d785`).
-2. **Q2** Chỉ READ async + WRITE đồng bộ có đạt yêu cầu?
-3. **Q3** Kernel C API + demo, hay bắt buộc syscall user?
-4. **Q4** SCAN truyền thống hay LOOK; quy tắc biên logic?
-5. **Q5** Phạm vi merge READ (số block, điều kiện thứ tự)?
-6. **Q6** Trọng số rubric Functionality/Testing/Measurement?
-7. **Q7** Có cần tăng `NUM` để chứng minh `max_inflight > 2`?
-8. **Q8** Kill/cancel/exit có bắt buộc trong học phần?
-
-Không có câu trả lời nào ở trên được coi là đã xác nhận.
+**Q1** tag/commit xv6 chính thức (đang pin tạm `f780d785`) · **Q2** chỉ READ async +
+WRITE đồng bộ có đạt? · **Q3** kernel C API + demo hay bắt buộc syscall user? ·
+**Q4** SCAN truyền thống hay LOOK, quy tắc biên logic? · **Q5** phạm vi merge READ
+(số block, điều kiện thứ tự)? · **Q6** trọng số rubric Functionality/Testing/
+Measurement? · **Q7** có cần tăng `NUM` để chứng minh `max_inflight > 2`? ·
+**Q8** kill/cancel/exit có bắt buộc trong học phần? — Không câu trả lời nào được coi
+là đã xác nhận.
 
 ## 10. Tham chiếu
 
-- Contract tuần 2: [`docs/week02/interface.md`](../week02/interface.md) · Header:
-  [`kernel/io_request.h`](../../kernel/io_request.h) · Kiến trúc:
-  [`docs/architecture.md`](../architecture.md).
-- Contract SCAN tuần 3: [`docs/week03/interface.md`](interface.md).
-- Rà soát lifecycle/kill-cancel: [`docs/week03/lifecycle-review.md`](lifecycle-review.md).
-- Bằng chứng tuần 2: [`results/week02/`](../../results/week02/) ·
-  Bằng chứng tuần 3: [`results/week03/`](../../results/week03/).
-- Sơ đồ: [`docs/week03/diagrams/`](diagrams/) (nguồn + SVG + script sinh).
+Contract tuần 2 [`docs/week02/interface.md`](../week02/interface.md) · header
+[`kernel/io_request.h`](../../kernel/io_request.h) · kiến trúc
+[`docs/architecture.md`](../architecture.md) · contract SCAN
+[`docs/week03/interface.md`](interface.md) · lifecycle/kill-cancel
+[`docs/week03/lifecycle-review.md`](lifecycle-review.md) · bằng chứng
+[`results/week02/`](../../results/week02/) và [`results/week03/`](../../results/week03/) ·
+sơ đồ [`docs/week03/diagrams/`](diagrams/) (nguồn + SVG + script sinh).
 
 *Tài liệu này là bản nháp kỹ thuật, không thay thế báo cáo tuần và chưa được GV phê duyệt.*

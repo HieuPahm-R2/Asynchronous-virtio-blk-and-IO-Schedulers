@@ -49,14 +49,28 @@ foreach ($name in $docs) {
     $html = Join-Path $tmp "$name.html"
     Write-Host "== pandoc: $name.md -> $name.html"
     & $pandoc $md -o $html --standalone --embed-resources --css $css `
-        --metadata "lang=vi" --metadata "title=$name" --from markdown
+        --metadata "lang=vi" --metadata "pagetitle=$name" --from markdown `
+        "--resource-path=$weekDir"
     if ($LASTEXITCODE -ne 0) { throw "pandoc failed for $name" }
 
     $uri = ([System.Uri]$html).AbsoluteUri
     Write-Host "== chrome headless: $name.html -> $name.pdf"
-    & $chrome '--headless=new' '--disable-gpu' '--no-pdf-header-footer' `
-        '--allow-file-access-from-files' '--virtual-time-budget=5000' `
-        "--print-to-pdf=$pdf" $uri | Out-Null
+    $errFile = Join-Path $tmp "$name.chrome.err"
+    $args = @(
+        '--headless=new',
+        '--disable-gpu',
+        '--no-pdf-header-footer',
+        '--allow-file-access-from-files',
+        '--virtual-time-budget=5000',
+        "--print-to-pdf=$pdf",
+        $uri
+    )
+    $proc = Start-Process -FilePath $chrome -ArgumentList $args -Wait -PassThru `
+        -NoNewWindow -RedirectStandardError $errFile
+    if ($proc.ExitCode -ne 0) {
+        Get-Content $errFile -ErrorAction SilentlyContinue | Write-Host
+        throw "chrome failed for $name (exit $($proc.ExitCode))"
+    }
     if (-not (Test-Path $pdf)) { throw "chrome did not write $pdf" }
     $size = (Get-Item $pdf).Length
     Write-Host ("   OK {0} ({1} bytes)" -f (Split-Path $pdf -Leaf), $size)
