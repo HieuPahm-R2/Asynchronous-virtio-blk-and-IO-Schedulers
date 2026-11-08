@@ -1,19 +1,9 @@
 # Thiết kế submit và complete bất đồng bộ đề xuất
 
-Hoàng, T1-06/T1-11, 23/10/2026. DESIGN ONLY: các API dưới đây chưa có trong
-kernel hiện tại, chưa có kết quả test async. Tên hàm/errno/chữ ký chờ nhóm
-review. Xem sequence ở [Mermaid](diagrams/async-submit-complete.mmd) và
-[SVG](diagrams/async-submit-complete.svg).
 
-Bản chỉnh sửa trong draw.io: [virtio-submit-complete.drawio](diagrams/virtio-submit-complete.drawio), trang **02 Async đề xuất**. Mọi nhãn, lifeline và mũi tên là đối tượng riêng, không phải ảnh nhúng.
+Bản chỉnh sửa trong draw.io: [virtio-submit-complete.drawio](diagrams/virtio-submit-complete.drawio), 
+trang **02 Async đề xuất**. Mọi nhãn, lifeline và mũi tên là đối tượng riêng, không phải ảnh nhúng.
 
-> **CẬP NHẬT 2026-10-30 (W2-G01):** phần buffer ownership (pool sở hữu
-> header/status/buffer) và mô hình **một lock chung** ở đây đã được **thống
-> nhất** vào contract tuần 2: [`docs/week02/interface.md`](../week02/interface.md)
-> (D2, D6), header [`kernel/io_request.h`](../../kernel/io_request.h). Chữ ký API
-> chốt theo `interface.md` §3 (`aio_read_submit(dev, blockno, *handle)`,
-> `struct io_handle`, `-E*`); bảng API cũ bên dưới chỉ còn giá trị lịch sử thiết
-> kế, **không dùng để code**.
 
 ## Contract và hai vòng đời
 

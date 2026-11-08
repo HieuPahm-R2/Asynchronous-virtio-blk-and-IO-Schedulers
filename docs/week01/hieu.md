@@ -51,9 +51,9 @@ phép PENDING nhưng phải có owner + hạn hỏi); có ít nhất 1 commit.
 
 ---
 
-## Bước 2 — Cài & kiểm tra môi trường trên laptop (45 phút, ngày 20/10 sáng)
+## Bước 2 — Cài & kiểm tra môi trường trên laptop
 
-**Mục tiêu (T1-05):** máy bạn build/boot được; điền version log 3 máy.
+**Mục tiêu:** máy bạn build/boot được; điền version log 3 máy.
 
 ```bash
 sudo bash scripts/setup-env.sh    # 1 lần/máy; script tự chọn gói QEMU cho 26.04
@@ -85,9 +85,9 @@ QEMU, gdb, python (copy từ output `make env-check`), ngày, `env-check = PASS`
 
 ## Bước 3 — DrawIO + URL (45 phút, ngày 20/10 chiều)
 
-**Mục tiêu (T1-04):** có 3 trang sơ đồ, giảng viên đọc được.
+**Mục tiêu:** có 3 trang sơ đồ, giảng viên đọc được.
 
-Tạo FigJam (hoặc Figma) với 3 trang, vẽ theo [`docs/architecture.md`](../architecture.md):
+vẽ theo [`docs/architecture.md`](../architecture.md):
 
 1. **I/O path stock**: `bread/bget → bwrite (chỉ log) → virtio_disk_rw → virtqueue
    → interrupt (trap.c devintr) → virtio_disk_intr → wakeup` + ghi chú NUM=8,
@@ -96,9 +96,6 @@ Tạo FigJam (hoặc Figma) với 3 trang, vẽ theo [`docs/architecture.md`](..
    (kèm nhánh merge read, trạng thái con của merged request).
 3. **Sequence async đề xuất**: caller → `aio_read_submit` → pending queue →
    scheduler → device → interrupt → completion → `aio_poll/aio_wait` → `aio_release`.
-
-**Nghiệm thu:** 3 trang đủ nội dung; URL dán ở 2 chỗ; quyền GV đã kiểm tra
-(bạn nhờ GV mở thử hoặc xác nhận qua kênh lớp).
 
 ---
 
@@ -154,9 +151,9 @@ có tag + cách kiểm; mục benchmark/stress khớp với `docs/testing.md`.
 
 ---
 
-## Bước 6 — Baseline trên máy bạn + protocol đo (2h, ngày 24/10)
+## Bước 6 — Baseline trên máy bạn + protocol đo
 
-**Mục tiêu (T1-09 phần của bạn):** máy thứ hai tái lập được baseline.
+**Mục tiêu** máy thứ hai tái lập được baseline.
 
 ```bash
 make baseline        # ~10–25 phút trên laptop; chạy ở terminal riêng
@@ -180,54 +177,3 @@ Khi xong:
 
 **Nghiệm thu:** baseline máy bạn 6/6 PASS + clone mới build/boot PASS; ghi vào
 environment.md + báo cáo tuần.
-
-> Số liệu của bạn sẽ khác máy dev (CPU/QEMU khác) — **không sao**, chỉ cần cùng
-> commit và ghi rõ môi trường. Không trộn số giữa hai máy khi so sánh.
-
----
-
-## Bước 7 — Review chéo + báo cáo tuần (1h, ngày 25/10)
-
-**Mục tiêu (T1-12) + review chéo.**
-
-1. **Bạn review Lợi** (module request queue/policy): kiểm tra file/tài liệu của
-   Lợi theo checklist ngắn:
-   - NUM/chain cost có đúng (8 descriptor → 2 chain)? lock order có ghi?
-   - định nghĩa FCFS/SCAN/deadline rõ ràng, có oracle test chưa?
-   - kết luận nào thiếu bằng chứng/log?
-   Ghi nhận xét trong PR của Lợi (comment + approve/reject).
-2. **Hoàng review bạn**: xử lý comment, sửa decisions.md/không tranh cãi suông.
-3. Điền [`docs/week01/progress-report.md`](progress-report.md):
-   - summary **200–300 từ**;
-   - Completed / In progress / Blocked (kèm link commit/PR/log);
-   - so sánh **TODO kế hoạch tuần 1 vs thực tế**;
-   - kế hoạch tuần 2 (3 phần kernel của 3 người, dependency, giờ dự kiến);
-   - đóng góp cá nhân từng người.
-4. Nếu GV yêu cầu `.docx`: mở file .md, copy sang template
-   `Spec/Progress Report template.docx` và xuất PDF/docx; giữ bản .md trong repo.
-
-**Nghiệm thu:** PR review xong; progress-report.md có đủ 5 mục và link bằng chứng;
-không có mục "Completed" nào thiếu file/log.
-
----
-
-## Bước 8 — PR & chốt checklist (30 phút)
-
-```bash
-make check-text        # không lỗi encoding
-make test-fast         # hoặc make test nếu có thời gian
-git status             # không có file build/fs.img bị add
-git add docs/week01/... && git commit -m "docs(week01): hoàn thiện hồ sơ Hiếu"
-git push -u origin week1/hieu
-```
-
-Tạo PR `week1/hieu → main`:
-
-- tiêu đề: `docs(week01): hồ sơ tuần 1 — Hiếu`;
-- mô tả: checklist T1-01/04/05/08/10/12 + link file + kết quả `make env-check`/baseline;
-- reviewer: **Hoàng**; chờ approve rồi merge (không tự merge);
-- sau merge cập nhật bảng trạng thái trong [`docs/week01/README.md`](README.md).
-
-
-
-

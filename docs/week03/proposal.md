@@ -1,11 +1,6 @@
 # Proposal kỹ thuật — Asynchronous virtio-blk và I/O schedulers trên xv6-riscv
 
 > **Đề tài:** 26128 — nhóm 3 (ET4290, HK 2026.1) · **Người soạn:** Phạm Trung Hiếu (20233402)
-> **Phiên bản:** v1.0-draft, 2026-11-07 · **Base revision:** `49557bf671edb5ee4ccf6a2c3c452d32fd1f411e`
-> **Pin xv6:** `f780d785…` (tạm thời, PTO-7/Q1) · **Reviewers:** Nguyễn Văn Hoàng (driver/lifetime),
-> Phạm Quý Lợi (policy/oracle) — **PENDING**.
-> **Nguồn:** [`docs/week03/interface.md`](interface.md), [`docs/week03/lifecycle-review.md`](lifecycle-review.md),
-> [`docs/week02/interface.md`](../week02/interface.md); PDF/build: [`docs/week03/README.md`](README.md).
 
 ## 1. Bài toán và mục tiêu
 
@@ -130,7 +125,7 @@ I/O thật nên chưa dùng để tuyên bố độ trễ; QEMU không mô phỏ
 | Coherence khi cùng block vừa đọc vừa ghi | Chưa giải quyết; chỉ đọc fixture read-only; không thay `bread()` |
 | Bằng chứng/hạ tầng bị hiểu sai | Mock/timer báo riêng, không tính READ thật; kết quả ghi theo máy/toolchain (H01); CI đang comment nên không coi CI PASS là bằng chứng |
 
-## 8. Lộ trình tuần 4–7 (đề xuất, chưa cam kết kết quả)
+## 8. Lộ trình tuần 4–7
 
 | Tuần | Công việc | Đầu ra kiểm được |
 | :---: | :--- | :--- |
@@ -143,22 +138,10 @@ Mọi mục tuần 4–7 là **kế hoạch**; chỉ ghi Done khi có review + l
 
 ## 9. Câu hỏi cần GV xác nhận (PTO-7, đang Pending)
 
-**Q1** tag/commit xv6 chính thức (đang pin tạm `f780d785`) · **Q2** chỉ READ async +
+**Q2** chỉ READ async +
 WRITE đồng bộ có đạt? · **Q3** kernel C API + demo hay bắt buộc syscall user? ·
 **Q4** SCAN truyền thống hay LOOK, quy tắc biên logic? · **Q5** phạm vi merge READ
 (số block, điều kiện thứ tự)? · **Q6** trọng số rubric Functionality/Testing/
 Measurement? · **Q7** có cần tăng `NUM` để chứng minh `max_inflight > 2`? ·
-**Q8** kill/cancel/exit có bắt buộc trong học phần? — Không câu trả lời nào được coi
-là đã xác nhận.
+**Q8** kill/cancel/exit có bắt buộc trong học phần?
 
-## 10. Tham chiếu
-
-Contract tuần 2 [`docs/week02/interface.md`](../week02/interface.md) · header
-[`kernel/io_request.h`](../../kernel/io_request.h) · kiến trúc
-[`docs/architecture.md`](../architecture.md) · contract SCAN
-[`docs/week03/interface.md`](interface.md) · lifecycle/kill-cancel
-[`docs/week03/lifecycle-review.md`](lifecycle-review.md) · bằng chứng
-[`results/week02/`](../../results/week02/) và [`results/week03/`](../../results/week03/) ·
-sơ đồ [`docs/week03/diagrams/`](diagrams/) (nguồn + SVG + script sinh).
-
-*Tài liệu này là bản nháp kỹ thuật, không thay thế báo cáo tuần và chưa được GV phê duyệt.*

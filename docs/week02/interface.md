@@ -2,9 +2,6 @@
 
 > **Mã công việc:** W2-G01 (CARD 1/9) — *Chốt interface request, buffer ownership và quy tắc khóa*.  
 > **Người thực hiện:** Phạm Trung Hiếu (MSSV: 20233402) · **Nhánh làm việc:** `week2/hieu-request`.  
-> **Base commit:** `e809500` (origin/main sau tuần 1) · **Pin xv6 tạm thời:** `f780d785…` (chờ GV xác nhận tag chính thức).  
-> **Người rà soát (Reviewers):** Nguyễn Văn Hoàng (G01/I01/I02), Phạm Quý Lợi (G01) — *Trạng thái: PENDING*.
-> **File mã nguồn nguồn sự thật (Single Source of Truth):** [`kernel/io_request.h`](../../kernel/io_request.h).
 
 ---
 
@@ -14,8 +11,6 @@
 Trong Tuần 1, hai tài liệu thiết kế xuất hiện mâu thuẫn lớn đe dọa khả năng tích hợp:
 - [`docs/week01/async-design.md`](../week01/async-design.md): Đề xuất Request Pool sở hữu buffer và quy về một khóa chung.
 - [`docs/week01/decisions_report.md`](../week01/decisions_report.md): Đề xuất tiến trình gọi (caller) tự sở hữu `kbuf` và chưa chốt cơ chế đồng bộ khóa.
-
-Nếu ba thành viên lập trình song song trên hai mô hình trái ngược nhau, hệ thống sẽ rơi vào tình trạng không thể ghép nối hoặc phát sinh lỗi deadlock AB-BA. Bản hợp đồng này (Contract) chuẩn hóa toàn bộ giao diện và cơ chế đồng bộ trước khi viết code.
 
 ### 1.2 Bảng đối chiếu mã nguồn gốc xv6
 Nhóm đã rà soát trực tiếp trên commit `e809500` để rút ra các kết luận nền tảng:

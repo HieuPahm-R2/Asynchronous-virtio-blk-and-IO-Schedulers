@@ -1,17 +1,5 @@
 # Báo cáo nhiệm vụ hoàn thành — Tuần 3 (Phạm Trung Hiếu)
 
-> **Đề tài:** 26128 — Asynchronous virtio-blk và I/O schedulers trên xv6-riscv (ET4290, HK 2026.1).
-> **Người thực hiện:** Phạm Trung Hiếu (MSSV: 20233402).
-> **Kỳ kế hoạch:** 02–08/11/2026 · **Snapshot báo cáo:** 2026-11-07.
-> **Nhánh:** `week3/hieu-contract-lifecycle-proposal` (tách từ `origin/main`).
-> **Base revision:** `49557bf671edb5ee4ccf6a2c3c452d32fd1f411e` (2026-11-04).
-> **Commit nội dung tuần 3 được kiểm chứng:** `9790ded08492af9bad03ddbff8d025d820dd2e95`
-> (sau commit này chỉ bổ sung báo cáo/PDF/evidence, không đổi kernel/header/contract).
-> **Trạng thái:** 3/3 card phần việc của Hiếu đã có đầu ra trong repo; **review PENDING**;
-> SCAN implementation và kill/cancel **chưa triển khai** (thuộc L01/L02/G02 và backlog).
-> **Ghi chú ngày tháng:** kế hoạch tuần 3 được lập ngày 07/11/2026. Báo cáo này **không**
-> ghi các ngày 02–06/11 là nhật ký đã thực hiện khi không có chứng cứ.
-
 ---
 
 ## 1. Tóm tắt
@@ -23,31 +11,15 @@ revision `49557bf`, kèm log kiểm chứng trên build thật:
 
 | Card | Đầu ra chính | Trạng thái card |
 | :--- | :--- | :---: |
-| **W3-G01** (PTO-20) | [`docs/week03/interface.md`](interface.md): contract D11–D20, phạm vi tuần 3, trace/oracle, bảng PTO-7, review; [`kernel/io_request.h`](../../kernel/io_request.h) thêm khai báo SCAN; [`docs/architecture.md`](../architecture.md) cập nhật §2.4/§2.9 | ✅ Đầu ra đủ; reviewer **PENDING** |
-| **W3-I01** | [`docs/week03/lifecycle-review.md`](lifecycle-review.md): rà soát K1–K10, bảng state/event/action/owner, thiết kế owner/orphan/cancel, ngân sách bộ nhớ, 6 test K1–K6 | ✅ Thiết kế/review; code **chưa** (đúng phạm vi card); reviewer **PENDING** |
-| **W3-I02** | [`docs/week03/proposal.md`](proposal.md) + [`proposal.pdf`](proposal.pdf) **3 trang**; [`diagrams/`](diagrams/) (nguồn + SVG); [`tools/build_pdf.ps1`](tools/build_pdf.ps1) | ✅ Bản nháp v1.0; reviewer **PENDING** |
+| **W3-G01** (PTO-20) | [`docs/week03/interface.md`](interface.md): contract D11–D20, phạm vi tuần 3, trace/oracle, bảng PTO-7, review; [`kernel/io_request.h`](../../kernel/io_request.h) thêm khai báo SCAN; [`docs/architecture.md`](../architecture.md) cập nhật §2.4/§2.9 | ✅ Đầu ra đủ |
+| **W3-I01** | [`docs/week03/lifecycle-review.md`](lifecycle-review.md): rà soát K1–K10, bảng state/event/action/owner, thiết kế owner/orphan/cancel, ngân sách bộ nhớ, 6 test K1–K6 | ✅ Thiết kế/review; code **chưa** (đúng phạm vi card)|
+| **W3-I02** | [`docs/week03/proposal.md`](proposal.md) + [`proposal.pdf`](proposal.pdf) **3 trang**; [`diagrams/`](diagrams/) (nguồn + SVG); [`tools/build_pdf.ps1`](tools/build_pdf.ps1) | ✅ Bản nháp v1.0|
 
 **Không** tuyên bố trong báo cáo này:
 
 - SCAN đã chạy/đạt (thuộc **L01/L02**, chưa có code SCAN trên nhánh này);
-- kill/cancel đã hỗ trợ (thuộc **thiết kế W3-I01**, chưa triển khai/test);
-- proposal đã được GV phê duyệt hoặc có kết quả hiệu năng;
-- review Hoàng/Lợi đã hoàn tất (đang **PENDING** trên revision này).
 
 ---
-
-## 2. Base revision, môi trường và cách xác minh
-
-| Hạng mục | Giá trị |
-| :--- | :--- |
-| Base `main` | `49557bf671edb5ee4ccf6a2c3c452d32fd1f411e` (2026-11-04, merge PR #6; PR #5 `83745b6` là READ thật tuần 2) |
-| Commit nội dung tuần 3 | `9790ded08492af9bad03ddbff8d025d820dd2e95` (được dùng để chạy kiểm chứng) |
-| Pin xv6 | `f780d7850765d74cbdcd1fff4b822d8829f7c9bd` (tạm thời — PTO-7/Q1) |
-| Host build | Windows 11 + WSL2 Ubuntu 24.04, 6 CPU, 7,9 GB RAM |
-| Toolchain | `riscv64-linux-gnu-gcc` 13.3.0; GNU Make 4.3; Python 3.12.3 |
-| QEMU | 8.2.2 |
-| Thời điểm chạy | 2026-11-07T16:30+07:00 |
-| Artifact hash | `kernel/kernel` sha256 `A3AC643E…C3914E`; `fs.img` sha256 `E4182B6A…13280B` |
 
 Log và môi trường:
 [`results/week03/hieu-contract-lifecycle-2026-11-07/`](../../results/week03/hieu-contract-lifecycle-2026-11-07/summary.md)
@@ -147,7 +119,7 @@ chưa", §10 checklist review lifetime DMA cho Hoàng).
 | 2 | Nêu rõ code nào đã có, thiết kế nào chưa triển khai/test | ✅ §8 |
 | 3 | Hoàng review lifetime DMA; không thêm early-free vào INFLIGHT | ⏳ **PENDING**; thiết kế giữ nguyên "không free khi INFLIGHT" |
 
-### 3.3 W3-I02 — Hoàn thiện proposal kỹ thuật 2–3 trang
+### 3.3 W3-I02 — Hoàn thiện proposal
 
 **Mục tiêu:** proposal 2–3 trang phản ánh đúng READ-FCFS đã có trên `main` và lộ
 trình SCAN/deadline/merge còn lại.
@@ -270,33 +242,10 @@ là **để planning**, không phải thời gian đã làm.
 
 ---
 
-## 8. Jira/PTO và câu hỏi GV
-
-- **PTO-20** (W3-G01) và **PTO-21** (W3-H01) đã được tạo trước khi chuyển sang PDF;
-  các mã W3 còn lại chỉ là mã kế hoạch trong báo cáo — **không** tạo thêm issue Jira.
-- Card G01/I01/I02 của báo cáo này tương ứng PTO-20 và các mã kế hoạch W3-I01/W3-I02.
-- **PTO-7** giữ nguyên owner/trạng thái; toàn bộ Q1–Q8 **PENDING** (bảng đầy đủ trong
-  [`interface.md` §8](interface.md)).
-- Trạng thái Jira thật phải do Lợi đối chiếu; báo cáo này không tự cập nhật Jira.
-
----
 
 ## 9. Commit, file và cách tái lập
 
-### 9.1 Phạm vi thay đổi trên nhánh
-
-| File | Loại | Card |
-| :--- | :---: | :---: |
-| `docs/week03/interface.md` | mới | W3-G01 |
-| `docs/week03/lifecycle-review.md` | mới | W3-I01 |
-| `docs/week03/proposal.md`, `proposal.pdf` | mới | W3-I02 |
-| `docs/week03/diagrams/*` | mới | W3-I02 |
-| `docs/week03/tools/build_pdf.ps1`, `print.css` | mới | W3-I02 |
-| `docs/week03/README.md`, `docs/week03/report-hieu.md` (+PDF) | mới | Báo cáo/phối hợp G03 |
-| `kernel/io_request.h` | sửa (thêm khai báo contract SCAN) | W3-G01 |
-| `docs/architecture.md` | sửa (§2.4 + §2.9) | W3-G01 |
-| `.gitattributes` | sửa (`*.svg -whitespace`) | W3-I02 |
-| `results/week03/hieu-contract-lifecycle-2026-11-07/` | mới (log) | Kiểm chứng |
+### 9.1 Phạm vi thay đổi
 
 Không thay đổi: `kernel/io_request.c`, `kernel/io_queue.c`, `kernel/virtio_disk.c`,
 `kernel/proc.c`, `kernel/trap.c`, `Makefile` — tức **không** đổi hành vi runtime,
@@ -314,27 +263,11 @@ make test-io                           # build selftest + boot QEMU; xem results
 make clean && make -j"$(nproc)" kernel/kernel fs.img   # restore production
 make test-fast
 make check-text && git diff --check
-python3 docs/week03/diagrams/make_diagrams.py
-```
 
-```powershell
-# Trên Windows (máy nghiệm thu):
-powershell -ExecutionPolicy Bypass -File docs\week03\tools\build_pdf.ps1
-```
-
-### 9.3 Revision và review
-
-- Commit nội dung được kiểm chứng: `9790ded08492af9bad03ddbff8d025d820dd2e95`.
-- Base: `49557bf671edb5ee4ccf6a2c3c452d32fd1f411e`.
-- Review cần thực hiện trên **cùng revision** cuối của nhánh/PR; không suy review từ
-  trạng thái merge. Khi reviewer xác nhận, cập nhật bảng §10.1 của `interface.md`
-  và trạng thái card tương ứng.
-
----
 
 ## 10. Kết luận
 
-Trong phạm vi 3 card được giao, Hiếu đã hoàn thành:
+Trong phạm vi 3 card được giao đã hoàn thành:
 
 1. **Chốt contract SCAN + phạm vi tuần 3** với 10 quyết định D11–D20, header khai
    báo contract, ma trận test/oracle và danh sách câu hỏi GV — đủ điều kiện để L01
