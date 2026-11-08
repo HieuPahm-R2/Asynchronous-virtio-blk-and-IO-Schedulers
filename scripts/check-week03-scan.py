@@ -59,6 +59,17 @@ def tool(name):
     raise SystemExit(f"không tìm thấy công cụ RISC-V '{name}' (unknown-elf/linux-gnu)")
 
 
+# Tương thích cả harness cũ (build(outdir, mode, flag)) và harness sau W3-H01
+# của Hoàng (build(outdir, mode, tc, flag) + resolve_toolchain()).
+TC = H.resolve_toolchain(None) if hasattr(H, "resolve_toolchain") else None
+
+
+def build(outdir, mode, flag=None):
+    if TC is not None:
+        return H.build(outdir, mode, TC, flag)
+    return H.build(outdir, mode, flag)
+
+
 def boot_text(logpath, cpus):
     """Boot và trả về log; boot lỗi/panic vẫn trả log để oracle chấm."""
     try:
@@ -78,7 +89,7 @@ def main():
     ap.add_argument("--results-dir", type=Path)
     args = ap.parse_args()
 
-    gcc, nm = tool("gcc"), tool("nm")
+    gcc, nm = (TC["cc"], TC["nm"]) if TC else (tool("gcc"), tool("nm"))
     stamp = dt.datetime.now().astimezone().strftime("%Y%m%d-%H%M%S")
     outdir = (args.results_dir or ROOT / "results/week03/scan-oracle" / f"{socket.gethostname()}-{stamp}").resolve()
     outdir.mkdir(parents=True, exist_ok=False)
@@ -93,7 +104,7 @@ def main():
     (outdir / "source.patch").write_text(out(["git", "diff", "--binary", "HEAD"]) + "\n")
     errors = []
     try:
-        H.build(outdir, "queue", "EXTRA_CFLAGS=-DIOQ_SELFTEST")
+        build(outdir, "queue", "EXTRA_CFLAGS=-DIOQ_SELFTEST")
         for cpus in (1, 4):
             text, booted = boot_text(outdir / f"scan-cpus{cpus}.log", cpus)
             e = SCAN.check(text) + [f"FCFS tuần 2: thiếu {p}" for p in fcfs_errors(text)]
@@ -110,7 +121,7 @@ def main():
                 name = patch.stem
                 subprocess.run(["git", "apply", str(patch)], cwd=ROOT, check=True)
                 try:
-                    H.build(outdir, name, "EXTRA_CFLAGS=-DIOQ_SELFTEST")
+                    build(outdir, name, "EXTRA_CFLAGS=-DIOQ_SELFTEST")
                     text, booted = boot_text(outdir / f"{name}-cpus1.log", 1)
                 finally:
                     subprocess.run(["git", "apply", "-R", str(patch)], cwd=ROOT, check=True)
@@ -125,7 +136,7 @@ def main():
         errors.append(f"lỗi harness: {exc}")
     finally:
         try:
-            H.build(outdir, "production")
+            build(outdir, "production")
             leaked = sorted(set(re.findall(TEST_HOOKS, out([nm, "kernel/kernel"]))))
             meta["production_hooks_absent"] = not leaked
             if leaked:
