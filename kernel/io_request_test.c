@@ -430,6 +430,10 @@ io_selftest(void)
 
 #endif // IO_SELFTEST
 
+#ifdef IO_STRESS_SELFTEST
+extern int io_stress_selftest(int op);
+#endif
+
 // Test-only syscall entry (SYS_io_selftest): runs the process-context tests
 // from init and returns the failure count. In a production build it is not
 // reachable because init.c only calls it under -DIO_SELFTEST; return -1 anyway.
@@ -440,6 +444,10 @@ sys_io_selftest(void)
   return (uint64)io_user_selftest();
 #elif defined(IO_HW_SELFTEST)
   return (uint64)io_hw_selftest();
+#elif defined(IO_STRESS_SELFTEST)
+  int op = 0;
+  argint(0, &op);
+  return (uint64)io_stress_selftest(op);
 #else
   return (uint64)-1;
 #endif

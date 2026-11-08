@@ -1,0 +1,543 @@
+diff --git a/Makefile b/Makefile
+index 1326024..846994a 100644
+--- a/Makefile
++++ b/Makefile
+@@ -33,7 +33,8 @@ OBJS = \
+   $K/io_request_test.o \
+   $K/io_queue.o \
+   $K/io_queue_test.o \
+-  $K/io_hw_test.o
++  $K/io_hw_test.o \
++  $K/io_stress_test.o
+ # riscv64-unknown-elf- or riscv64-linux-gnu-
+ # perhaps in /opt/riscv/bin
+ #TOOLPREFIX = 
+@@ -63,6 +64,7 @@ CC = $(TOOLPREFIX)gcc
+ LD = $(TOOLPREFIX)ld
+ OBJCOPY = $(TOOLPREFIX)objcopy
+ OBJDUMP = $(TOOLPREFIX)objdump
++NM = $(TOOLPREFIX)nm
+ 
+ # Deterministic builds.
+ DETFLAGS = -ffile-prefix-map=$(CURDIR)=.
+@@ -95,6 +97,9 @@ endif
+ ifdef IO_HW_SELFTEST
+ CFLAGS += -DIO_HW_SELFTEST
+ endif
++ifdef IO_STRESS_SELFTEST
++CFLAGS += -DIO_STRESS_SELFTEST
++endif
+ 
+ # Disable PIE when possible (for Ubuntu 16.10 toolchain)
+ ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]no-pie'),)
+diff --git a/docs/testing.md b/docs/testing.md
+index 2e77fcc..0c63a30 100644
+--- a/docs/testing.md
++++ b/docs/testing.md
+@@ -133,6 +133,30 @@ CASES = [{
+   `scripts/update-xv6.sh` sẽ không xoá file của dự án (chỉ xoá file trong
+   `.xv6-files`), nhưng cần tự thêm vào `UPROGS` lại sau khi update.
+ 
++### Harness kiểm chứng driver/tích hợp và stress nhiều producer (W3-H01, W3-H02)
++
++- **Đồng bộ `TOOLPREFIX` và `NM` (`W3-H01` / `PTO-21`):** `Makefile` khai báo
++  `NM = $(TOOLPREFIX)nm` và `mk/project.mk` cung cấp `make -s print-toolprefix`.
++  Các script `scripts/check-week02-hoang.py` và `scripts/check-week03-stress.py`
++  nhận `--toolprefix` hoặc biến môi trường `TOOLPREFIX` (mặc định tự dò theo
++  `Makefile`, hỗ trợ cả `riscv64-unknown-elf-` và `riscv64-linux-gnu-` mà không
++  cần tạo symlink giả trong `~/bin`), đồng thời kiểm tra đủ `gcc`/`nm`/`objdump`/`ld`/`qemu`
++  trước khi tạo thư mục kết quả.
++- **Chạy bộ kiểm chứng READ thật + mock + hồi quy symbol (`W3-H01`):**
++  - Kiểm nhanh 1 lượt phần cứng: `python3 scripts/check-week02-hoang.py --repeat 1 --hw-only`
++  - Bộ đầy đủ 10 lượt (`CPUS=1` và `CPUS=4`, negative fixture, pool/queue mock,
++    restore production + kiểm symbol bằng `NM`): `make test-week02`
++- **Chạy stress READ nhiều producer (`W3-H02`):**
++  - Lệnh chạy: `make test-week03-stress` (hoặc
++    `python3 scripts/check-week03-stress.py --repeat 2 --seed 0x26128003`).
++  - Cơ chế: build test-only với `IO_STRESS_SELFTEST=1`; `init` fork 4 tiến trình
++    worker độc lập gọi `sys_io_selftest`, mỗi worker thực hiện 120 READ (tổng
++    480 READ/lượt boot) với cửa sổ 5 handle/worker trên 32 block fixture đã
++    kiểm free bitmap, đối chiếu đủ 1024 byte/block, xử lý `IO_EAGAIN` bằng
++    drain/yield hữu hạn có watchdog, kiểm tra đối chứng âm bản sai 1 byte
++    (`EXPECTED_FAIL`), sau đó restore bản production và kiểm tra không rò rỉ
++    symbol test.
++
+ ## 8. Definition of Done cho một case test
+ 
+ - [ ] Có assertion thực chất (không chỉ "không panic") và oracle độc lập nếu
+diff --git a/kernel/io_request_test.c b/kernel/io_request_test.c
+index 88c0b37..9fc3720 100644
+--- a/kernel/io_request_test.c
++++ b/kernel/io_request_test.c
+@@ -430,6 +430,10 @@ io_selftest(void)
+ 
+ #endif // IO_SELFTEST
+ 
++#ifdef IO_STRESS_SELFTEST
++extern int io_stress_selftest(int op);
++#endif
++
+ // Test-only syscall entry (SYS_io_selftest): runs the process-context tests
+ // from init and returns the failure count. In a production build it is not
+ // reachable because init.c only calls it under -DIO_SELFTEST; return -1 anyway.
+@@ -440,6 +444,10 @@ sys_io_selftest(void)
+   return (uint64)io_user_selftest();
+ #elif defined(IO_HW_SELFTEST)
+   return (uint64)io_hw_selftest();
++#elif defined(IO_STRESS_SELFTEST)
++  int op = 0;
++  argint(0, &op);
++  return (uint64)io_stress_selftest(op);
+ #else
+   return (uint64)-1;
+ #endif
+diff --git a/mk/project.mk b/mk/project.mk
+index 70abfec..11bdcef 100644
+--- a/mk/project.mk
++++ b/mk/project.mk
+@@ -10,7 +10,7 @@ BASELINE_ARGS ?=
+ DEMO_ARGS ?=
+ IO_TEST_TIMEOUT ?= 30
+ 
+-.PHONY: help env-check list-tests demo test test-fast test-slow baseline clean-all check-text check-mermaid test-io
++.PHONY: help env-check list-tests demo test test-fast test-slow baseline clean-all check-text check-mermaid test-io print-toolprefix test-week02 test-week03-stress
+ 
+ help:
+ 	@echo "ET4290 — Async virtio-blk & I/O schedulers trên xv6-riscv"
+@@ -82,6 +82,12 @@ clean-all: clean
+ 	rm -rf results/local
+ 
+ # Hoàng: real virtio READ + independent pool/queue suites, then production build.
+-.PHONY: test-week02
++print-toolprefix:
++	@echo "$(TOOLPREFIX)"
++
++.PHONY: test-week02 test-week03-stress
+ test-week02:
+-	python3 scripts/check-week02-hoang.py $(WEEK02_ARGS)
++	$(PYTHON) scripts/check-week02-hoang.py $(WEEK02_ARGS)
++
++test-week03-stress:
++	$(PYTHON) scripts/check-week03-stress.py $(STRESS_ARGS)
+diff --git a/scripts/check-week02-hoang.py b/scripts/check-week02-hoang.py
+index 94218cb..cffa82d 100755
+--- a/scripts/check-week02-hoang.py
++++ b/scripts/check-week02-hoang.py
+@@ -1,9 +1,11 @@
+ #!/usr/bin/env python3
+-"""PTO-12/13/19: isolated real-DMA tests plus independent team selftests.
++"""PTO-12/13/19 & W3-H01 (PTO-21): isolated real-DMA tests plus independent team selftests.
+ 
+ Never patches fs.img: fixture blocks are written only into disposable copies,
+ only after checking that mkfs marked every target block free. Flag transitions
+ always use make clean. Direct QEMU boots cannot silently rebuild without flags.
++Supports both riscv64-unknown-elf- and riscv64-linux-gnu- toolchains via unified
++Makefile TOOLPREFIX/NM discovery without requiring ~/bin compiler symlinks.
+ """
+ from __future__ import annotations
+ import argparse
+@@ -20,10 +22,18 @@ import shutil
+ import signal
+ import struct
+ import subprocess
++import sys
+ import tempfile
+ import time
+ 
+ ROOT = Path(__file__).resolve().parents[1]
++CANDIDATE_PREFIXES = (
++    'riscv64-unknown-elf-',
++    'riscv64-elf-',
++    'riscv64-none-elf-',
++    'riscv64-linux-gnu-',
++    'riscv64-unknown-linux-gnu-',
++)
+ HW_CASES = [
+     'T01 single-read', 'ARGS validation', 'T02 pool-exhaustion',
+     'T03 stale-handle', 'T04 release-active', 'T05 complete-before-wait',
+@@ -32,6 +42,7 @@ HW_CASES = [
+     'T10 submit-returns-pending', 'T12 stock-async-coexist',
+     'T13 FCFS-real-dispatch', 'T11 accounting-10-cycles',
+ ]
++HOOK_REGEX = r'\b(?:virtio_test_\w+|io_hw_selftest|io_hw_set_wait_hook|io_test_timer_tick|io_stress_\w+)\b'
+ 
+ 
+ def output(cmd):
+@@ -42,10 +53,99 @@ def sha(path):
+     return hashlib.sha256(path.read_bytes()).hexdigest()
+ 
+ 
+-def build(outdir, mode, flag=None):
++def probe_prefix_from_makefile(explicit_prefix: str | None) -> str:
++    if explicit_prefix:
++        return explicit_prefix
++    env_prefix = os.environ.get('TOOLPREFIX', '').strip()
++    if env_prefix:
++        return env_prefix
++    try:
++        res = subprocess.run(
++            ['make', '-s', 'print-toolprefix'],
++            cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=False
++        )
++        if res.returncode == 0 and res.stdout.strip():
++            return res.stdout.strip()
++    except OSError:
++        pass
++    for cand in CANDIDATE_PREFIXES:
++        objdump = shutil.which(f'{cand}objdump')
++        if not objdump:
++            continue
++        try:
++            info = subprocess.check_output([objdump, '-i'], cwd=ROOT, text=True, stderr=subprocess.STDOUT)
++            if 'elf64-big' in info:
++                return cand
++        except (OSError, subprocess.CalledProcessError):
++            continue
++    return ''
++
++
++def resolve_toolchain(explicit_prefix: str | None) -> dict:
++    missing = []
++    for host_tool in ('make', 'qemu-system-riscv64'):
++        if not shutil.which(host_tool):
++            missing.append(host_tool)
++
++    prefix = probe_prefix_from_makefile(explicit_prefix)
++    if not prefix:
++        missing.append(
++            'RISC-V toolchain prefix (tried Makefile print-toolprefix and '
++            + ', '.join(CANDIDATE_PREFIXES) + ')'
++        )
++        raise RuntimeError(
++            'Missing required build/test tools before run start: ' + '; '.join(missing)
++        )
++
++    cc = f'{prefix}gcc'
++    nm = os.environ.get('NM', '').strip() or f'{prefix}nm'
++    objdump = f'{prefix}objdump'
++    ld = f'{prefix}ld'
++
++    for tool_name in (cc, nm, objdump, ld):
++        if not shutil.which(tool_name):
++            missing.append(f'{tool_name} (for TOOLPREFIX={prefix})')
++
++    if missing:
++        raise RuntimeError(
++            'Missing required build/test tools before run start: ' + '; '.join(missing)
++        )
++
++    try:
++        objdump_info = subprocess.check_output(
++            [objdump, '-i'], cwd=ROOT, text=True, stderr=subprocess.STDOUT
++        )
++    except (OSError, subprocess.CalledProcessError) as exc:
++        raise RuntimeError(f'Failed to run {objdump} -i: {exc}') from exc
++    if 'elf64-big' not in objdump_info:
++        raise RuntimeError(f'{objdump} does not support elf64-big target required by xv6')
++
++    cc_path = Path(shutil.which(cc))
++    nm_path = Path(shutil.which(nm))
++    return {
++        'toolprefix': prefix,
++        'cc': cc,
++        'cc_path': str(cc_path),
++        'cc_realpath': str(cc_path.resolve()),
++        'nm': nm,
++        'nm_path': str(nm_path),
++        'nm_realpath': str(nm_path.resolve()),
++        'objdump': objdump,
++        'objdump_path': str(Path(shutil.which(objdump)).resolve()),
++        'ld': ld,
++        'ld_path': str(Path(shutil.which(ld)).resolve()),
++    }
++
++
++def build(outdir, mode, tc, flag=None):
++    prefix_arg = f"TOOLPREFIX={tc['toolprefix']}"
+     with (outdir / f'build-{mode}.log').open('w') as log:
+-        for cmd in (['make', 'clean'], ['make', '-j4', *([flag] if flag else []), 'kernel/kernel', 'fs.img']):
+-            log.write('$ ' + ' '.join(cmd) + '\n'); log.flush()
++        for cmd in (
++            ['make', prefix_arg, 'clean'],
++            ['make', '-j4', prefix_arg, *([flag] if flag else []), 'kernel/kernel', 'fs.img'],
++        ):
++            log.write('$ ' + ' '.join(cmd) + '\n')
++            log.flush()
+             subprocess.run(cmd, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=True)
+     return {'kernel_sha256': sha(ROOT / 'kernel/kernel'), 'fs_sha256': sha(ROOT / 'fs.img')}
+ 
+@@ -65,7 +165,8 @@ def fixture(image, corrupt=False):
+             data = bytearray((block * 17 + i * 31 + (i >> 8) * 7) & 255 for i in range(bs))
+             if corrupt and block == size - 32:
+                 data[0] ^= 1
+-            f.seek(block * bs); f.write(data)
++            f.seek(block * bs)
++            f.write(data)
+     return {'blocks': [size - 32, size - 1], 'block_size': bs,
+             'verified_free': True, 'corrupt_first_byte': corrupt, 'image_sha256': sha(image)}
+ 
+@@ -82,8 +183,11 @@ def boot(logpath, cpus, hw=False, negative=False, timeout=60):
+                '-device', 'virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0']
+         proc = subprocess.Popen(cmd, cwd=ROOT, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT, start_new_session=True)
+-        sel = selectors.DefaultSelector(); sel.register(proc.stdout, selectors.EVENT_READ)
+-        start = time.monotonic(); data = bytearray(); reached_shell = False
++        sel = selectors.DefaultSelector()
++        sel.register(proc.stdout, selectors.EVENT_READ)
++        start = time.monotonic()
++        data = bytearray()
++        reached_shell = False
+         try:
+             while time.monotonic() - start < timeout:
+                 for key, _ in sel.select(0.2):
+@@ -103,7 +207,8 @@ def boot(logpath, cpus, hw=False, negative=False, timeout=60):
+                 os.killpg(proc.pid, signal.SIGTERM)
+                 proc.communicate(timeout=3)
+             except subprocess.TimeoutExpired:
+-                os.killpg(proc.pid, signal.SIGKILL); proc.communicate()
++                os.killpg(proc.pid, signal.SIGKILL)
++                proc.communicate()
+             except ProcessLookupError:
+                 proc.communicate()
+             sel.close()
+@@ -111,7 +216,7 @@ def boot(logpath, cpus, hw=False, negative=False, timeout=60):
+         logpath.write_text(text)
+         if not reached_shell or re.search(r'(^|\n)panic:', text):
+             raise RuntimeError(f'boot/panic/timeout: {logpath}')
+-        return text, {'cpus': cpus, 'duration_s': round(time.monotonic()-start, 3),
++        return text, {'cpus': cpus, 'duration_s': round(time.monotonic() - start, 3),
+                       'command': cmd, 'fixture': info, 'log': logpath.name}
+ 
+ 
+@@ -127,8 +232,8 @@ def check_hw(text):
+     if re.search(r'FAIL|panic:', text):
+         errors.append('failure marker')
+     line = re.search(r'IO-HWTEST: stats (.*)', text)
+-    stats = dict((k, int(v)) for k,v in re.findall(r'(\w+)=(\d+)', line[1])) if line else {}
+-    for key, value in {'free_req':16, 'free_desc':8, 'max_inflight':2, 'errors':2}.items():
++    stats = dict((k, int(v)) for k, v in re.findall(r'(\w+)=(\d+)', line[1])) if line else {}
++    for key, value in {'free_req': 16, 'free_desc': 8, 'max_inflight': 2, 'errors': 2}.items():
+         if stats.get(key) != value:
+             errors.append(f'{key} != {value}')
+     if not (stats.get('submitted') == stats.get('completed', -1) + stats.get('errors', -2)
+@@ -141,41 +246,67 @@ def main():
+     ap = argparse.ArgumentParser(description=__doc__)
+     ap.add_argument('--repeat', type=int, default=10)
+     ap.add_argument('--hw-only', action='store_true', help='skip independent pool/queue suites')
++    ap.add_argument('--toolprefix', type=str, default=None,
++                    help='RISC-V toolchain prefix (e.g. riscv64-unknown-elf- or riscv64-linux-gnu-)')
+     ap.add_argument('--results-dir', type=Path)
+     args = ap.parse_args()
+-    if args.repeat < 1: ap.error('--repeat must be >= 1')
++    if args.repeat < 1:
++        ap.error('--repeat must be >= 1')
++
++    try:
++        tc = resolve_toolchain(args.toolprefix)
++    except RuntimeError as exc:
++        print(f'ERROR: {exc}', file=sys.stderr, flush=True)
++        return 2
++
+     stamp = dt.datetime.now().astimezone().strftime('%Y%m%d-%H%M%S')
+-    outdir = (args.results_dir or ROOT / 'results/week02' / ('hoang-' + stamp)).resolve()
++    outdir = (args.results_dir or ROOT / 'results/week03/hoang-ubuntu' / ('verify-' + stamp)).resolve()
+     outdir.mkdir(parents=True, exist_ok=False)
+-    source_paths = sorted([ROOT/'Makefile', *ROOT.glob('kernel/*.[ch]'), *ROOT.glob('user/*.[ch]'),
+-                           Path(__file__), ROOT/'mk/project.mk', *ROOT.glob('tests/cases/*.py')])
+-    meta = {'started_at': dt.datetime.now().astimezone().isoformat(), 'host': platform.platform(),
+-            'head': output(['git','rev-parse','HEAD']), 'branch': output(['git','branch','--show-current']),
+-            'dirty': output(['git','status','--porcelain']), 'repeat': args.repeat,
+-            'versions': {exe:output([exe,'--version']).splitlines()[0] for exe in
+-                         ['qemu-system-riscv64','riscv64-unknown-elf-gcc','make']},
+-            'source_sha256': {str(p.relative_to(ROOT)):sha(p) for p in source_paths},
+-            'builds': {}, 'runs': []}
+-    (outdir/'source.patch').write_text(output(['git','diff','--binary','HEAD'])+'\n')
++
++    source_paths = sorted([
++        ROOT / 'Makefile', *ROOT.glob('kernel/*.[ch]'), *ROOT.glob('user/*.[ch]'),
++        Path(__file__), ROOT / 'mk/project.mk', *ROOT.glob('tests/cases/*.py')
++    ])
++    xv6_pin = (ROOT / '.xv6-commit').read_text().strip() if (ROOT / '.xv6-commit').is_file() else 'unknown'
++    meta = {
++        'started_at': dt.datetime.now().astimezone().isoformat(),
++        'host': platform.platform(),
++        'head': output(['git', 'rev-parse', 'HEAD']),
++        'branch': output(['git', 'branch', '--show-current']),
++        'xv6_pin': xv6_pin,
++        'dirty': output(['git', 'status', '--porcelain']),
++        'repeat': args.repeat,
++        'toolchain': tc,
++        'versions': {
++            exe: output([exe, '--version']).splitlines()[0]
++            for exe in ['qemu-system-riscv64', tc['cc'], tc['nm'], tc['objdump'], 'make']
++        },
++        'source_sha256': {str(p.relative_to(ROOT)): sha(p) for p in source_paths},
++        'builds': {},
++        'runs': [],
++    }
++    (outdir / 'source.patch').write_text(output(['git', 'diff', '--binary', 'HEAD']) + '\n')
+     # Keep untracked source as well: git diff alone cannot reproduce it.
+-    (outdir/'untracked-source').mkdir()
+-    for rel in output(['git','ls-files','--others','--exclude-standard']).splitlines():
+-        p = ROOT/rel
++    (outdir / 'untracked-source').mkdir()
++    for rel in output(['git', 'ls-files', '--others', '--exclude-standard']).splitlines():
++        p = ROOT / rel
+         if p.is_file() and (rel.startswith('kernel/') or rel.startswith('scripts/')):
+-            target = outdir/'untracked-source'/rel; target.parent.mkdir(parents=True, exist_ok=True)
+-            shutil.copyfile(p,target)
++            target = outdir / 'untracked-source' / rel
++            target.parent.mkdir(parents=True, exist_ok=True)
++            shutil.copyfile(p, target)
+     error = None
+     try:
+-        meta['builds']['hardware'] = build(outdir, 'hardware', 'IO_HW_SELFTEST=1')
+-        for cpus in (1,4):
++        meta['builds']['hardware'] = build(outdir, 'hardware', tc, 'IO_HW_SELFTEST=1')
++        for cpus in (1, 4):
+             for i in range(args.repeat):
+-                text, record = boot(outdir/f'hw-cpus{cpus}-{i+1:02}.log', cpus, hw=True)
++                text, record = boot(outdir / f'hw-cpus{cpus}-{i+1:02}.log', cpus, hw=True)
+                 errs, stats = check_hw(text)
+                 record.update(mode='real-virtio', status='FAIL' if errs else 'PASS', errors=errs, stats=stats)
+                 meta['runs'].append(record)
+                 print(f"real-virtio cpus={cpus} run={i+1}: {record['status']}", flush=True)
+-                if errs: raise RuntimeError('; '.join(errs))
+-        text, record = boot(outdir/'negative-corrupt-fixture.log', 1, hw=True, negative=True)
++                if errs:
++                    raise RuntimeError('; '.join(errs))
++        text, record = boot(outdir / 'negative-corrupt-fixture.log', 1, hw=True, negative=True)
+         errs, stats = check_hw(text)
+         if not errs or 'IO-HWTEST: FAIL 1024-byte fixture pattern' not in text:
+             raise RuntimeError('negative control failed to detect corrupted fixture')
+@@ -183,44 +314,57 @@ def main():
+         meta['runs'].append(record)
+         print('corrupt-fixture oracle: EXPECTED_FAIL', flush=True)
+         if not args.hw_only:
+-            meta['builds']['pool'] = build(outdir, 'pool', 'IO_SELFTEST=1')
+-            for cpus in (1,4):
+-                text, record = boot(outdir/f'pool-cpus{cpus}.log',cpus)
++            meta['builds']['pool'] = build(outdir, 'pool', tc, 'IO_SELFTEST=1')
++            for cpus in (1, 4):
++                text, record = boot(outdir / f'pool-cpus{cpus}.log', cpus)
+                 if ('IO-SELFTEST: PASS (T02/T03/T04/T11, failures=0)' not in text or
+                     'IO-SELFTEST: USER PASS (T03/T04/T05/T06, failures=0)' not in text or
+                     'IO-USER-TEST: PASS (rc=0)' not in text or 'FAIL' in text):
+                     raise RuntimeError('pool mock/timer suite failed')
+-                record.update(mode='pool-mock-timer', status='PASS'); meta['runs'].append(record)
+-                print(f'pool mock/timer cpus={cpus}: PASS',flush=True)
+-            meta['builds']['queue'] = build(outdir, 'queue', 'EXTRA_CFLAGS=-DIOQ_SELFTEST')
+-            spec = importlib.util.spec_from_file_location('fcfs_oracle', ROOT/'tests/cases/ioq_fcfs.py')
+-            oracle = importlib.util.module_from_spec(spec); spec.loader.exec_module(oracle)
+-            for cpus in (1,4):
+-                text, record = boot(outdir/f'queue-cpus{cpus}.log',cpus)
+-                if any(not re.search(p,text,re.M) for p in oracle.CASES[0]['expect']) or 'FAIL' in text:
++                record.update(mode='pool-mock-timer', status='PASS')
++                meta['runs'].append(record)
++                print(f'pool mock/timer cpus={cpus}: PASS', flush=True)
++            meta['builds']['queue'] = build(outdir, 'queue', tc, 'EXTRA_CFLAGS=-DIOQ_SELFTEST')
++            spec = importlib.util.spec_from_file_location('fcfs_oracle', ROOT / 'tests/cases/ioq_fcfs.py')
++            oracle = importlib.util.module_from_spec(spec)
++            spec.loader.exec_module(oracle)
++            for cpus in (1, 4):
++                text, record = boot(outdir / f'queue-cpus{cpus}.log', cpus)
++                if any(not re.search(p, text, re.M) for p in oracle.CASES[0]['expect']) or 'FAIL' in text:
+                     raise RuntimeError('independent queue oracle failed')
+-                record.update(mode='queue-mock', status='PASS'); meta['runs'].append(record)
+-                print(f'queue mock cpus={cpus}: PASS',flush=True)
++                record.update(mode='queue-mock', status='PASS')
++                meta['runs'].append(record)
++                print(f'queue mock cpus={cpus}: PASS', flush=True)
+     except Exception as exc:
+-        error = str(exc); meta['error'] = error
++        error = str(exc)
++        meta['error'] = error
+     finally:
+         try:
+-            meta['builds']['production'] = build(outdir, 'production')
+-            nm = output(['riscv64-unknown-elf-nm','kernel/kernel'])
+-            hooks = re.findall(r'\b(?:virtio_test_\w+|io_hw_selftest|io_hw_set_wait_hook|io_test_timer_tick)\b',nm)
+-            if hooks: raise RuntimeError('test hooks leaked into production: '+str(hooks))
++            meta['builds']['production'] = build(outdir, 'production', tc)
++            nm = output([tc['nm'], 'kernel/kernel'])
++            hooks = re.findall(HOOK_REGEX, nm)
++            if hooks:
++                raise RuntimeError('test hooks leaked into production: ' + str(hooks))
+             meta['production_hooks_absent'] = True
+         except Exception as exc:
+-            error = str(exc); meta['error'] = error
++            error = str(exc)
++            meta['error'] = error
+         meta['finished_at'] = dt.datetime.now().astimezone().isoformat()
+         meta['status'] = 'FAIL' if error else 'PASS'
+-        (outdir/'meta.json').write_text(json.dumps(meta,indent=2,ensure_ascii=False)+'\n')
+-        (outdir/'summary.md').write_text('# Hoàng week 02 verification\n\n' +
+-          f"Status: {meta['status']}\n\n" + '\n'.join(f"- {r['mode']} CPUS={r['cpus']}: {r['status']} ({r['log']})" for r in meta['runs']) +
+-          '\n\nNegative control is intentionally corrupt; mock/timer tests are not hardware evidence.\n' +
+-          (f'\nError: {error}\n' if error else ''))
+-        print(f"{meta['status']}: {outdir}",flush=True)
++        (outdir / 'meta.json').write_text(json.dumps(meta, indent=2, ensure_ascii=False) + '\n')
++        (outdir / 'summary.md').write_text(
++            '# Hoàng week 02/03 verification (unified TOOLPREFIX)\n\n'
++            + f"Status: {meta['status']}\n"
++            + f"HEAD: `{meta['head']}` (`{meta['branch']}`)\n"
++            + f"xv6 pin: `{meta['xv6_pin']}`\n"
++            + f"TOOLPREFIX: `{tc['toolprefix']}` (`{tc['cc_realpath']}`, `{tc['nm_realpath']}`)\n\n"
++            + '\n'.join(f"- {r['mode']} CPUS={r['cpus']}: {r['status']} ({r['log']})" for r in meta['runs'])
++            + '\n\nNegative control is intentionally corrupt; mock/timer tests are not hardware evidence.\n'
++            + (f'\nError: {error}\n' if error else '')
++        )
++        print(f"{meta['status']}: {outdir}", flush=True)
+     return 1 if error else 0
+ 
++
+ if __name__ == '__main__':
+     raise SystemExit(main())
+diff --git a/user/init.c b/user/init.c
+index 780f2de..48e8bde 100644
+--- a/user/init.c
++++ b/user/init.c
+@@ -14,6 +14,10 @@
+ // from process context. Only embedded/called when built with `make test-io`
+ // (-DIO_SELFTEST); production init never references it.
+ int io_selftest(void);
++#elif defined(IO_STRESS_SELFTEST)
++// W3-H02 test-only multi-producer stress entry.
++int io_selftest(int);
++#define IO_STRESS_NWORKERS 4
+ #endif
+ 
+ char *argv[] = {"sh", 0};
+@@ -35,6 +39,32 @@ main(void)
+     int rc = io_selftest();
+     printf("IO-USER-TEST: %s (rc=%d)\n", rc == 0 ? "PASS" : "FAIL", rc);
+   }
++#elif defined(IO_STRESS_SELFTEST)
++  {
++    int rc = io_selftest(-1);
++    int fail = (rc != 0);
++    for (int w = 0; w < IO_STRESS_NWORKERS; w++) {
++      int cpid = fork();
++      if (cpid < 0) {
++        printf("IO-STRESS: fork failed for worker %d\n", w);
++        fail = 1;
++        break;
++      }
++      if (cpid == 0) {
++        int wrc = io_selftest(w);
++        exit(wrc);
++      }
++    }
++    for (int w = 0; w < IO_STRESS_NWORKERS; w++) {
++      int st = -1;
++      int wpid = wait(&st);
++      if (wpid < 0 || st != 0)
++        fail = 1;
++    }
++    if (io_selftest(-2) != 0)
++      fail = 1;
++    printf("IO-USER-TEST: %s (rc=%d)\n", fail == 0 ? "PASS" : "FAIL", fail);
++  }
+ #endif
+ 
+   for (;;) {

@@ -14,6 +14,10 @@
 // from process context. Only embedded/called when built with `make test-io`
 // (-DIO_SELFTEST); production init never references it.
 int io_selftest(void);
+#elif defined(IO_STRESS_SELFTEST)
+// W3-H02 test-only multi-producer stress entry.
+int io_selftest(int);
+#define IO_STRESS_NWORKERS 4
 #endif
 
 char *argv[] = {"sh", 0};
@@ -34,6 +38,32 @@ main(void)
   {
     int rc = io_selftest();
     printf("IO-USER-TEST: %s (rc=%d)\n", rc == 0 ? "PASS" : "FAIL", rc);
+  }
+#elif defined(IO_STRESS_SELFTEST)
+  {
+    int rc = io_selftest(-1);
+    int fail = (rc != 0);
+    for (int w = 0; w < IO_STRESS_NWORKERS; w++) {
+      int cpid = fork();
+      if (cpid < 0) {
+        printf("IO-STRESS: fork failed for worker %d\n", w);
+        fail = 1;
+        break;
+      }
+      if (cpid == 0) {
+        int wrc = io_selftest(w);
+        exit(wrc);
+      }
+    }
+    for (int w = 0; w < IO_STRESS_NWORKERS; w++) {
+      int st = -1;
+      int wpid = wait(&st);
+      if (wpid < 0 || st != 0)
+        fail = 1;
+    }
+    if (io_selftest(-2) != 0)
+      fail = 1;
+    printf("IO-USER-TEST: %s (rc=%d)\n", fail == 0 ? "PASS" : "FAIL", fail);
   }
 #endif
 

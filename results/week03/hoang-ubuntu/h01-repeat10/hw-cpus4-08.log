@@ -1,0 +1,27 @@
+
+xv6 kernel is booting
+
+hart 2 starting
+hart 1 starting
+hart 3 starting
+IO-HWTEST: begin real-virtio fixture=1968 BSIZE=1024 NREQ=16
+IO-HWTEST: T01 single-read PASS
+IO-HWTEST: ARGS validation PASS
+IO-HWTEST: T02 pool-exhaustion PASS
+IO-HWTEST: T03 stale-handle PASS
+IO-HWTEST: T04 release-active PASS
+IO-HWTEST: T05 complete-before-wait PASS
+IO-HWTEST: T06 real-used-gap PASS
+IO-HWTEST: T07 descriptor-pressure-progress PASS
+IO-HWTEST: T08 head-reuse PASS
+IO-HWTEST: T09 reversed-used-mapping PASS
+IO-HWTEST: ERROR injected-status PASS
+IO-HWTEST: T10 submit-returns-pending PASS
+IO-HWTEST: T12 stock-async-coexist PASS
+IO-HWTEST: T13 seq=1,2,3,4,5
+IO-HWTEST: T13 FCFS-real-dispatch PASS
+IO-HWTEST: stats submitted=83 completed=81 errors=2 released=83 max_inflight=2 free_req=16 free_desc=8 eagain_desc=24 stock=34 async=83 head_reuse=42
+IO-HWTEST: T11 accounting-10-cycles PASS
+IO-HWTEST: PASS failures=0
+IO-USER-TEST: PASS (rc=0)
+init: starting sh
