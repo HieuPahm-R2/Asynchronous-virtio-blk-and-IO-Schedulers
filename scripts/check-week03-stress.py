@@ -11,59 +11,35 @@ control, and clean production restore with zero leaked test symbols.
 from __future__ import annotations
 import argparse
 import datetime as dt
-import hashlib
+import importlib.util
 import json
-import os
 from pathlib import Path
 import platform
 import re
-import selectors
-import shutil
-import signal
-import struct
-import subprocess
 import sys
-import tempfile
-import time
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / 'scripts'))
-import importlib.util
-
 _spec = importlib.util.spec_from_file_location('check_w2', ROOT / 'scripts/check-week02-hoang.py')
 check_w2 = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(check_w2)
 
 resolve_toolchain = check_w2.resolve_toolchain
-fixture = check_w2.fixture
+build = check_w2.build
 boot = check_w2.boot
 output = check_w2.output
-sha = check_w2.sha
 HOOK_REGEX = check_w2.HOOK_REGEX
+KERNEL_ELF = check_w2.KERNEL_ELF
+
+WORKER_RE = re.compile(
+    r'IO-STRESS: worker=(\d+) pid=(\d+) submitted=(\d+) completed=(\d+) '
+    r'eagain_pool=(\d+) poll_hits=(\d+) data_err=(\d+) watchdog=(\d+) fail=(\d+) '
+    r'first=(\d+)/(-?\d+)/(\d+)/(\d+) last=(\d+)/(-?\d+)/(\d+)/(\d+) hash=(0x[0-9a-fA-F]+)'
+)
 
 
-def build(outdir: Path, mode: str, tc: dict, flags: list[str] | None = None) -> dict:
-    prefix_arg = f"TOOLPREFIX={tc['toolprefix']}"
-    with (outdir / f'build-{mode}.log').open('w') as log:
-        for cmd in (
-            ['make', prefix_arg, 'clean'],
-            ['make', '-j4', prefix_arg, *(flags or []), 'kernel/kernel', 'fs.img'],
-        ):
-            log.write('$ ' + ' '.join(cmd) + '\n')
-            log.flush()
-            subprocess.run(cmd, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=True)
-    return {'kernel_sha256': sha(ROOT / 'kernel/kernel'), 'fs_sha256': sha(ROOT / 'fs.img')}
-
-
-def check_stress_output(text: str, expected_workers: int = 4, min_reads_per_worker: int = 100):
-    errors = []
-    workers = {}
-    for m in re.finditer(
-        r'IO-STRESS: worker=(\d+) pid=(\d+) submitted=(\d+) completed=(\d+) '
-        r'eagain_pool=(\d+) poll_hits=(\d+) data_err=(\d+) watchdog=(\d+) fail=(\d+) '
-        r'first=(\d+)/(-?\d+)/(\d+)/(\d+) last=(\d+)/(-?\d+)/(\d+)/(\d+) hash=(0x[0-9a-fA-F]+)',
-        text,
-    ):
+def _parse_workers(text: str) -> dict[int, dict]:
+    workers: dict[int, dict] = {}
+    for m in WORKER_RE.finditer(text):
         wid = int(m.group(1))
         workers[wid] = {
             'worker': wid,
@@ -89,49 +65,71 @@ def check_stress_output(text: str, expected_workers: int = 4, min_reads_per_work
             },
             'hash': m.group(18),
         }
+    return workers
 
+
+def _validate_worker_entry(wid: int, winfo: dict, min_reads: int) -> list[str]:
+    errs: list[str] = []
+    if winfo['completed'] < min_reads or winfo['submitted'] != winfo['completed']:
+        errs.append(f"worker {wid} incomplete reads ({winfo['submitted']}/{winfo['completed']})")
+    if winfo['data_err'] != 0 or winfo['watchdog'] != 0 or winfo['fail'] != 0:
+        errs.append(f"worker {wid} error/watchdog/fail")
+    if not (0 <= winfo['first']['id'] < 16 and winfo['first']['gen'] >= 1):
+        errs.append(f"worker {wid} invalid first handle")
+    if not (0 <= winfo['last']['id'] < 16 and winfo['last']['gen'] >= 1):
+        errs.append(f"worker {wid} invalid last handle")
+    return errs
+
+
+def _validate_stats_dict(stats: dict[str, int], expected_workers: int, total_expected: int) -> list[str]:
+    if not stats:
+        return ['missing global IO-STRESS stats line']
+    errs: list[str] = []
+    expected_map = {
+        'workers': expected_workers,
+        'total_reads': total_expected,
+        'free_req': 16,
+        'free_desc': 8,
+        'queued': 0,
+        'inflight': 0,
+        'done': 0,
+        'error': 0,
+        'errors': 0,
+        'data_errors': 0,
+        'max_inflight': 2,
+    }
+    for k, v in expected_map.items():
+        if stats.get(k) != v:
+            errs.append(f'{k}={stats.get(k)} != {v}')
+    if not (
+        stats.get('submitted')
+        == stats.get('completed', -1) + stats.get('errors', -2)
+        == stats.get('released')
+        == stats.get('q_enqueued')
+        == stats.get('q_dispatched')
+    ):
+        errs.append('cumulative accounting mismatch after drain')
+    if stats.get('eagain_pool', 0) <= 0:
+        errs.append('eagain_pool == 0 (pool contention not exercised)')
+    return errs
+
+
+def check_stress_output(text: str, expected_workers: int = 4, min_reads_per_worker: int = 100):
+    errors: list[str] = []
+    workers = _parse_workers(text)
     if len(workers) != expected_workers:
         errors.append(f'expected {expected_workers} workers, saw {len(workers)}')
-    pids = set()
+
+    pids = {winfo['pid'] for winfo in workers.values()}
     for wid, winfo in sorted(workers.items()):
-        pids.add(winfo['pid'])
-        if winfo['completed'] < min_reads_per_worker or winfo['submitted'] != winfo['completed']:
-            errors.append(f"worker {wid} incomplete reads ({winfo['submitted']}/{winfo['completed']})")
-        if winfo['data_err'] != 0 or winfo['watchdog'] != 0 or winfo['fail'] != 0:
-            errors.append(f"worker {wid} error/watchdog/fail")
-        if not (0 <= winfo['first']['id'] < 16 and winfo['first']['gen'] >= 1):
-            errors.append(f"worker {wid} invalid first handle")
-        if not (0 <= winfo['last']['id'] < 16 and winfo['last']['gen'] >= 1):
-            errors.append(f"worker {wid} invalid last handle")
+        errors.extend(_validate_worker_entry(wid, winfo, min_reads_per_worker))
     if len(pids) != len(workers):
         errors.append('worker PIDs are not distinct processes')
 
-    line = re.search(r'IO-STRESS: stats (.*)', text)
-    stats = dict((k, int(v)) for k, v in re.findall(r'(\w+)=(\d+)', line[1])) if line else {}
-    if not stats:
-        errors.append('missing global IO-STRESS stats line')
-    else:
-        total_expected = sum(w['completed'] for w in workers.values())
-        for k, v in {
-            'workers': expected_workers,
-            'total_reads': total_expected,
-            'free_req': 16,
-            'free_desc': 8,
-            'queued': 0,
-            'inflight': 0,
-            'done': 0,
-            'error': 0,
-            'errors': 0,
-            'data_errors': 0,
-            'max_inflight': 2,
-        }.items():
-            if stats.get(k) != v:
-                errors.append(f'{k}={stats.get(k)} != {v}')
-        if not (stats.get('submitted') == stats.get('completed', -1) + stats.get('errors', -2)
-                == stats.get('released') == stats.get('q_enqueued') == stats.get('q_dispatched')):
-            errors.append('cumulative accounting mismatch after drain')
-        if stats.get('eagain_pool', 0) <= 0:
-            errors.append('eagain_pool == 0 (pool contention not exercised)')
+    stats_lines = [ln for ln in text.splitlines() if ln.startswith('IO-STRESS: stats ')]
+    stats = {k: int(v) for k, v in re.findall(r'(\w+)=(-?\d+)', stats_lines[-1])} if stats_lines else {}
+    total_expected = sum(w['completed'] for w in workers.values())
+    errors.extend(_validate_stats_dict(stats, expected_workers, total_expected))
 
     if 'IO-STRESS: PASS failures=0' not in text or 'IO-USER-TEST: PASS (rc=0)' not in text:
         errors.append('missing overall PASS marker')
@@ -139,6 +137,56 @@ def check_stress_output(text: str, expected_workers: int = 4, min_reads_per_work
         errors.append('failure/panic marker present')
 
     return errors, stats, workers
+
+
+def _run_stress_matrix(outdir: Path, tc: dict, args, meta: dict) -> None:
+    stress_flags = ['IO_STRESS_SELFTEST=1', f'EXTRA_CFLAGS=-DIO_STRESS_SEED={hex(args.seed)}U']
+    meta['builds']['stress'] = build(outdir, 'stress', tc, stress_flags)
+    for cpus in (1, 4):
+        for i in range(args.repeat):
+            logpath = outdir / f'stress-cpus{cpus}-{i+1:02}.log'
+            text, record = boot(logpath, cpus, hw=True, negative=False, timeout=args.timeout)
+            errs, stats, workers = check_stress_output(text)
+            record.update(
+                mode='stress-multi-producer',
+                status='FAIL' if errs else 'PASS',
+                errors=errs,
+                stats=stats,
+                workers=workers,
+            )
+            meta['runs'].append(record)
+            print(f"stress-multi-producer cpus={cpus} run={i+1}: {record['status']}", flush=True)
+            if errs:
+                raise RuntimeError('; '.join(errs))
+
+    neg_log = outdir / 'negative-corrupt-fixture.log'
+    text, record = boot(neg_log, 4, hw=True, negative=True, timeout=args.timeout)
+    errs, stats, workers = check_stress_output(text)
+    if not errs or 'IO-STRESS: FAIL 1024-byte fixture pattern' not in text:
+        raise RuntimeError('negative control failed to detect 1-byte corrupted fixture in stress test')
+    record.update(
+        mode='negative-control-1byte',
+        status='EXPECTED_FAIL',
+        errors=errs,
+        stats=stats,
+        workers=workers,
+    )
+    meta['runs'].append(record)
+    print('stress negative-control (1-byte corrupt fixture): EXPECTED_FAIL', flush=True)
+
+
+def _restore_production(outdir: Path, tc: dict, meta: dict) -> None:
+    meta['builds']['production'] = build(outdir, 'production', tc)
+    nm = output([tc['nm'], KERNEL_ELF])
+    hooks = re.findall(HOOK_REGEX, nm)
+    if hooks:
+        raise RuntimeError('test hooks leaked into production: ' + str(hooks))
+    meta['production_hooks_absent'] = True
+    smoke_log = outdir / 'production-smoke.log'
+    _, smoke_rec = boot(smoke_log, 1, hw=False, negative=False, timeout=30)
+    smoke_rec.update(mode='production-restore-smoke', status='PASS')
+    meta['runs'].append(smoke_rec)
+    print('production restore + smoke: PASS', flush=True)
 
 
 def main() -> int:
@@ -185,57 +233,13 @@ def main() -> int:
 
     error = None
     try:
-        stress_flags = ['IO_STRESS_SELFTEST=1', f'EXTRA_CFLAGS=-DIO_STRESS_SEED={hex(args.seed)}U']
-        meta['builds']['stress'] = build(outdir, 'stress', tc, stress_flags)
-        for cpus in (1, 4):
-            for i in range(args.repeat):
-                logpath = outdir / f'stress-cpus{cpus}-{i+1:02}.log'
-                text, record = boot(logpath, cpus, hw=True, negative=False, timeout=args.timeout)
-                errs, stats, workers = check_stress_output(text)
-                record.update(
-                    mode='stress-multi-producer',
-                    status='FAIL' if errs else 'PASS',
-                    errors=errs,
-                    stats=stats,
-                    workers=workers,
-                )
-                meta['runs'].append(record)
-                print(f"stress-multi-producer cpus={cpus} run={i+1}: {record['status']}", flush=True)
-                if errs:
-                    raise RuntimeError('; '.join(errs))
-
-        # Negative control: 1-byte corrupted fixture must be caught by workers
-        neg_log = outdir / 'negative-corrupt-fixture.log'
-        text, record = boot(neg_log, 4, hw=True, negative=True, timeout=args.timeout)
-        errs, stats, workers = check_stress_output(text)
-        if not errs or 'IO-STRESS: FAIL 1024-byte fixture pattern' not in text:
-            raise RuntimeError('negative control failed to detect 1-byte corrupted fixture in stress test')
-        record.update(
-            mode='negative-control-1byte',
-            status='EXPECTED_FAIL',
-            errors=errs,
-            stats=stats,
-            workers=workers,
-        )
-        meta['runs'].append(record)
-        print('stress negative-control (1-byte corrupt fixture): EXPECTED_FAIL', flush=True)
+        _run_stress_matrix(outdir, tc, args, meta)
     except Exception as exc:
         error = str(exc)
         meta['error'] = error
     finally:
         try:
-            meta['builds']['production'] = build(outdir, 'production', tc)
-            nm = output([tc['nm'], 'kernel/kernel'])
-            hooks = re.findall(HOOK_REGEX, nm)
-            if hooks:
-                raise RuntimeError('test hooks leaked into production: ' + str(hooks))
-            meta['production_hooks_absent'] = True
-            # Smoke test restored production build
-            smoke_log = outdir / 'production-smoke.log'
-            _, smoke_rec = boot(smoke_log, 1, hw=False, negative=False, timeout=30)
-            smoke_rec.update(mode='production-restore-smoke', status='PASS')
-            meta['runs'].append(smoke_rec)
-            print('production restore + smoke: PASS', flush=True)
+            _restore_production(outdir, tc, meta)
         except Exception as exc:
             error = str(exc)
             meta['error'] = error

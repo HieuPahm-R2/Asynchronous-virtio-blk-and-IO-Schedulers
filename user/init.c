@@ -18,6 +18,35 @@ int io_selftest(void);
 // W3-H02 test-only multi-producer stress entry.
 int io_selftest(int);
 #define IO_STRESS_NWORKERS 4
+
+static void
+run_io_stress_selftest(void)
+{
+  int rc = io_selftest(-1);
+  int fail = (rc != 0);
+  int spawned = 0;
+
+  for (int w = 0; w < IO_STRESS_NWORKERS; w++) {
+    int cpid = fork();
+    if (cpid < 0) {
+      printf("IO-STRESS: fork failed for worker %d\n", w);
+      fail = 1;
+      break;
+    }
+    if (cpid == 0)
+      exit(io_selftest(w));
+    spawned++;
+  }
+  for (int w = 0; w < spawned; w++) {
+    int st = -1;
+    int child_pid = wait(&st);
+    if (child_pid < 0 || st != 0)
+      fail = 1;
+  }
+  if (io_selftest(-2) != 0)
+    fail = 1;
+  printf("IO-USER-TEST: %s (rc=%d)\n", fail == 0 ? "PASS" : "FAIL", fail);
+}
 #endif
 
 char *argv[] = {"sh", 0};
@@ -40,31 +69,7 @@ main(void)
     printf("IO-USER-TEST: %s (rc=%d)\n", rc == 0 ? "PASS" : "FAIL", rc);
   }
 #elif defined(IO_STRESS_SELFTEST)
-  {
-    int rc = io_selftest(-1);
-    int fail = (rc != 0);
-    for (int w = 0; w < IO_STRESS_NWORKERS; w++) {
-      int cpid = fork();
-      if (cpid < 0) {
-        printf("IO-STRESS: fork failed for worker %d\n", w);
-        fail = 1;
-        break;
-      }
-      if (cpid == 0) {
-        int wrc = io_selftest(w);
-        exit(wrc);
-      }
-    }
-    for (int w = 0; w < IO_STRESS_NWORKERS; w++) {
-      int st = -1;
-      int wpid = wait(&st);
-      if (wpid < 0 || st != 0)
-        fail = 1;
-    }
-    if (io_selftest(-2) != 0)
-      fail = 1;
-    printf("IO-USER-TEST: %s (rc=%d)\n", fail == 0 ? "PASS" : "FAIL", fail);
-  }
+  run_io_stress_selftest();
 #endif
 
   for (;;) {

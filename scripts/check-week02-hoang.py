@@ -27,6 +27,8 @@ import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
+KERNEL_ELF = 'kernel/kernel'
+FS_IMG = 'fs.img'
 CANDIDATE_PREFIXES = (
     'riscv64-unknown-elf-',
     'riscv64-elf-',
@@ -139,15 +141,21 @@ def resolve_toolchain(explicit_prefix: str | None) -> dict:
 
 def build(outdir, mode, tc, flag=None):
     prefix_arg = f"TOOLPREFIX={tc['toolprefix']}"
+    if isinstance(flag, (list, tuple)):
+        extra_args = list(flag)
+    elif flag:
+        extra_args = [flag]
+    else:
+        extra_args = []
     with (outdir / f'build-{mode}.log').open('w') as log:
         for cmd in (
             ['make', prefix_arg, 'clean'],
-            ['make', '-j4', prefix_arg, *([flag] if flag else []), 'kernel/kernel', 'fs.img'],
+            ['make', '-j4', prefix_arg, *extra_args, KERNEL_ELF, FS_IMG],
         ):
             log.write('$ ' + ' '.join(cmd) + '\n')
             log.flush()
             subprocess.run(cmd, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, check=True)
-    return {'kernel_sha256': sha(ROOT / 'kernel/kernel'), 'fs_sha256': sha(ROOT / 'fs.img')}
+    return {'kernel_sha256': sha(ROOT / KERNEL_ELF), 'fs_sha256': sha(ROOT / FS_IMG)}
 
 
 def fixture(image, corrupt=False):
@@ -173,11 +181,11 @@ def fixture(image, corrupt=False):
 
 def boot(logpath, cpus, hw=False, negative=False, timeout=60):
     with tempfile.TemporaryDirectory(prefix='hoang-virtio-') as temp:
-        image = Path(temp) / 'fs.img'
-        shutil.copyfile(ROOT / 'fs.img', image)
+        image = Path(temp) / FS_IMG
+        shutil.copyfile(ROOT / FS_IMG, image)
         info = fixture(image, negative) if hw else None
         cmd = ['qemu-system-riscv64', '-machine', 'virt', '-bios', 'none',
-               '-kernel', 'kernel/kernel', '-m', '128M', '-smp', str(cpus), '-nographic',
+               '-kernel', KERNEL_ELF, '-m', '128M', '-smp', str(cpus), '-nographic',
                '-global', 'virtio-mmio.force-legacy=false',
                '-drive', f'file={image},if=none,format=raw,id=x0',
                '-device', 'virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0']
@@ -231,8 +239,8 @@ def check_hw(text):
         errors.append('overall PASS absent')
     if re.search(r'FAIL|panic:', text):
         errors.append('failure marker')
-    line = re.search(r'IO-HWTEST: stats (.*)', text)
-    stats = dict((k, int(v)) for k, v in re.findall(r'(\w+)=(\d+)', line[1])) if line else {}
+    stats_lines = [ln for ln in text.splitlines() if ln.startswith('IO-HWTEST: stats ')]
+    stats = {k: int(v) for k, v in re.findall(r'(\w+)=(\d+)', stats_lines[-1])} if stats_lines else {}
     for key, value in {'free_req': 16, 'free_desc': 8, 'max_inflight': 2, 'errors': 2}.items():
         if stats.get(key) != value:
             errors.append(f'{key} != {value}')
@@ -341,7 +349,7 @@ def main():
     finally:
         try:
             meta['builds']['production'] = build(outdir, 'production', tc)
-            nm = output([tc['nm'], 'kernel/kernel'])
+            nm = output([tc['nm'], KERNEL_ELF])
             hooks = re.findall(HOOK_REGEX, nm)
             if hooks:
                 raise RuntimeError('test hooks leaked into production: ' + str(hooks))
