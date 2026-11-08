@@ -1,0 +1,11 @@
+--- a/kernel/io_queue.c
++++ b/kernel/io_queue.c
+@@ -150,7 +150,7 @@
+   for (int id = q.head; id != IO_NIL; id = q.by_id[id]->next) {
+     struct io_request *r = q.by_id[id];
+     if (dir == IO_DIR_UP) {
+-      if (r->blockno > q.logical_head && (best == 0 || r->blockno < best->blockno))
++      if (r->blockno > q.logical_head && (best == 0 || r->blockno <= best->blockno) /* MUTANT M2: tie lấy seq lớn */)
+         best = r;
+     } else {
+       if (r->blockno < q.logical_head && (best == 0 || r->blockno > best->blockno))

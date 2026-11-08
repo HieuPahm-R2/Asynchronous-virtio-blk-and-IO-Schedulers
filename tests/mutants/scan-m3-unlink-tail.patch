@@ -1,0 +1,12 @@
+--- a/kernel/io_queue.c
++++ b/kernel/io_queue.c
+@@ -114,8 +114,7 @@
+     q.head = req->next;
+   else
+     q.by_id[prev]->next = req->next;
+-  if (q.tail == req->id)
+-    q.tail = prev;
++  // MUTANT M3: quên cập nhật tail khi gỡ phần tử cuối
+   req->next = IO_NIL;
+   q.by_id[req->id] = 0;
+   q.count--;

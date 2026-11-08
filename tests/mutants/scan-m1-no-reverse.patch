@@ -1,0 +1,11 @@
+--- a/kernel/io_queue.c
++++ b/kernel/io_queue.c
+@@ -247,7 +247,7 @@
+       ev.boundary = q.direction == IO_DIR_UP ? FSSIZE - 1 : 0;
+       trace_add_locked(&ev);
+       q.cnt.boundary_events++;
+-      q.direction = newdir;
++      // MUTANT M1: quên đảo chiều sau biên
+     }
+ 
+     unlink_locked(r);

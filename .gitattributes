@@ -17,6 +17,8 @@ Makefile text eol=lf
 # Ignore trailing whitespace in evidence logs only, not source files.
 results/week01/**/*.log -whitespace
 results/week03/**/*.log -whitespace
-
+# source.patch trong evidence và mutant patch giữ nguyên dòng context trống.
+results/week03/**/*.patch -whitespace
+tests/mutants/*.patch -whitespace
 # SVG do matplotlib sinh ra: path data có trailing space, không phải lỗi whitespace.
 *.svg -whitespace
