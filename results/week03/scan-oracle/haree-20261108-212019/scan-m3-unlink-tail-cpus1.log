@@ -1,0 +1,5 @@
+
+xv6 kernel is booting
+
+scause=0xf sepc=0x80006808 stval=0x20
+panic: 

@@ -1,0 +1,61 @@
+{
+  "started_at": "2026-11-08T21:20:19.283060+07:00",
+  "host": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "head": "b70a4106aed1e68be2a0efb4a873671e21501c55",
+  "branch": "week3/loi-scan",
+  "dirty": "",
+  "versions": {
+    "riscv64-unknown-elf-gcc": "riscv64-unknown-elf-gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "qemu-system-riscv64": "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)"
+  },
+  "runs": [
+    {
+      "mode": "scan-mock",
+      "cpus": 1,
+      "status": "PASS",
+      "errors": [],
+      "log": "scan-cpus1.log"
+    },
+    {
+      "mode": "scan-mock",
+      "cpus": 4,
+      "status": "PASS",
+      "errors": [],
+      "log": "scan-cpus4.log"
+    }
+  ],
+  "mutants": [
+    {
+      "name": "scan-m1-no-reverse",
+      "caught": true,
+      "first_errors": [
+        "scan-up: trace sai\n  expected=['D seq=5 blk=50 hb=40 ha=50 db=1 da=1', 'D seq=1 blk=70 hb=50 ha=70 db=1 da=1', 'D seq=3 blk=90 hb=70 ha=90 db=1 da=1', 'B bnd=1999 hb=90 ha=90 db=1 da=-1', 'D seq=2 blk=20 hb=90 ha=20 db=-1 da=-1', 'D seq=4 blk=10 hb=20 ha=10 db=-1 da=-1']\n  actual  =['D seq=5 blk=50 hb=40 ha=50 db=1 da=1', 'D seq=1 blk=70 hb=50 ha=70 db=1 da=1', 'D seq=3 blk=90 hb=70 ha=90 db=1 da=1', 'B bnd=1999 hb=90 ha=90 db=1 da=-1', 'D seq=2 blk=20 hb=90 ha=20 db=1 da=1', 'B bnd=1999 hb=20 ha=20 db=1 da=-1', 'D seq=4 blk=10 hb=20 ha=10 db=1 da=1']",
+        "scan-up: END n khác 6",
+        "scan-down: trace sai\n  expected=['D seq=2 blk=20 hb=40 ha=20 db=-1 da=-1', 'D seq=4 blk=10 hb=20 ha=10 db=-1 da=-1', 'B bnd=0 hb=10 ha=10 db=-1 da=1', 'D seq=5 blk=50 hb=10 ha=50 db=1 da=1', 'D seq=1 blk=70 hb=50 ha=70 db=1 da=1', 'D seq=3 blk=90 hb=70 ha=90 db=1 da=1']\n  actual  =['D seq=2 blk=20 hb=40 ha=20 db=-1 da=-1', 'D seq=4 blk=10 hb=20 ha=10 db=-1 da=-1', 'B bnd=0 hb=10 ha=10 db=-1 da=1', 'D seq=5 blk=50 hb=10 ha=50 db=-1 da=-1', 'B bnd=0 hb=50 ha=50 db=-1 da=1', 'D seq=1 blk=70 hb=50 ha=70 db=-1 da=-1', 'B bnd=0 hb=70 ha=70 db=-1 da=1', 'D seq=3 blk=90 hb=70 ha=90 db=-1 da=-1']"
+      ],
+      "log": "scan-m1-no-reverse-cpus1.log"
+    },
+    {
+      "name": "scan-m2-tie-latest",
+      "caught": true,
+      "first_errors": [
+        "tie-head: trace sai\n  expected=['D seq=2 blk=40 hb=40 ha=40 db=1 da=1', 'D seq=4 blk=40 hb=40 ha=40 db=1 da=1', 'D seq=1 blk=60 hb=40 ha=60 db=1 da=1', 'D seq=3 blk=60 hb=60 ha=60 db=1 da=1']\n  actual  =['D seq=2 blk=40 hb=40 ha=40 db=1 da=1', 'D seq=4 blk=40 hb=40 ha=40 db=1 da=1', 'D seq=3 blk=60 hb=40 ha=60 db=1 da=1', 'D seq=1 blk=60 hb=60 ha=60 db=1 da=1']"
+      ],
+      "log": "scan-m2-tie-latest-cpus1.log"
+    },
+    {
+      "name": "scan-m3-unlink-tail",
+      "caught": true,
+      "first_errors": [
+        "panic",
+        "thiếu marker IOQSCAN DONE (timeout/không chạy)",
+        "fcfs: thiếu CHK closed-no-commit PASS"
+      ],
+      "log": "scan-m3-unlink-tail-cpus1.log"
+    }
+  ],
+  "production_hooks_absent": true,
+  "finished_at": "2026-11-08T21:20:59.627226+07:00",
+  "status": "PASS",
+  "errors": []
+}

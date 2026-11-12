@@ -1,0 +1,112 @@
+
+xv6 kernel is booting
+
+IOQTEST MOCK T07 two-inflight PASS
+IOQTEST MOCK T07 three-queued PASS
+IOQTEST MOCK T07 eagain-seen PASS
+IOQTEST MOCK T07 eagain-keeps-queued PASS
+IOQTEST MOCK T07 progress-after-complete PASS
+IOQTEST MOCK T11 drain-queue-empty PASS
+IOQTEST MOCK T11 drain-no-inflight PASS
+IOQTEST MOCK T11 counters PASS
+IOQTEST MOCK T07 each-dispatched-once PASS
+IOQTEST MOCK T13 seq=1,2,3,4,5
+IOQTEST MOCK T13 blk=7,2,9,1,4
+IOQTEST MOCK DONE fail=0
+IOQSCAN fcfs CHK closed-no-commit PASS
+IOQSCAN fcfs CHK eagain-no-commit PASS
+IOQSCAN fcfs CHK drain-each-once PASS
+IOQSCAN fcfs CHK state-matches-trace PASS
+IOQSCAN fcfs EV D seq=1 blk=70 hb=40 ha=40 db=1 da=1
+IOQSCAN fcfs EV D seq=2 blk=20 hb=40 ha=40 db=1 da=1
+IOQSCAN fcfs EV D seq=3 blk=90 hb=40 ha=40 db=1 da=1
+IOQSCAN fcfs EV D seq=4 blk=10 hb=40 ha=40 db=1 da=1
+IOQSCAN fcfs EV D seq=5 blk=50 hb=40 ha=40 db=1 da=1
+IOQSCAN fcfs END n=5
+IOQSCAN scan-up CHK closed-no-commit PASS
+IOQSCAN scan-up CHK eagain-no-commit PASS
+IOQSCAN scan-up CHK drain-each-once PASS
+IOQSCAN scan-up CHK state-matches-trace PASS
+IOQSCAN scan-up EV D seq=5 blk=50 hb=40 ha=50 db=1 da=1
+IOQSCAN scan-up EV D seq=1 blk=70 hb=50 ha=70 db=1 da=1
+IOQSCAN scan-up EV D seq=3 blk=90 hb=70 ha=90 db=1 da=1
+IOQSCAN scan-up EV B bnd=1999 hb=90 ha=90 db=1 da=-1
+IOQSCAN scan-up EV D seq=2 blk=20 hb=90 ha=20 db=-1 da=-1
+IOQSCAN scan-up EV D seq=4 blk=10 hb=20 ha=10 db=-1 da=-1
+IOQSCAN scan-up END n=6
+IOQSCAN scan-down CHK closed-no-commit PASS
+IOQSCAN scan-down CHK eagain-no-commit PASS
+IOQSCAN scan-down CHK drain-each-once PASS
+IOQSCAN scan-down CHK state-matches-trace PASS
+IOQSCAN scan-down EV D seq=2 blk=20 hb=40 ha=20 db=-1 da=-1
+IOQSCAN scan-down EV D seq=4 blk=10 hb=20 ha=10 db=-1 da=-1
+IOQSCAN scan-down EV B bnd=0 hb=10 ha=10 db=-1 da=1
+IOQSCAN scan-down EV D seq=5 blk=50 hb=10 ha=50 db=1 da=1
+IOQSCAN scan-down EV D seq=1 blk=70 hb=50 ha=70 db=1 da=1
+IOQSCAN scan-down EV D seq=3 blk=90 hb=70 ha=90 db=1 da=1
+IOQSCAN scan-down END n=6
+IOQSCAN opposite CHK closed-no-commit PASS
+IOQSCAN opposite CHK eagain-no-commit PASS
+IOQSCAN opposite CHK drain-each-once PASS
+IOQSCAN opposite CHK state-matches-trace PASS
+IOQSCAN opposite EV B bnd=1999 hb=40 ha=40 db=1 da=-1
+IOQSCAN opposite EV D seq=2 blk=20 hb=40 ha=20 db=-1 da=-1
+IOQSCAN opposite EV D seq=1 blk=10 hb=20 ha=10 db=-1 da=-1
+IOQSCAN opposite END n=3
+IOQSCAN empty CHK closed-no-commit PASS
+IOQSCAN empty CHK eagain-no-commit PASS
+IOQSCAN empty CHK drain-each-once PASS
+IOQSCAN empty CHK state-matches-trace PASS
+IOQSCAN empty END n=0
+IOQSCAN single CHK closed-no-commit PASS
+IOQSCAN single CHK eagain-no-commit PASS
+IOQSCAN single CHK drain-each-once PASS
+IOQSCAN single CHK state-matches-trace PASS
+IOQSCAN single EV D seq=1 blk=5 hb=0 ha=5 db=1 da=1
+IOQSCAN single END n=1
+IOQSCAN tie-head CHK closed-no-commit PASS
+IOQSCAN tie-head CHK eagain-no-commit PASS
+IOQSCAN tie-head CHK drain-each-once PASS
+IOQSCAN tie-head CHK state-matches-trace PASS
+IOQSCAN tie-head EV D seq=2 blk=40 hb=40 ha=40 db=1 da=1
+IOQSCAN tie-head EV D seq=4 blk=40 hb=40 ha=40 db=1 da=1
+IOQSCAN tie-head EV D seq=1 blk=60 hb=40 ha=60 db=1 da=1
+IOQSCAN tie-head EV D seq=3 blk=60 hb=60 ha=60 db=1 da=1
+IOQSCAN tie-head END n=4
+IOQSCAN eagain CHK closed-no-commit PASS
+IOQSCAN eagain CHK eagain-no-commit PASS
+IOQSCAN eagain CHK drain-each-once PASS
+IOQSCAN eagain CHK state-matches-trace PASS
+IOQSCAN eagain EV D seq=1 blk=50 hb=40 ha=50 db=1 da=1
+IOQSCAN eagain EV D seq=2 blk=70 hb=50 ha=70 db=1 da=1
+IOQSCAN eagain EV B bnd=1999 hb=70 ha=70 db=1 da=-1
+IOQSCAN eagain EV D seq=3 blk=20 hb=70 ha=20 db=-1 da=-1
+IOQSCAN eagain END n=4
+IOQSCAN edge-up CHK closed-no-commit PASS
+IOQSCAN edge-up CHK eagain-no-commit PASS
+IOQSCAN edge-up CHK drain-each-once PASS
+IOQSCAN edge-up CHK state-matches-trace PASS
+IOQSCAN edge-up EV D seq=1 blk=70 hb=40 ha=70 db=1 da=1
+IOQSCAN edge-up EV D seq=3 blk=1999 hb=70 ha=1999 db=1 da=1
+IOQSCAN edge-up EV B bnd=1999 hb=1999 ha=1999 db=1 da=-1
+IOQSCAN edge-up EV D seq=2 blk=20 hb=1999 ha=20 db=-1 da=-1
+IOQSCAN edge-up END n=4
+IOQSCAN edge-down CHK closed-no-commit PASS
+IOQSCAN edge-down CHK eagain-no-commit PASS
+IOQSCAN edge-down CHK drain-each-once PASS
+IOQSCAN edge-down CHK state-matches-trace PASS
+IOQSCAN edge-down EV D seq=2 blk=30 hb=40 ha=30 db=-1 da=-1
+IOQSCAN edge-down EV D seq=1 blk=0 hb=30 ha=0 db=-1 da=-1
+IOQSCAN edge-down EV B bnd=0 hb=0 ha=0 db=-1 da=1
+IOQSCAN edge-down EV D seq=3 blk=50 hb=0 ha=50 db=1 da=1
+IOQSCAN edge-down END n=4
+IOQSCAN unlink CHK head-mid-tail PASS
+IOQSCAN unlink EV D seq=2 blk=2 hb=0 ha=0 db=1 da=1
+IOQSCAN unlink EV D seq=4 blk=1 hb=0 ha=0 db=1 da=1
+IOQSCAN unlink EV D seq=6 blk=3 hb=0 ha=0 db=1 da=1
+IOQSCAN unlink END n=3
+IOQSCAN DONE fail=0
+hart 3 starting
+hart 1 starting
+hart 2 starting
+init: starting sh
