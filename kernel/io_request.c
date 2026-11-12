@@ -1,15 +1,7 @@
-//
-// kernel/io_request.c
 // Finite asynchronous request pool with generation handles
 //
-// Pool/wait implementation by Hiếu, integrated with queue/driver for PTO-19:
-//   - W2-L01 supplies the FCFS queue; io_init() initialises it;
-//   - W2-I02 supplies poll/wait/release; Hoàng wires submit for PTO-19;
-//   - W2-H01/H02 add try-submit, completion and descriptor reclaim.
+// Pool/wait integrated with queue/driver:
 // The pool state is protected by the ONE io_lock domain from the driver
-// (virtio_disk_io_lock(), contract D6). The kernel selftest (make test-io) is
-// built from kernel/io_request_test.c.
-//
 #include "types.h"
 #include "param.h"
 #include "riscv.h"
@@ -52,8 +44,7 @@ static int io_test_slept;
 #endif
 
 // Generation 0 is never valid: start at 1 and skip 0 on wrap. A slot has to be
-// released 2^32-1 times before an old handle could alias again; that is outside
-// the MVP test scope but the wrap is handled explicitly (contract D4).
+// released 2^32-1 times before an old handle could alias again;
 static uint
 io_next_gen(uint gen)
 {
@@ -464,4 +455,3 @@ io_test_timer_tick(void)
   release(lk);
 }
 #endif // IO_SELFTEST
-

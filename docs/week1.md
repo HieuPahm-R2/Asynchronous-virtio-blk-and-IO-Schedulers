@@ -56,25 +56,6 @@ tuần sau. Mỗi người giải thích phần mình khảo sát và chỉ ra b
 - Khung test/benchmark/stress: `docs/testing.md`.
 - Checklist tuần 1 gốc: `docs/plan/02_Checklist_tuan_1.pdf`.
 
-## Đối chiếu bộ bằng chứng với checklist 02
 
-Checklist 02 đề xuất cấu trúc `docs/week01/...` và `results/baseline/...`. Repo
-hiện có **hub tuần 1 + template điền dần** tại [`week01/README.md`](week01/README.md),
-kèm hướng dẫn riêng cho từng người (bắt đầu từ [`week01/hieu.md`](week01/hieu.md)):
-
-| Checklist 02 (đề xuất) | File hiện tại | Trạng thái |
-| --- | --- | --- |
-| `docs/week01/kickoff.md` | [`week01/kickoff.md`](week01/kickoff.md) | 📝 template — họp xong điền |
-| `docs/week01/environment.md` | [`week01/environment.md`](week01/environment.md) | 📝 có dòng máy dev, chờ 3 máy |
-| `docs/week01/io-path.md` | [`week01/io-path.md`](week01/io-path.md) | 📝 Hoàng điền |
-| `docs/week01/decisions.md` | [`week01/decisions.md`](week01/decisions.md) | 📝 Hiếu/Lợi điền |
-| `docs/week01/test-plan.md` | [`week01/test-plan.md`](week01/test-plan.md) | 📝 Hiếu điền (T1-10) |
-| `docs/week01/progress-report.docx` | [`week01/progress-report.md`](week01/progress-report.md) → xuất .docx | 📝 template |
-| `results/baseline/<run-id>/metadata.json` | `results/baseline/2026-10-19_222935/meta.json` | ✅ (khác tên) |
-| `results/baseline/<run-id>/serial.log` | `results/baseline/2026-10-19_222935/logs/<case>.log` | ✅ (tách theo case) |
-| `results/baseline/<run-id>/summary.txt` | `results/baseline/2026-10-19_222935/summary.md` | ✅ (khác định dạng) |
-
-T1-09 (log baseline CPUS=1/4, usertests, grind + protocol timeout/termination):
-đã có trên máy dev — xem [`baseline.md`](baseline.md); máy thứ 2/3 tự chạy.
 
 

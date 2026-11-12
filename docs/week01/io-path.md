@@ -1,16 +1,12 @@
 # Khảo sát virtio và interrupt của Hoàng tuần 1
 
 Người phụ trách: Nguyễn Văn Hoàng, 20233413 (T1-06). Ngày 23/10/2026.
-Project commit `a0cfa2e942fd7cf27040ec404b002e5a25c691d9`.
-Xv6 pin `f780d7850765d74cbdcd1fff4b822d8829f7c9bd`.
-Đã đọc code và chạy smoke trên máy hiện tại, chưa sửa kernel, chưa commit.
-Hiếu chưa review; pin chính thức của GV vẫn PENDING theo hồ sơ.
 
 ## 1. Kết luận và sơ đồ
 
 `virtio_disk_rw` là API đồng bộ với caller: chỉ trả về sau completion và
 thu hồi descriptor. Thiết bị chạy độc lập sau publication/notify; process khác
-có thể vào driver khi caller nhả vdisk_lock để ngủ. Không được kết luận stock
+có thể vào driver khi caller nhả vdisk_lock để ngủ. Không kết luận stock
 chỉ có một request outstanding toàn hệ thống.
 
 `NUM=8`, mỗi request dùng 3 descriptor trực tiếp, nên tối đa 2 chain hoàn chỉnh
@@ -136,28 +132,3 @@ complete là hai tầng riêng; một ngắt có thể xử lý nhiều completi
 OASIS định nghĩa status OK=0, IOERR=1, UNSUPP=2. Không có error injection
 trong lần chạy này. Giới hạn outstanding, hết descriptor, IOERR và lost-wakeup
 được phân tích tĩnh, chưa có test động riêng cho các nhánh này.
-
-## 7. Kết quả và việc cần review
-
-- env-check exit 0; log results/local/hoang-week01-20261023/env-check.log.
-- Build bắt buộc rebuild thành công; checks.json và build.log.
-- 4/4 smoke read/write/reboot, CPUS=1/4 PASS; stock-fast 2/2 PASS.
-- Reboot đọc lại sau sync kiểm tra cùng fs.img; không phải crash/power-loss test.
-- Full usertests/grind, stress 30 phút và max_inflight: NOT RUN trong phiên này.
-- Kernel/user/mkfs/Makefile/mk không đổi. Không lấy baseline máy cũ làm số đo mới.
-- [ ] Hiếu review bản đồ code, lock, descriptor/error path.
-- [ ] Nhóm chốt interface với Lợi/Hiếu và write ordering.
-- [ ] GV xác nhận pin và phạm vi async kernel API hay syscall.
-
-Nguồn: mã nguồn local tại commit nêu trên; Doc/T1/02_Checklist_tuan_1.md,
-04_Backlog_va_phan_cong.md và 03_De_xuat_thiet_ke_26128.md.
-[VIRTIO 1.2 mục 2.7 và 5.2.6](https://docs.oasis-open.org/virtio/virtio/v1.2/virtio-v1.2.html),
-đối chiếu 23/10/2026, dùng cho flags/ring/sector/status; không sao chép giải pháp project.
-
-## 8. Đồng bộ sơ đồ và bằng chứng để review
-
-Bố cục đã cập nhật theo [ProjectTerm - ET4290](https://app.diagrams.net/#G1lpHCZ3cDq0vzGF7y1B910eJgA_-NZf_m); SVG lấy trực tiếp từ draw.io.
-Xem [nguồn và checksum](diagrams/drawio-source.json). Thứ tự 20 bước stock và
-21 bước async không đổi; thay đổi hình thức không chứng minh triển khai async.
-Bằng chứng có thể commit tại [results/week01/hoang-2026-10-23](../../results/week01/hoang-2026-10-23/README.md), sao chép từ results/local, không phải lượt test mới.
-Báo cáo PDF: [hoang-week01-2026-10-23.pdf](reports/hoang-week01-2026-10-23.pdf).

@@ -52,9 +52,6 @@
 | 6 | Trọng số rubric (Functionality/Testing/Measurement) — bảng rubric và spec lệch nhau | Hiếu | PENDING | Không tự suy ra trọng số |
 | 7 | Có cần mở rộng virtqueue/NUM để chứng minh `max_inflight > 2`? | Hoàng | PENDING (mới, tuần 2) | Tuần 2 chỉ đo số thực tế, không hứa speedup |
 
-> Chưa có câu trả lời: giữ `PENDING` + ghi hạn hỏi. Không tự suy đoán. Tổng hợp
-> câu hỏi giữ tại PTO-7 (không tạo card hỏi GV trùng); xem
-> [`docs/week02/interface.md`](../week02/interface.md) §9.1.
 
 ## 5. Trạng thái thật đầu tuần 2 (bằng chứng)
 
