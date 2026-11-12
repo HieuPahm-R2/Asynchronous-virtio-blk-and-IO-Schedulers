@@ -33,7 +33,8 @@ OBJS = \
   $K/io_request_test.o \
   $K/io_queue.o \
   $K/io_queue_test.o \
-  $K/io_hw_test.o
+  $K/io_hw_test.o \
+  $K/io_stress_test.o
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
 #TOOLPREFIX = 
@@ -63,6 +64,7 @@ CC = $(TOOLPREFIX)gcc
 LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
+NM = $(TOOLPREFIX)nm
 
 # Deterministic builds.
 DETFLAGS = -ffile-prefix-map=$(CURDIR)=.
@@ -94,6 +96,9 @@ CFLAGS += -DIO_SELFTEST
 endif
 ifdef IO_HW_SELFTEST
 CFLAGS += -DIO_HW_SELFTEST
+endif
+ifdef IO_STRESS_SELFTEST
+CFLAGS += -DIO_STRESS_SELFTEST
 endif
 
 # Disable PIE when possible (for Ubuntu 16.10 toolchain)

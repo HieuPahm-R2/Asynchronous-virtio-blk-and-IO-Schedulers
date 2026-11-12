@@ -1,0 +1,270 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device" version="24.7.17">
+  <diagram id="hoang-w3-0" name="01 W3-H01 Toolchain va Xac minh Main">
+    <mxGraphModel dx="1500" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="840" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="PTO-21 / W3-H01 | Đồng bộ TOOLPREFIX/NM và xác minh nhánh main sau merge" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=26;fontColor=#18283F;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="45" y="20" width="1400" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="Nguyễn Văn Hoàng (20233413) | Kiểm tra công cụ trước khi tạo thư mục log; hỗ trợ riscv64-unknown-elf- và riscv64-linux-gnu-" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=18;fontColor=#18283F;" vertex="1" parent="1">
+          <mxGeometry x="45" y="62" width="1400" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="1. Phân giải TOOLPREFIX&#10;--toolprefix | env TOOLPREFIX |&#10;make -s print-toolprefix" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E9F0FF;strokeColor=#315EAB;fontColor=#18283F;fontFamily=Arial;fontSize=18;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="135" width="380" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="2. Pre-flight check công cụ&#10;make, qemu-system-riscv64,&#10;${NM}, gcc, objdump, ld + elf64-big" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E9F0FF;strokeColor=#315EAB;fontColor=#18283F;fontFamily=Arial;fontSize=18;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="135" width="420" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="Thiếu binary / sai target:&#10;Báo lỗi stderr + exit(2)&#10;KHÔNG tạo thư mục results/" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FBEAEC;strokeColor=#B84C5B;fontColor=#18283F;fontFamily=Arial;fontSize=18;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="135" width="410" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="NM=$(TOOLPREFIX)nm" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="430" y="190" as="sourcePoint" />
+            <mxPoint x="520" y="190" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="8" value="Nếu thiếu" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#B84C5B;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;dashed=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="940" y="190" as="sourcePoint" />
+            <mxPoint x="1030" y="190" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="9" value="3. Tạo thư mục kết quả&#10;results/week03/hoang-ubuntu/...&#10;Ghi nhận meta.json + versions" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E7F4EF;strokeColor=#26775A;fontColor=#18283F;fontFamily=Arial;fontSize=18;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="310" width="420" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="Đủ công cụ" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="730" y="245" as="sourcePoint" />
+            <mxPoint x="730" y="310" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="11" value="4a. Hardware READ thật&#10;CPUS=1 (10 boots) + CPUS=4 (10 boots)&#10;15 nhóm kịch bản / boot → 20/20 PASS" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E7F4EF;strokeColor=#26775A;fontColor=#18283F;fontFamily=Arial;fontSize=17;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="50" y="490" width="430" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="4b. Đối chứng âm + Mock suites&#10;negative-corrupt-fixture → EXPECTED_FAIL&#10;pool-cpus1/4 + queue-cpus1/4 → 4/4 PASS" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FFF2DE;strokeColor=#BC7A24;fontColor=#18283F;fontFamily=Arial;fontSize=17;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="520" y="490" width="430" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="4c. Khôi phục Production&#10;make clean &amp;&amp; make kernel/kernel fs.img&#10;${TOOLPREFIX}nm kiểm 0 hook symbol" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E9F0FF;strokeColor=#315EAB;fontColor=#18283F;fontFamily=Arial;fontSize=17;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="990" y="490" width="450" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="CFLAGS=-DIO_HW_SELFTEST" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="620" y="415" as="sourcePoint" />
+            <mxPoint x="265" y="490" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="15" value="Negative + Mock" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="730" y="415" as="sourcePoint" />
+            <mxPoint x="730" y="490" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="16" value="Restore + nm check" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="840" y="415" as="sourcePoint" />
+            <mxPoint x="1215" y="490" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="17" value="Kết quả nghiệm thu W3-H01 (h01-repeat10): PASS tuyệt đối&#10;20/20 boots phần cứng thật | 1 EXPECTED_FAIL | 4/4 mock | Production sạch hook | Không còn phụ thuộc ~/bin symlink" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#F1F4F8;strokeColor=#8290A2;fontColor=#18283F;fontFamily=Arial;fontSize=18;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="120" y="680" width="1260" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="18" value="" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="265" y="615" as="sourcePoint" />
+            <mxPoint x="450" y="680" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="19" value="" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="730" y="615" as="sourcePoint" />
+            <mxPoint x="730" y="680" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="20" value="" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1215" y="615" as="sourcePoint" />
+            <mxPoint x="1020" y="680" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="hoang-w3-1" name="02 W3-H02 Stress READ 4 Producer">
+    <mxGraphModel dx="1500" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="840" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="W3-H02 | Kiến trúc Stress READ 4 tiến trình producer thực có kiểm dữ liệu 1024 B" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=26;fontColor=#18283F;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="45" y="20" width="1400" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="Nguyễn Văn Hoàng (20233413) | Cờ biên dịch riêng -DIO_STRESS_SELFTEST; không chạm 4 tệp lõi runtime" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=18;fontColor=#18283F;" vertex="1" parent="1">
+          <mxGeometry x="45" y="62" width="1400" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="user/init.c (PID 1)&#10;io_selftest(-1): Chuẩn bị 8 khối&#10;blockno 700..707 (1024B/khối)" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E9F0FF;strokeColor=#315EAB;fontColor=#18283F;fontFamily=Arial;fontSize=16;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="130" width="315" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="Worker w=0 (fork PID 2)&#10;15 vòng × 8 READ = 120 READs&#10;BSS buf[0][8][1024] (1024B check)" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E7F4EF;strokeColor=#26775A;fontColor=#18283F;fontFamily=Arial;fontSize=15;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="415" y="125" width="355" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="355" y="187" as="sourcePoint" />
+            <mxPoint x="415" y="180" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="7" value="Worker w=1 (fork PID 3)&#10;15 vòng × 8 READ = 120 READs&#10;BSS buf[1][8][1024] (1024B check)" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E7F4EF;strokeColor=#26775A;fontColor=#18283F;fontFamily=Arial;fontSize=15;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="415" y="265" width="355" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="355" y="187" as="sourcePoint" />
+            <mxPoint x="415" y="320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="9" value="Worker w=2 (fork PID 4)&#10;15 vòng × 8 READ = 120 READs&#10;BSS buf[2][8][1024] (1024B check)" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E7F4EF;strokeColor=#26775A;fontColor=#18283F;fontFamily=Arial;fontSize=15;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="415" y="405" width="355" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="355" y="187" as="sourcePoint" />
+            <mxPoint x="415" y="460" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="11" value="Worker w=3 (fork PID 5)&#10;15 vòng × 8 READ = 120 READs&#10;BSS buf[3][8][1024] (1024B check)" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E7F4EF;strokeColor=#26775A;fontColor=#18283F;fontFamily=Arial;fontSize=15;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="415" y="545" width="355" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="355" y="187" as="sourcePoint" />
+            <mxPoint x="415" y="600" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="13" value="Rào chắn đồng bộ vòng&#10;stress_round_barrier&#10;4 worker × 8 = 32 req / đợt" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FFF2DE;strokeColor=#BC7A24;fontColor=#18283F;fontFamily=Arial;fontSize=16;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="830" y="130" width="285" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="Tầng lõi bất đồng bộ&#10;io_req pool (N_IO_REQ=16)&#10;io_queue → virtio_disk (NUM=8)&#10;max_inflight = 2 chains" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E9F0FF;strokeColor=#315EAB;fontColor=#18283F;fontFamily=Arial;fontSize=16;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="830" y="310" width="285" height="155" as="geometry" />
+        </mxCell>
+        <mxCell id="15" value="Áp lực tài nguyên &amp; Thoái lui&#10;eagain_pool: 116..234 lần/boot&#10;eagain_desc: 116 lần (CPUS=4)&#10;head_reuse: 433..451 lần/boot" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FFF2DE;strokeColor=#BC7A24;fontColor=#18283F;fontFamily=Arial;fontSize=15;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="830" y="520" width="285" height="135" as="geometry" />
+        </mxCell>
+        <mxCell id="16" value="" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="770" y="180" as="sourcePoint" />
+            <mxPoint x="830" y="385" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="17" value="" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="770" y="320" as="sourcePoint" />
+            <mxPoint x="830" y="385" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="18" value="" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="770" y="460" as="sourcePoint" />
+            <mxPoint x="830" y="385" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="19" value="" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="770" y="600" as="sourcePoint" />
+            <mxPoint x="830" y="385" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="20" value="Đẩy đồng thời" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=14;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="972" y="255" as="sourcePoint" />
+            <mxPoint x="972" y="310" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="21" value="Rollback IO_EAGAIN" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=14;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="972" y="465" as="sourcePoint" />
+            <mxPoint x="972" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="22" value="QEMU virtio-blk DMA thật&#10;Đọc 8 khối (700..707)&#10;480 DMA READs / lần boot&#10;491,520 B / boot khớp 100%" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E7F4EF;strokeColor=#26775A;fontColor=#18283F;fontFamily=Arial;fontSize=15;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1185" y="200" width="275" height="195" as="geometry" />
+        </mxCell>
+        <mxCell id="23" value="io_selftest(-2) Global Drain&#10;free_req=16, free_desc=8&#10;queued=inflight=done=error=0&#10;submitted=completed=480&#10;released=480" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E9F0FF;strokeColor=#315EAB;fontColor=#18283F;fontFamily=Arial;fontSize=15;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1185" y="455" width="275" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="24" value="" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1115" y="360" as="sourcePoint" />
+            <mxPoint x="1185" y="310" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="25" value="" style="edgeStyle=none;html=0;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#315EAB;fontFamily=Arial;fontSize=16;fontColor=#18283F;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1115" y="565" as="sourcePoint" />
+            <mxPoint x="1185" y="565" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="26" value="Đối chứng âm (negative-corrupt-stress-fixture): Lật 1 byte tại block 703, offset 511 trên bản sao fs.img → Kernel bắt lỗi ngay (EXPECTED_FAIL)" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FBEAEC;strokeColor=#B84C5B;fontColor=#18283F;fontFamily=Arial;fontSize=16;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="45" y="705" width="1415" height="80" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="hoang-w3-2" name="03 PTO-7 Q1 Q7 va Review Tuan 3">
+    <mxGraphModel dx="1500" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="840" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="PTO-7 (Q1, Q7) &amp; Phản biện kỹ thuật W3-G01 / W3-I01 / W3-I02" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=26;fontColor=#18283F;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="45" y="20" width="1400" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="Nguyễn Văn Hoàng (20233413) | Giải thích giới hạn NUM=8 (max_inflight=2) và cơ chế an toàn vùng nhớ DMA khi kill/exit" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=18;fontColor=#18283F;" vertex="1" parent="1">
+          <mxGeometry x="45" y="62" width="1400" height="32" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="PTO-7 / Q1: Commit chuẩn xv6 &amp; Toolchain&#10;• .xv6-commit = f780d7850765d74cbdcd1fff4b822d8829f7c9bd&#10;• Có sẵn sleep_prepare() trong kernel/proc.c&#10;• Harness hỗ trợ tự động unknown-elf &amp; linux-gnu&#10;• Trạng thái: Giữ nguyên trong Tuần 3 (PENDING GVHD)" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E9F0FF;strokeColor=#315EAB;fontColor=#18283F;fontFamily=Arial;fontSize=16;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="125" width="680" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="PTO-7 / Q7: Virtqueue NUM=8 và max_inflight = 2&#10;• Mỗi request cần 3 descriptor: Header(16B) + Data(1024B) + Status(1B)&#10;• Với NUM = 8: floor(8 / 3) = 2 chuỗi INFLIGHT đồng thời (dư 2 desc lẻ)&#10;• Khi 4 producer phát 16 request: 2 INFLIGHT + 14 QUEUED trong io_queue&#10;• Đủ độ sâu hàng đợi để phân biệt rõ FIFO và SCAN (PENDING GVHD)" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E7F4EF;strokeColor=#26775A;fontColor=#18283F;fontFamily=Arial;fontSize=16;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="775" y="125" width="680" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="Minh họa phân bổ 8 descriptor trong kernel/virtio.h (#define NUM 8) khi đầy tải:" style="text;html=0;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=20;fontColor=#18283F;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="45" y="335" width="1400" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="Desc 0&#10;Chain A: Hdr" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E7F4EF;strokeColor=#26775A;fontColor=#18283F;fontFamily=Arial;fontSize=16;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="45" y="380" width="165" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="Desc 1&#10;Chain A: Data" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E7F4EF;strokeColor=#26775A;fontColor=#18283F;fontFamily=Arial;fontSize=16;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="225" y="380" width="165" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="9" value="Desc 2&#10;Chain A: Stat" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E7F4EF;strokeColor=#26775A;fontColor=#18283F;fontFamily=Arial;fontSize=16;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="405" y="380" width="165" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="Desc 3&#10;Chain B: Hdr" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E9F0FF;strokeColor=#315EAB;fontColor=#18283F;fontFamily=Arial;fontSize=16;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="585" y="380" width="165" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="Desc 4&#10;Chain B: Data" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E9F0FF;strokeColor=#315EAB;fontColor=#18283F;fontFamily=Arial;fontSize=16;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="765" y="380" width="165" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="Desc 5&#10;Chain B: Stat" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E9F0FF;strokeColor=#315EAB;fontColor=#18283F;fontFamily=Arial;fontSize=16;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="945" y="380" width="165" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="Desc 6&#10;Dư (Free)" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FFF2DE;strokeColor=#BC7A24;fontColor=#18283F;fontFamily=Arial;fontSize=16;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1125" y="380" width="165" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="Desc 7&#10;Dư (Free)" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FFF2DE;strokeColor=#BC7A24;fontColor=#18283F;fontFamily=Arial;fontSize=16;spacing=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1305" y="380" width="165" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="15" value="Review W3-G01 (interface.md)&#10;• alloc3_desc thiếu → rollback ngay,&#10;  trả IO_EAGAIN (-11)&#10;• io_queue_requeue_front_locked()&#10;  giữ request ở trạng thái QUEUED&#10;• Không cập nhật logical_head hay&#10;  direction trước khi try_submit == 0" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E9F0FF;strokeColor=#315EAB;fontColor=#18283F;fontFamily=Arial;fontSize=15;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="45" y="520" width="460" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="16" value="Review W3-I01 (§10 lifecycle-review.md)&#10;• Cấm io_req_release() khi QUEUED / INFLIGHT&#10;• Vùng đệm staging nằm trong BSS,&#10;  tuyệt đối không đặt trên stack&#10;• Tiến trình bị kill() khi INFLIGHT →&#10;  gắn cờ ORPHAN, chờ IRQ DMA xong mới&#10;  tự thu hồi và tăng released++" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#E7F4EF;strokeColor=#26775A;fontColor=#18283F;fontFamily=Arial;fontSize=15;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="525" y="520" width="460" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="17" value="Review W3-I02 (proposal.md)&#10;• Pipeline 3 tầng: io_req pool →&#10;  io_queue → virtio_disk&#10;• Tách biệt IO_HEAD_SYNC và&#10;  IO_HEAD_ASYNC trên used ring&#10;• Báo cáo trung thực số lần lặp boot vs&#10;  số kịch bản, tách riêng mock và DMA" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#FFF2DE;strokeColor=#BC7A24;fontColor=#18283F;fontFamily=Arial;fontSize=15;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1005" y="520" width="450" height="260" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

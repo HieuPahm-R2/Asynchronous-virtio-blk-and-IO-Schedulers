@@ -1,0 +1,15 @@
+
+xv6 kernel is booting
+
+hart 1 starting
+hart 3 starting
+hart 2 starting
+IO-STRESS: begin workers=4 reads_per_worker=120 window=5 fixture=1968..1999 seed=0x26128003
+IO-STRESS: worker=0 pid=2 submitted=120 completed=120 eagain_pool=46 poll_hits=120 data_err=0 watchdog=0 fail=0 first=0/2/1/1968 last=0/8/47/1986 hash=0x4fccd822
+IO-STRESS: worker=1 pid=3 submitted=120 completed=120 eagain_pool=54 poll_hits=120 data_err=0 watchdog=0 fail=0 first=1/9/1/1968 last=1/9/57/1997 hash=0xf408e123
+IO-STRESS: worker=2 pid=4 submitted=120 completed=120 eagain_pool=84 poll_hits=119 data_err=0 watchdog=0 fail=0 first=2/14/1/1968 last=2/0/46/1974 hash=0xd7d16594
+IO-STRESS: worker=3 pid=5 submitted=120 completed=120 eagain_pool=45 poll_hits=120 data_err=0 watchdog=0 fail=0 first=3/0/1/1968 last=3/9/55/1994 hash=0xf4594f35
+IO-STRESS: stats workers=4 total_reads=480 submitted=480 completed=480 errors=0 released=480 max_inflight=2 free_req=16 free_desc=8 queued=0 inflight=0 done=0 error=0 eagain_pool=229 eagain_desc=113 q_enqueued=480 q_dispatched=480 q_eagain=113 head_reuse=433 data_errors=0
+IO-STRESS: PASS failures=0
+IO-USER-TEST: PASS (rc=0)
+init: starting sh

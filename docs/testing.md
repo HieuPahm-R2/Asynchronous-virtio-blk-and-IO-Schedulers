@@ -133,6 +133,30 @@ CASES = [{
   `scripts/update-xv6.sh` sẽ không xoá file của dự án (chỉ xoá file trong
   `.xv6-files`), nhưng cần tự thêm vào `UPROGS` lại sau khi update.
 
+### Harness kiểm chứng driver/tích hợp và stress nhiều producer (W3-H01, W3-H02)
+
+- **Đồng bộ `TOOLPREFIX` và `NM` (`W3-H01` / `PTO-21`):** `Makefile` khai báo
+  `NM = $(TOOLPREFIX)nm` và `mk/project.mk` cung cấp `make -s print-toolprefix`.
+  Các script `scripts/check-week02-hoang.py` và `scripts/check-week03-stress.py`
+  nhận `--toolprefix` hoặc biến môi trường `TOOLPREFIX` (mặc định tự dò theo
+  `Makefile`, hỗ trợ cả `riscv64-unknown-elf-` và `riscv64-linux-gnu-` mà không
+  cần tạo symlink giả trong `~/bin`), đồng thời kiểm tra đủ `gcc`/`nm`/`objdump`/`ld`/`qemu`
+  trước khi tạo thư mục kết quả.
+- **Chạy bộ kiểm chứng READ thật + mock + hồi quy symbol (`W3-H01`):**
+  - Kiểm nhanh 1 lượt phần cứng: `python3 scripts/check-week02-hoang.py --repeat 1 --hw-only`
+  - Bộ đầy đủ 10 lượt (`CPUS=1` và `CPUS=4`, negative fixture, pool/queue mock,
+    restore production + kiểm symbol bằng `NM`): `make test-week02`
+- **Chạy stress READ nhiều producer (`W3-H02`):**
+  - Lệnh chạy: `make test-week03-stress` (hoặc
+    `python3 scripts/check-week03-stress.py --repeat 2 --seed 0x26128003`).
+  - Cơ chế: build test-only với `IO_STRESS_SELFTEST=1`; `init` fork 4 tiến trình
+    worker độc lập gọi `sys_io_selftest`, mỗi worker thực hiện 120 READ (tổng
+    480 READ/lượt boot) với cửa sổ 5 handle/worker trên 32 block fixture đã
+    kiểm free bitmap, đối chiếu đủ 1024 byte/block, xử lý `IO_EAGAIN` bằng
+    drain/yield hữu hạn có watchdog, kiểm tra đối chứng âm bản sai 1 byte
+    (`EXPECTED_FAIL`), sau đó restore bản production và kiểm tra không rò rỉ
+    symbol test.
+
 ## 8. Definition of Done cho một case test
 
 - [ ] Có assertion thực chất (không chỉ "không panic") và oracle độc lập nếu

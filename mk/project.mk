@@ -10,7 +10,7 @@ BASELINE_ARGS ?=
 DEMO_ARGS ?=
 IO_TEST_TIMEOUT ?= 30
 
-.PHONY: help env-check list-tests demo test test-fast test-slow baseline clean-all check-text check-mermaid test-io
+.PHONY: help env-check list-tests demo test test-fast test-slow baseline clean-all check-text check-mermaid test-io print-toolprefix test-week02 test-week03-stress
 
 help:
 	@echo "ET4290 — Async virtio-blk & I/O schedulers trên xv6-riscv"
@@ -82,6 +82,12 @@ clean-all: clean
 	rm -rf results/local
 
 # Hoàng: real virtio READ + independent pool/queue suites, then production build.
-.PHONY: test-week02
+print-toolprefix:
+	@echo "$(TOOLPREFIX)"
+
+.PHONY: test-week02 test-week03-stress
 test-week02:
-	python3 scripts/check-week02-hoang.py $(WEEK02_ARGS)
+	$(PYTHON) scripts/check-week02-hoang.py $(WEEK02_ARGS)
+
+test-week03-stress:
+	$(PYTHON) scripts/check-week03-stress.py $(STRESS_ARGS)

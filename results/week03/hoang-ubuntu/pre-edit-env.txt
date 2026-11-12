@@ -1,0 +1,11 @@
+timestamp=2026-11-08T18:57:21+07:00
+head=10de5a06842e329197f31d882b602dcc2c5300c2
+branch=week3/hoang-toolchain-stress
+xv6_pin=f780d7850765d74cbdcd1fff4b822d8829f7c9bd 2026-10-15 build with -fno-delete-null-pointer-checks
+status=?? results/week03/hoang-ubuntu/
+uname=Linux nguyen-van-hoang-20233413 7.2.6 #2 SMP PREEMPT_DYNAMIC Sun Sep 20 14:20:23 +07 2026 x86_64 x86_64 x86_64 GNU/Linux
+gcc=riscv64-unknown-elf-gcc (13.2.0-11ubuntu1+12) 13.2.0
+nm=GNU nm (2.42-1ubuntu1+6) 2.42
+qemu=QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)
+make=GNU Make 4.3
+python=Python 3.12.3
