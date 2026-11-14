@@ -1,4 +1,4 @@
-// kernel/io_queue_test.h: hook CHỈ dùng cho self-test MOCK của queue (W2-L02, W3-L02).
+// kernel/io_queue_test.h: hook CHỈ dùng cho self-test MOCK của queue (W2-L02, W3-L02, W4-L01/L02).
 // Không thuộc contract public; không dùng trong code thật.
 #ifndef _IO_QUEUE_TEST_H_
 #define _IO_QUEUE_TEST_H_
@@ -12,6 +12,9 @@ struct ioq_counters {
   uint eagain;     // số lần dispatch dừng vì driver báo IO_EAGAIN
   uint boundary_events; // W3-L01: số sự kiện biên logic đã commit (D20)
   uint trace_overflow;  // W3-L01: số sự kiện không ghi được vì trace đầy (D18)
+  uint policy_switches; // W4-L02: số lần đổi policy đã commit (no-op/invalid không tính)
+  uint dl_expired;      // W4-L01: số dispatch deadline vì request đã quá hạn
+  uint dl_fifo;         // W4-L01: số dispatch deadline vì chạm giới hạn batch
 };
 
 void io_queue_get_counters_locked(struct ioq_counters *out);
@@ -21,6 +24,8 @@ int  io_queue_trace_locked(uint *out, int max); // enqueue_seq theo thứ tự d
 void io_queue_set_submit_for_test(int (*fn)(struct io_request *));
 // W3-L02: đặt head/direction ban đầu cho fixture SCAN (chỉ khi queue chưa dùng).
 void io_queue_set_scan_start_for_test(uint head, int dir);
+// W4-L01: đồng hồ giả cho fixture deadline (0 = dùng ticks thật).
+void io_queue_set_clock_for_test(uint (*fn)(void));
 void ioq_selftest(void);
 #endif
 

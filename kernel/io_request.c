@@ -218,6 +218,21 @@ aio_release(struct io_handle h)
   return rc;
 }
 
+// W4-L02 (D22): runtime policy switch for kernel control code (no syscall yet).
+// Takes io_lock itself, so it serialises with submit, dispatch and the IRQ
+// completion path on every CPU. Process context; never call with io_lock held.
+int
+io_set_policy(enum io_policy policy)
+{
+  struct spinlock *lk = virtio_disk_io_lock();
+  int rc;
+
+  acquire(lk);
+  rc = io_queue_set_policy_locked(policy);
+  release(lk);
+  return rc;
+}
+
 // Snapshot of the request-layer counters for tests T02/T11. queued/inflight/
 // free_req are derived from the slot states so accounting cannot drift.
 void

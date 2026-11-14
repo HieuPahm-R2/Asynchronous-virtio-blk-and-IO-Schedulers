@@ -163,12 +163,14 @@ struct io_desc_stats {
 // that W3-L01 implements in kernel/io_queue.c. They are a contract only: the
 // queue/dispatcher in this revision still runs FCFS. Production default stays
 // FCFS; SCAN may only be selected in a test build before the first enqueue
-// (D19). Do not add a runtime policy switch here before the week-4 contract.
+// (D19). Week 4 (W4-L01/L02) adds DEADLINE and the runtime switch (D21/D22).
 // ---------------------------------------------------------------------------
 enum io_policy {
   IO_POLICY_FCFS = 0,
   IO_POLICY_SCAN = 1,
+  IO_POLICY_DEADLINE = 2, // W4-L01: age threshold + bounded position batch (D21)
 };
+#define IO_NPOLICY 3
 
 // Logical seek direction. +1 = increasing blockno, -1 = decreasing blockno.
 enum io_dir {
@@ -183,7 +185,22 @@ enum io_dir {
 enum ioq_event_kind {
   IOQ_EV_DISPATCH = 1, // one request committed to the driver
   IOQ_EV_BOUNDARY = 2, // logical boundary hit; direction flips after commit
+  IOQ_EV_SWITCH = 3,   // W4-L02: committed runtime policy switch (D22)
 };
+
+// W4-L01: why the deadline policy picked a request (D21). Other policies use
+// IOQ_RSN_NONE. Recorded only for committed DISPATCH events.
+enum ioq_reason {
+  IOQ_RSN_NONE = 0,
+  IOQ_RSN_EXPIRED = 1,  // oldest expired request (earliest expiry, tie seq)
+  IOQ_RSN_POSITION = 2, // lowest blockno (tie seq), inside the batch limit
+  IOQ_RSN_FIFO = 3,     // batch limit reached: oldest QUEUED request (FIFO)
+};
+
+// W4-L01 proposed D21 values (review in W4-G01 before freezing). Unit: xv6
+// timer ticks; an age threshold, not a real-time completion guarantee.
+#define IOQ_DL_READ_EXPIRE 50
+#define IOQ_DL_BATCH 4
 
 struct ioq_trace_ev {
   enum ioq_event_kind kind;
@@ -195,6 +212,11 @@ struct ioq_trace_ev {
   enum io_dir dir_before;
   enum io_dir dir_after;
   uint boundary; // 0 or FSSIZE-1 for BOUNDARY; 0 otherwise
+  // W4 (appended, layout above unchanged):
+  enum ioq_reason reason;  // DISPATCH under DEADLINE; IOQ_RSN_NONE otherwise
+  uint batch_after;        // deadline batch_count after the event
+  enum io_policy old_policy; // SWITCH: policy before; otherwise = policy
+  uint epoch;              // policy epoch after the event (SWITCH bumps it)
 };
 
 // Observable SCAN state for review/tests (snapshot under io_lock, D18/D20).
@@ -203,6 +225,16 @@ struct ioq_scan_state {
   uint logical_head; // committed head, 0..FSSIZE-1
   enum io_dir direction;
   uint boundary_events; // cumulative committed boundary events
+};
+
+// W4-L01/L02: observable deadline/switch state (snapshot under io_lock).
+struct ioq_policy_state {
+  enum io_policy policy;
+  uint epoch;          // 0 at boot; +1 per committed (non no-op) switch
+  uint switches;       // cumulative committed switches (== epoch in the MVP)
+  uint batch_count;    // consecutive POSITION picks under DEADLINE
+  uint last_block;     // blockno of the last successful dispatch, any policy
+  int has_last;        // 0 until the first successful dispatch
 };
 
 // ---------------------------------------------------------------------------
@@ -332,10 +364,27 @@ void io_queue_get_scan_state_locked(struct ioq_scan_state *out);
 // Returns the number of events copied (<= max); context: io_lock held.
 int io_queue_trace_snapshot_locked(struct ioq_trace_ev *out, int max);
 
+// W4-L02 (D22): runtime policy switch while requests are QUEUED and INFLIGHT.
+// Validates the enum before any mutation (IO_EINVAL, nothing changes); the
+// same policy is a no-op (returns 0, no epoch/counter/event). Otherwise commits
+// policy, epoch+1, switches+1 and one SWITCH event under io_lock. It never
+// touches the queue (no re-enqueue, id/gen/seq/t_enqueue unchanged) nor any
+// INFLIGHT request. Entering SCAN: head = last successful dispatch block (or 0),
+// direction = UP. Entering DEADLINE: batch_count = 0. Does not dispatch: the
+// next pick (submit/completion) uses the new policy. Context: io_lock held.
+int io_queue_set_policy_locked(enum io_policy policy);
+
+// Snapshot of deadline/switch state. Context: io_lock held.
+void io_queue_get_policy_state_locked(struct ioq_policy_state *out);
+
+// Process-context wrapper: takes io_lock itself. Kernel control only in week 4
+// (no user syscall yet). Production boots FCFS; nothing calls this by default.
+int io_set_policy(enum io_policy policy);
+
 #if defined(IOQ_SELFTEST) || defined(IO_HW_SELFTEST)
 // TEST-ONLY: select the policy before the first request is enqueued (queue
-// must be empty; panics in test builds otherwise). A production kernel has no
-// policy switch: it always runs FCFS (W3-G01 D19).
+// must be empty; panics in test builds otherwise). Boot/test config only (D19);
+// use io_queue_set_policy_locked()/io_set_policy() to switch under load (D22).
 void io_queue_set_policy(enum io_policy policy);
 #endif
 
