@@ -1,0 +1,11 @@
+--- a/kernel/io_queue.c
++++ b/kernel/io_queue.c
+@@ -315,6 +315,8 @@
+ 
+     int rc = submit_fn(r);
+     if (rc == IO_EAGAIN) {
++      if (rsn == IOQ_RSN_POSITION)
++        q.batch_count++; // MUTANT: commit batch dù driver từ chối
+       q.cnt.eagain++;
+       return;
+     }

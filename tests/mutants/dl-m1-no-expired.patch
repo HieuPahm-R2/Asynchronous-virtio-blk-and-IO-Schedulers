@@ -1,0 +1,11 @@
+--- a/kernel/io_queue.c
++++ b/kernel/io_queue.c
+@@ -255,7 +255,7 @@
+     if (best == 0 || (int)(r->t_enqueue - best->t_enqueue) < 0)
+       best = r;
+   }
+-  if (best) {
++  if (0 && best) { // MUTANT: bỏ ưu tiên expired
+     *rsn = IOQ_RSN_EXPIRED;
+     return best;
+   }
