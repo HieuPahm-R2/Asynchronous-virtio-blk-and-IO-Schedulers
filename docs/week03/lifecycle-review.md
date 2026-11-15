@@ -275,15 +275,20 @@ kexit(status):
 
 ### 5.8 Bất biến kế toán sau khi thêm orphan/cancel
 
-Giữ nguyên D10 tuần 2, bổ sung:
+Giữ nguyên D10 tuần 2, bổ sung (đã đính chính counter/gauge ngày 2026-11-15 — W4-G01):
 
 - `submitted = queued + inflight + done + error` (cancel từ `QUEUED` chuyển sang
   `ERROR` nên vẫn nằm trong `error` cho tới khi release/cleanup);
+  > **Đính chính:** vế trái là counter **tích luỹ**, vế phải là gauge hiện tại. Công
+  > thức đúng: `S = Q + I + C + E` với `C/E` là **cumulative** `completed/errors`
+  > (xem `docs/week04/interface.md` D23). Câu gốc giữ lại để đối chiếu lịch sử.
 - `completed + errors = released + done + error`: **mọi** đường auto-free
   (orphan trong IRQ, cleanup `kexit`, `aio_abandon`) **phải** `released++` trước khi
-  `gen++/FREE`, nếu không bất biến sai;
-- `free_req = 16 - (queued + inflight + done + error)`;
-- sau drain/owner exit: `free_req = 16`, `free_desc = 8`, `Q=I=D=X=0`;
+  `gen++/FREE`, nếu không bất biến sai; đúng dạng `C + E = R + D + X`;
+- `free_req = 16 - (queued + inflight + done + error)`; viết đúng dạng:
+  `16 = F + Q + I + D + X`;
+- sau drain/owner exit: `free_req = 16`, `free_desc = 8`, `S = C + E = R`,
+  `Q=I=D=X=0`;
 - counter mới: `canceled`, `orphan_reclaimed`, `eintr`, `owner_denied` (tích lũy).
 
 ---

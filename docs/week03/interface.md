@@ -220,6 +220,14 @@ Với queue `QUEUED` khác rỗng và policy `SCAN`, dưới `io_lock`:
 - **Bất biến tuần 2 vẫn giữ (D10):** `submitted = queued + inflight + done + error`;
   `completed + errors = released + done + error`; `free_req = 16 - (queued+inflight+done+error)`;
   sau drain: `free_req = 16`, `free_desc = 8`, `queued = inflight = done = error = 0`.
+  > **Đính chính 2026-11-15 (W4-G01, Hiếu):** công thức gốc ở trên **trộn counter
+  > tích luỹ với gauge hiện tại** (`submitted`, `completed`, `errors` là tích luỹ;
+  > `queued/inflight/done/error` là gauge nên không thể bằng nhau). Công thức đúng
+  > dùng ở tuần 4 (`docs/week04/interface.md` D23):
+  > `S = Q + I + C + E`, `C + E = R + D + X`, `16 = F + Q + I + D + X`,
+  > với `S/C/E/R = submitted/completed/errors/released` tích luỹ và
+  > `Q/I/D/X/F = queued/inflight/done/error/free_req` hiện tại. Giữ nguyên câu chữ
+  > lịch sử kèm ghi chú này để không xoá dấu vết.
 - **Kế toán kiểu test:** test unit tự đặt state không áp dụng công thức cumulative
   của luồng API thật; chỉ so **drain cuối** sau khi mọi worker kết thúc.
 - **Không dùng** `max_inflight = 2` để khẳng định DMA song song; đó là số chain đã

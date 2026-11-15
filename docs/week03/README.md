@@ -11,7 +11,7 @@ base `origin/main` `49557bf671edb5ee4ccf6a2c3c452d32fd1f411e` (2026-11-04).
 | [`interface.md`](interface.md) | **W3-G01** (PTO-20) | Contract SCAN (D11–D20), phạm vi tuần 3, trace/oracle, câu hỏi GV, review | ✅ Đã soạn, review **PENDING** |
 | [`lifecycle-review.md`](lifecycle-review.md) | **W3-I01** | Rà vòng đời request; bảng kill/exit; thiết kế owner/orphan/cancel; test cần viết | ✅ Thiết kế, review **PENDING**, code **chưa** |
 | [`proposal.md`](proposal.md) · [`proposal.pdf`](proposal.pdf) | **W3-I02** | Proposal kỹ thuật 2–3 trang: kiến trúc, FCFS/SCAN, bằng chứng, test, rủi ro, lộ trình | ✅ Bản nháp v1.0, review **PENDING** |
-| [`report-hieu.md`](report-hieu.md) · [`report-hieu.pdf`](report-hieu.pdf) | Báo cáo | Báo cáo nhiệm vụ hoàn thành của Hiếu (G01/I01/I02) | ✅ Snapshot 2026-11-07 |
+| [`report-hieu.md`](report-hieu.md) | Báo cáo | Báo cáo nhiệm vụ hoàn thành của Hiếu (G01/I01/I02) | ✅ Snapshot 2026-11-07 |
 | [`diagrams/`](diagrams/) | W3-I02 | Nguồn + SVG pipeline/SCAN | ✅ |
 | `results/week03/hieu-contract-lifecycle-2026-11-07/` | — | Log base build/test-fast/check-text/link-check | ✅ |
 
@@ -25,6 +25,11 @@ base `origin/main` `49557bf671edb5ee4ccf6a2c3c452d32fd1f411e` (2026-11-04).
 - Snapshot tài liệu: 2026-11-07 (kế hoạch tuần 3 lập 07/11, hạn chốt 08/11).
 
 ## 3. Sinh lại PDF
+
+> **Ghi chú 2026-11-15 (W4-G01):** file `report-hieu.pdf` đã bị xoá khỏi repo ở
+> commit `8d298c9`; bản Markdown [`report-hieu.md`](report-hieu.md) là nguồn sự thật
+> và không còn liên kết tới PDF đã xoá. `proposal.pdf` vẫn còn và tái sinh được bằng
+> lệnh dưới đây.
 
 PDF được sinh từ Markdown bằng `pandoc` + Chrome headless (không sửa tay PDF):
 
