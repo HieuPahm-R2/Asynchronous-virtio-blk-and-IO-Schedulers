@@ -13,6 +13,7 @@
 #include "defs.h"
 #include "spinlock.h"
 #include "fs.h"
+#include "virtio.h" // W4-I01: NUM cho kiểm bất biến descriptor trong snapshot
 #include "io_request.h"
 #include "io_queue_test.h"
 
@@ -76,6 +77,7 @@ check(char *test, char *name, int ok)
 
 static void ioq_scan_selftest(void);
 static void ioq_dl_selftest(void);
+static void ioq_i01_selftest(void);
 
 void
 ioq_selftest(void)
@@ -370,6 +372,7 @@ ioq_scan_selftest(void)
     run_scan_case(&scan_cases[i]);
   run_unlink_case();
   ioq_dl_selftest();
+  ioq_i01_selftest(); // W4-I01: fixture độc lập + snapshot/accounting
 
   // Trả queue về trạng thái production (FCFS, head 0) cho code thật.
   acquire(&test_lock);
@@ -474,11 +477,11 @@ struct sw_rec {
 };
 
 static void
-dcheck(char *c, char *name, int ok)
+dcheck(const char *tag, const char *c, const char *name, int ok, int *fails)
 {
-  printk("IOQDL %s CHK %s %s\n", c, name, ok ? "PASS" : "FAIL");
+  printk("%s %s CHK %s %s\n", tag, c, name, ok ? "PASS" : "FAIL");
   if (!ok)
-    dl_fails++;
+    (*fails)++;
 }
 
 // Trạng thái đã commit phải khớp đúng việc phát lại trace từ trạng thái đầu.
@@ -518,41 +521,91 @@ dl_commit_consistent(int policy0)
 }
 
 static void
-print_dl_trace(char *name, int n)
+print_dl_trace(const char *tag, char *name, int n)
 {
   for (int k = 0; k < n; k++) {
     struct ioq_trace_ev *e = &evs[k];
     if (e->kind == IOQ_EV_DISPATCH)
-      printk("IOQDL %s EV D pol=%d rsn=%d seq=%d blk=%d hb=%d ha=%d db=%d da=%d bat=%d ep=%d\n",
-             name, e->policy, e->reason, e->seq, e->blockno, e->head_before, e->head_after,
-             e->dir_before, e->dir_after, e->batch_after, e->epoch);
+      printk("%s %s EV D pol=%d rsn=%d seq=%d blk=%d hb=%d ha=%d db=%d da=%d bat=%d ep=%d\n",
+             tag, name, e->policy, e->reason, e->seq, e->blockno, e->head_before,
+             e->head_after, e->dir_before, e->dir_after, e->batch_after, e->epoch);
     else if (e->kind == IOQ_EV_BOUNDARY)
-      printk("IOQDL %s EV B bnd=%d hb=%d ha=%d db=%d da=%d ep=%d\n", name, e->boundary,
+      printk("%s %s EV B bnd=%d hb=%d ha=%d db=%d da=%d ep=%d\n", tag, name, e->boundary,
              e->head_before, e->head_after, e->dir_before, e->dir_after, e->epoch);
     else
-      printk("IOQDL %s EV S old=%d new=%d hb=%d ha=%d da=%d bat=%d ep=%d\n", name,
+      printk("%s %s EV S old=%d new=%d hb=%d ha=%d da=%d bat=%d ep=%d\n", tag, name,
              e->old_policy, e->policy, e->head_before, e->head_after, e->dir_after,
              e->batch_after, e->epoch);
   }
-  printk("IOQDL %s END n=%d\n", name, n);
+  printk("%s %s END n=%d\n", tag, name, n);
+}
+
+// ---------------------------------------------------------------------------
+// W4-I01: snapshot/accounting checks. The kernel checks the invariants that hold
+// for every snapshot and that the unified snapshot agrees with the direct
+// _locked getters (same lock domain); the independent Python oracle checks the
+// counters against its own expected event list (D23).
+// ---------------------------------------------------------------------------
+static int
+snapshot_invariants(const struct io_snapshot *s)
+{
+  int ok = 1;
+
+  if (s->submitted != s->queued + s->inflight + s->completed + s->errors)
+    ok = 0;
+  if (s->completed + s->errors != s->released + s->done + s->error)
+    ok = 0;
+  if (IO_NREQ != s->free_req + s->queued + s->inflight + s->done + s->error)
+    ok = 0;
+  if (s->policy_switches != s->epoch) // MVP: một switch = một epoch
+    ok = 0;
+  if (s->desc.free_desc > NUM)
+    ok = 0;
+  if (s->latency.samples == 0 &&
+      (s->latency.wait_sum || s->latency.service_sum || s->latency.total_sum))
+    ok = 0;
+  return ok;
 }
 
 static void
-run_dl_case(struct dl_case *dc)
+print_snapshot(const char *tag, char *name, const struct io_snapshot *s)
+{
+  printk("%s %s SNAP ticks=%d S=%d C=%d E=%d R=%d Q=%d I=%d D=%d X=%d F=%d "
+         "eq=%d dlx=%d dlf=%d sw=%d ep=%d batch=%d last=%d haslast=%d bnd=%d ovf=%d "
+         "fdesc=%d lat_samples=%d wait_sum=%d wait_max=%d service_sum=%d "
+         "service_max=%d total_sum=%d total_max=%d zero_total=%d\n",
+         tag, name, s->ticks_now, s->submitted, s->completed, s->errors, s->released,
+         s->queued, s->inflight, s->done, s->error, s->free_req, s->eagain,
+         s->dl_expired, s->dl_fifo, s->policy_switches, s->epoch, s->batch_count,
+         s->last_block, s->has_last, s->boundary_events, s->trace_overflow,
+         s->desc.free_desc, s->latency.samples, s->latency.wait_sum,
+         s->latency.wait_max, s->latency.service_sum, s->latency.service_max,
+         s->latency.total_sum, s->latency.total_max, s->latency.zero_total);
+}
+
+// Chạy một kịch bản fixture (ADD/TICK/CAP/DONE/SW/DRAIN) trên driver giả và
+// đồng hồ giả. W4-L01/L02 dùng tag IOQDL; W4-I01 dùng tag IOQI01 và in thêm
+// dòng SNAP. Kernel chỉ kiểm bất biến + in trace; thứ tự đúng do oracle Python
+// độc lập tính từ contract (D18/D21/D22).
+static void
+run_scenario(const char *tag, char *name, int policy0, uint clock0,
+             const struct dl_op *ops, int want_snap, int *fails)
 {
   static uint t0[NMAX], seq0[NMAX], gen0[NMAX];
   struct sw_rec sw[DL_NSW];
   struct ioq_counters c;
+  struct io_snapshot snap;
   int nreq = 0, nsw = 0, n, ok_commit = 1, ok_age = 1, ok_drain, overflow = 0;
+  int have_snap = 0, ok_snap = 1;
 
   acquire(&test_lock);
-  fake_now = dc->clock0;
+  fake_now = clock0;
   io_queue_set_clock_for_test(fake_clock);
-  reset_case(dc->policy, 0, IO_DIR_UP);
+  reset_case(policy0, 0, IO_DIR_UP);
   mock_cap = MOCK_SLOTS;
 
-  for (int k = 0; k < DL_NOPS && dc->ops[k].op != OP_END; k++) {
-    struct dl_op *op = &dc->ops[k];
+  for (int k = 0; k < DL_NOPS && ops[k].op != OP_END; k++) {
+    const struct dl_op *op = &ops[k];
     switch (op->op) {
     case OP_ADD:
       if (nreq >= NMAX)
@@ -593,7 +646,7 @@ run_dl_case(struct dl_case *dc)
         mock_complete(mock_slot[1] ? 1 : 0);
       break;
     }
-    if (!dl_commit_consistent(dc->policy))
+    if (!dl_commit_consistent(policy0))
       ok_commit = 0;
   }
 
@@ -607,27 +660,124 @@ run_dl_case(struct dl_case *dc)
       ok_age = 0;
   }
   overflow = c.trace_overflow;
+  if (want_snap) {
+    // Cùng lock domain: io_get_snapshot() tự lấy io_lock; đang giữ test_lock
+    // (thứ tự test_lock -> io_lock; không nhánh io_lock nào lấy test_lock).
+    struct ioq_counters c2;
+    struct ioq_policy_state ps2;
+
+    io_get_snapshot(&snap);
+    io_queue_get_counters_locked(&c2);
+    io_queue_get_policy_state_locked(&ps2);
+    have_snap = 1;
+    if (!snapshot_invariants(&snap))
+      ok_snap = 0;
+    // Snapshot phải khớp getter trực tiếp trong cùng lock domain.
+    if (snap.policy_switches != c2.policy_switches || snap.dl_expired != c2.dl_expired ||
+        snap.dl_fifo != c2.dl_fifo || snap.trace_overflow != c2.trace_overflow ||
+        snap.epoch != ps2.epoch || snap.batch_count != ps2.batch_count)
+      ok_snap = 0;
+  }
   n = io_queue_trace_snapshot_locked(evs, IOQ_TRACE_N);
   io_queue_set_clock_for_test(0);
   io_queue_set_submit_for_test(0);
   release(&test_lock);
 
-  dcheck(dc->name, "commit-matches-trace", ok_commit);
-  dcheck(dc->name, "drain-each-once", ok_drain);
-  dcheck(dc->name, "age-seq-gen-kept", ok_age);
-  dcheck(dc->name, "no-trace-overflow", overflow == 0);
+  dcheck(tag, name, "commit-matches-trace", ok_commit, fails);
+  dcheck(tag, name, "drain-each-once", ok_drain, fails);
+  dcheck(tag, name, "age-seq-gen-kept", ok_age, fails);
+  dcheck(tag, name, "no-trace-overflow", overflow == 0, fails);
+  if (want_snap)
+    dcheck(tag, name, "snapshot-invariants", ok_snap, fails);
   for (int k = 0; k < nsw; k++)
-    printk("IOQDL %s SW pol=%d rc=%d q=%d i=%d ep=%d\n", dc->name, sw[k].policy, sw[k].rc,
+    printk("%s %s SW pol=%d rc=%d q=%d i=%d ep=%d\n", tag, name, sw[k].policy, sw[k].rc,
            sw[k].q, sw[k].i, sw[k].epoch);
-  print_dl_trace(dc->name, n);
+  print_dl_trace(tag, name, n);
+  if (have_snap)
+    print_snapshot(tag, name, &snap);
 }
 
 static void
 ioq_dl_selftest(void)
 {
   for (int i = 0; i < NDL; i++)
-    run_dl_case(&dl_cases[i]);
+    run_scenario("IOQDL", dl_cases[i].name, dl_cases[i].policy, dl_cases[i].clock0,
+                 dl_cases[i].ops, 0, &dl_fails);
   printk("IOQDL DONE fail=%d\n", dl_fails);
+}
+
+// ---------------------------------------------------------------------------
+// W4-I01: fixture độc lập cho oracle deadline/switch + snapshot. Khác bộ fixture
+// W4-L01/L02 ở trên: có ranh giới tuổi 49/50, wrap, EAGAIN trước/sau candidate,
+// switch giữ tuổi, reset batch khi vào DEADLINE và vào SCAN lấy last_block.
+// Fixture phải giống tests/cases/ioq_w4_model.py (I01_CASES).
+// ---------------------------------------------------------------------------
+#define A(b) { OP_ADD, (b) }
+#define T(n) { OP_TICK, (n) }
+#define C(n) { OP_CAP, (n) }
+#define DN   { OP_DONE, 0 }
+#define SW(p) { OP_SW, (p) }
+#define DR   { OP_DRAIN, 0 }
+#define F IO_POLICY_FCFS
+#define S IO_POLICY_SCAN
+#define DL IO_POLICY_DEADLINE
+
+static struct dl_case i01_cases[] = {
+  // D21: tuổi 49 < 50 => chưa expired => chọn block thấp (POSITION).
+  { "i01-dl-age-before", DL, 500, { C(0), A(40), A(10), T(49), C(1), DN, DN, DR } },
+  // D21: tuổi đúng 50 => expired; cùng expiry => hòa theo enqueue_seq.
+  { "i01-dl-age-at", DL, 500, { C(0), A(40), A(10), T(50), C(1), DN, DN, DR } },
+  // D21: expired (tuổi 51) thắng request mới ở block thấp hơn.
+  { "i01-dl-age-after", DL, 500, { C(0), A(40), T(51), A(5), C(1), DN, DN, DR } },
+  // D21: 4 lần POSITION rồi FIFO lấy request cũ ở block 1000 (batch boundary).
+  { "i01-dl-batch-boundary", DL, 1000, { C(0), A(1000), A(9), A(8), A(7), A(6), A(5), C(1),
+                                          DN, DN, DN, DN, DN, DN, DR } },
+  // D21/D16: EAGAIN trước candidate (cổng đóng) không commit; sau candidate
+  // (chỉ 1 slot) cũng không đổi batch/trace.
+  { "i01-dl-eagain", DL, 1000, { C(0), A(40), A(30), T(60), C(1), DN, C(0), DR } },
+  // D21: đồng hồ wrap qua 0xFFFFFFFF; tuổi 50 vẫn nhận đúng.
+  { "i01-dl-wrap", DL, 0xfffffff0U, { C(0), A(100), T(50), A(50), C(1), DN, DN, DR } },
+  // D21: nhiều expired khác tuổi -> expiry (t_enqueue) sớm nhất đi trước.
+  { "i01-dl-expired-order", DL, 1000, { C(0), A(500), T(10), A(300), T(60), C(1), DN, DN, DR } },
+  // D22: switch giữ nguyên t_enqueue: request cũ vẫn expired dưới DEADLINE.
+  { "i01-sw-keep-age", F, 1000, { C(0), A(40), T(45), SW(DL), T(10), A(5), C(1), DN, DN, DR } },
+  // D22: no-op cùng policy và enum sai không tăng epoch/counter; queue rỗng
+  // vẫn switch được.
+  { "i01-sw-noop-invalid", F, 1000, { SW(F), SW(9), SW(-3), SW(S), SW(S), C(0), A(30),
+                                      A(10), C(1), SW(9), SW(DL), SW(DL), DR } },
+  // D22: vào DEADLINE reset batch_count; nếu không reset thì lần pick kế tiếp
+  // thành FIFO (sai thứ tự so với POSITION).
+  { "i01-sw-batch-reset", DL, 1000, { C(0), A(1000), A(9), A(8), A(7), A(6), A(5), C(1),
+                                      DN, DN, DN, SW(F), SW(DL), DN, DR } },
+  // D22: vào SCAN lấy block dispatch thành công cuối (FCFS) làm head, dir UP;
+  // switch khi Q>0 và I>0.
+  { "i01-sw-scan-head", F, 1000, { C(1), A(300), A(100), A(500), A(200), SW(S), C(0), A(350),
+                                   C(1), DR } },
+  // D22: đủ 6 chiều chuyển giữa 3 policy, mỗi lần switch đều có Q>0 và I>0.
+  { "i01-sw-all6", F, 1000, { C(2), A(300), A(100), A(700), A(200), A(600), A(50), A(800),
+                              A(400), SW(S), SW(DL), SW(F), SW(DL), SW(S), SW(F), DR } },
+};
+#define NI01 (sizeof(i01_cases) / sizeof(i01_cases[0]))
+
+#undef A
+#undef T
+#undef C
+#undef DN
+#undef SW
+#undef DR
+#undef F
+#undef S
+#undef DL
+
+static int i01_fails;
+
+static void
+ioq_i01_selftest(void)
+{
+  for (int i = 0; i < NI01; i++)
+    run_scenario("IOQI01", i01_cases[i].name, i01_cases[i].policy, i01_cases[i].clock0,
+                 i01_cases[i].ops, 1, &i01_fails);
+  printk("IOQI01 DONE fail=%d\n", i01_fails);
 }
 
 #endif // IOQ_SELFTEST

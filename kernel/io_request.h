@@ -238,6 +238,75 @@ struct ioq_policy_state {
 };
 
 // ---------------------------------------------------------------------------
+// W4-I01 (week 4): unified snapshot + latency aggregates.
+// Contract: docs/week04/interface.md D23 (accounting/snapshot) and D24
+// (measurement units). Every field below is observed under the SAME io_lock
+// acquisition; never rebuild a snapshot by mixing separate public calls.
+// ---------------------------------------------------------------------------
+
+// Latency aggregates of terminal async READs, in xv6 timer ticks (the pinned
+// QEMU timer fires every 1e6 cycles = 100 ms/tick, so a tick is the measurement
+// resolution, not a promise about device service time). Recorded once per
+// terminal request under io_lock; uint subtraction is wrap-safe in the D21 age
+// domain (< 2^31 ticks).
+struct io_latency_stats {
+  uint samples;     // number of terminal requests included in the sums
+  uint wait_sum;    // sum(t_dispatch - t_enqueue): time spent QUEUED
+  uint wait_max;    // max queue wait (0 samples => 0)
+  uint service_sum; // sum(t_complete - t_dispatch): INFLIGHT -> terminal
+  uint service_max;
+  uint total_sum;   // sum(t_complete - t_enqueue): end-to-end
+  uint total_max;
+  uint zero_total;  // samples whose total == 0 (tick too coarse: lower bound)
+};
+
+// One consistent observation of the whole async subsystem (W4-I01, D23).
+// Naming follows the week-4 accounting contract:
+//   S/C/E/R = submitted/completed/errors/released (cumulative, never decrease)
+//   Q/I/D/X = queued/inflight/done/error slots      (current gauges)
+//   F       = free_req slots, fd = desc.free_desc
+// Invariants while no cancel exists (docs/week04/interface.md D23):
+//   S = Q + I + C + E            C + E = R + D + X
+//   IO_NREQ = F + Q + I + D + X
+// After drain of an idle subsystem: S = C + E = R, Q=I=D=X=0, F=IO_NREQ, fd=NUM.
+struct io_snapshot {
+  uint ticks_now; // time base of this snapshot (ticks, read under io_lock)
+  // request layer: cumulative
+  uint submitted;
+  uint completed;
+  uint errors;
+  uint released;
+  uint max_inflight;
+  uint eagain_pool;
+  uint stale_handle;
+  // request layer: current slots
+  uint queued;
+  uint inflight;
+  uint done;
+  uint error;
+  uint free_req;
+  // queue/dispatcher: cumulative
+  uint enqueued;
+  uint dispatched;
+  uint eagain;
+  uint boundary_events;
+  uint policy_switches;
+  uint dl_expired;
+  uint dl_fifo;
+  uint trace_overflow;
+  // current policy state (D21/D22)
+  enum io_policy policy;
+  uint epoch;
+  uint batch_count;
+  uint last_block;
+  int has_last;
+  // driver descriptor pool
+  struct io_desc_stats desc;
+  // timing aggregates
+  struct io_latency_stats latency;
+};
+
+// ---------------------------------------------------------------------------
 // Public async API (kernel context). Implemented in kernel/io_request.c.
 // Context: process context unless stated otherwise. None of these may be called
 // with io_lock held; each takes the lock itself.
@@ -289,9 +358,27 @@ void *aio_data(struct io_handle h);
 // Fill *out with request-layer counters. Process context; takes io_lock.
 void io_get_stats(struct io_stats *out);
 
+// W4-I01: same as io_get_stats() but the caller already holds io_lock. The
+// gauges Q/I/D/X/F are derived from slot states, so they cannot drift from the
+// pool. No sleep, no allocation, no print. Implemented in io_request.c.
+void io_get_stats_locked(struct io_stats *out);
+
+// New in W4-I01: one consistent snapshot of request + queue/policy + driver +
+// latency under a single io_lock acquisition (D23). io_get_snapshot() is the
+// process-context entry point and takes io_lock; io_snapshot_locked() requires
+// the caller to hold io_lock (it is safe from a test/IRQ-adjacent context that
+// already serialises against the driver). Neither sleeps, allocates or prints.
+void io_get_snapshot(struct io_snapshot *out);
+void io_snapshot_locked(struct io_snapshot *out);
+
 // Snapshot of driver counters (descriptor pressure, owner split, head reuse).
 // Process context; takes io_lock. Implemented in virtio_disk.c by W2-H02.
 void virtio_disk_get_stats(struct io_desc_stats *out);
+
+// W4-I01: locked helper for the unified snapshot; requires io_lock held.
+// Reviewed by Hoàng (driver lock/timing) because it replaces a second
+// acquisition inside io_snapshot_locked(). Implemented in virtio_disk.c.
+void virtio_disk_get_stats_locked(struct io_desc_stats *out);
 
 // ---------------------------------------------------------------------------
 // Request-layer internal helpers (W2-I01, implemented in kernel/io_request.c).
@@ -343,6 +430,27 @@ void io_dispatch_locked(void);
 
 // Current number of QUEUED requests. Context: io_lock held.
 int io_queue_count_locked(void);
+
+// Queue/policy counters (D20). Written by kernel/io_queue.c under io_lock and
+// copied out in the same lock domain; included in the W4-I01 unified snapshot.
+// Counters are cumulative and never decremented.
+struct ioq_counters {
+  uint enqueued;        // requests appended to the pending queue
+  uint dispatched;      // requests the driver accepted (committed DISPATCH)
+  uint eagain;          // dispatch loops that stopped on IO_EAGAIN
+  uint boundary_events; // committed logical BOUNDARY events (SCAN)
+  uint trace_overflow;  // committed events dropped because the trace was full
+  uint policy_switches; // committed runtime switches (no-op/invalid excluded)
+  uint dl_expired;      // DEADLINE dispatches chosen as expired
+  uint dl_fifo;         // DEADLINE dispatches forced by the batch limit (FIFO)
+};
+
+// Copy the committed queue counters. Context: io_lock held; no sleep/alloc.
+void io_queue_get_counters_locked(struct ioq_counters *out);
+
+// Copy the DISPATCH order (enqueue_seq) of committed events, up to max entries.
+// Context: io_lock held. The full typed trace is io_queue_trace_snapshot_locked.
+int io_queue_trace_locked(uint *out, int max);
 
 // ---------------------------------------------------------------------------
 // W3-G01 (week 3): queue additions required by SCAN (implemented by W3-L01).

@@ -1,0 +1,11 @@
+--- a/kernel/io_queue.c
++++ b/kernel/io_queue.c
+@@ -251,7 +251,7 @@
+   for (int id = q.head; id != IO_NIL; id = q.by_id[id]->next) {
+     struct io_request *r = q.by_id[id];
+     if (!dl_expired(r, now))
+       continue;
+-    if (best == 0 || (int)(r->t_enqueue - best->t_enqueue) < 0)
++    if (best == 0 || (int)(r->t_enqueue - best->t_enqueue) > 0) // MUTANT (I01): chọn expiry muộn nhất
+       best = r;
+   }
