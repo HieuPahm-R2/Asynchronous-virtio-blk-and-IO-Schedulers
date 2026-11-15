@@ -15,7 +15,7 @@ commit/log trong repo; phần chưa làm được ghi rõ **NOT RUN**, không su
 | Card | Việc Hiếu phụ trách | Đầu ra đã hoàn thiện | Trạng thái |
 | :---: | :--- | :--- | :---: |
 | **W4-G01** (P0) | Chốt contract deadline/switch + evidence index | [`interface.md`](interface.md) (D21–D27), [`measurement.md`](measurement.md), [`evidence-index.md`](evidence-index.md); khai báo contract trong `kernel/io_request.h` | ✅ **Xong**; review Hoàng/Lợi **PENDING** |
-| **W4-I01** (P1) | Oracle độc lập cho deadline/switch + snapshot/counters + timing | Code snapshot một khoá + latency; 3 oracle Python độc lập; 8 fixture mới; 3 mutant; harness một lệnh; **log PASS CPU1/4** | ✅ **Xong**, đã chạy PASS |
+| **W4-I01** (P1) | Oracle độc lập cho deadline/switch + snapshot/counters + timing | Code snapshot một khoá + latency; 1 mô hình contract + 2 oracle Python độc lập; 12 fixture mới `IOQI01`; 3 mutant; harness một lệnh; **log PASS CPU1/4** | ✅ **Xong**, đã chạy PASS |
 | **W4-I02** (P2) | Thiết kế merge READ + owner/cancel | [`merge-lifecycle-design.md`](merge-lifecycle-design.md): ≤4 block/lệnh, bounce buffer, master/child, fan-out, cancel/orphan/exit, test checklist | ✅ **Xong thiết kế**; code **chưa** (đúng phạm vi) |
 | **W4-G03** (phần Hiếu) | Review số liệu, sửa công thức counter/gauge + link PDF cũ, báo cáo cá nhân | Báo cáo này; đính chính D20 tuần 3; sửa link `report-hieu.pdf` đã bị xoá | ✅ **Xong phần Hiếu** |
 
@@ -110,7 +110,8 @@ lấy log/ code C làm đáp án. Đồng thời cần **snapshot nhất quán**
   `io_snapshot_locked()` **không acquire lồng** (đúng cảnh báo của H01/§I01.4).
 - Không có `printk/kalloc/sleep` trong IRQ; snapshot copy ra ngoài rồi in.
 
-**(b) Fixture self-test độc lập — `kernel/io_queue_test.c`** (10 ca `IOQI01`)
+**(b) Fixture self-test độc lập — `kernel/io_queue_test.c`** (12 ca `IOQI01`; bảng
+dưới gộp 3 ca tuổi thành 1 dòng cho gọn)
 
 | Ca | Kiểm điều gì |
 | :--- | :--- |
@@ -314,7 +315,7 @@ python3 scripts/check_text.py && git diff --check
 | [`kernel/io_request.h`](../../kernel/io_request.h) | Snapshot/latency structs + contract counters + helper `_locked` |
 | [`kernel/io_request.c`](../../kernel/io_request.c) | `io_snapshot_locked/get_snapshot`, latency record, refactor stats |
 | [`kernel/virtio_disk.c`](../../kernel/virtio_disk.c) | `virtio_disk_get_stats_locked()` |
-| [`kernel/io_queue_test.c`](../../kernel/io_queue_test.c) | 10 fixture `IOQI01`, snapshot checks, generic scenario runner |
+| [`kernel/io_queue_test.c`](../../kernel/io_queue_test.c) | 12 fixture `IOQI01`, snapshot checks, generic scenario runner |
 | [`kernel/io_hw_test.c`](../../kernel/io_hw_test.c) | In `IO-SNAP` sau READ thật (mẫu timing) |
 | [`tests/cases/ioq_w4_model.py`](../../tests/cases/ioq_w4_model.py) | Mô hình contract độc lập (D21/D22/D23) |
 | [`tests/cases/ioq_deadline.py`](../../tests/cases/ioq_deadline.py) | Oracle deadline độc lập |

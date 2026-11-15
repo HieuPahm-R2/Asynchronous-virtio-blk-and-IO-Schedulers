@@ -27,7 +27,7 @@ hoạch nhóm tuần 4 (09–15/11/2026), nhánh `week4/hieu-contract-oracle`, b
 | :--- | :--- |
 | `kernel/io_request.h`, `kernel/io_request.c` | `struct io_snapshot`/`io_latency_stats`; `io_get_snapshot()`, `io_snapshot_locked()`, `io_get_stats_locked()`, latency aggregates |
 | `kernel/virtio_disk.c` | `virtio_disk_get_stats_locked()` để snapshot không acquire lồng |
-| `kernel/io_queue_test.c` | 10 fixture độc lập `IOQI01` + in trace/SW/SNAP + kiểm bất biến D23 |
+| `kernel/io_queue_test.c` | 12 fixture độc lập `IOQI01` + in trace/SW/SNAP + kiểm bất biến D23 |
 | `kernel/io_hw_test.c` | In `IO-SNAP` trên READ thật |
 | `tests/cases/ioq_w4_model.py` | Mô hình contract độc lập (D21/D22/D23) |
 | `tests/cases/ioq_deadline.py`, `tests/cases/ioq_policy_switch.py` | Hai oracle độc lập |
