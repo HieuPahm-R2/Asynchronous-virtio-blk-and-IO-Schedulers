@@ -571,6 +571,14 @@ io_stress_finish(void)
          ds.eagain_desc, qc.enqueued, qc.dispatched, qc.eagain,
          ds.head_reuse, total_data_errors);
   printk("IO-STRESS: %s failures=%d\n", failures == 0 ? "PASS" : "FAIL", failures);
+#ifdef IO_POLICY_STRESS_SELFTEST
+  struct io_snapshot snap;
+  io_get_snapshot(&snap);
+  printk("IO-STRESS-SNAP: sw=%d ep=%d pol=%d ovf=%d samples=%d zero_total=%d wait_sum=%d service_sum=%d total_sum=%d unit=tick\n",
+         snap.policy_switches, snap.epoch, snap.policy, snap.trace_overflow,
+         snap.latency.samples, snap.latency.zero_total, snap.latency.wait_sum,
+         snap.latency.service_sum, snap.latency.total_sum);
+#endif
   return failures;
 }
 

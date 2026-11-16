@@ -81,6 +81,10 @@ def check(text):
             for key, value in expected.items():
                 if end.get(key) != value:
                     errors.append(f'case {number}: {key}={end.get(key)}, expected {value}')
+            if end.get('samples') != accepted or not 0 <= end.get('zero_total', -1) <= accepted:
+                errors.append(f'case {number}: timing sample count does not match real completions')
+            if end.get('wait_sum', -1) + end.get('service_sum', -1) != end.get('total_sum', -3):
+                errors.append(f'case {number}: wait + service != total ticks')
         except (KeyError, ValueError, TypeError) as exc:
             errors.append(f'case {number}: {exc}')
     return errors

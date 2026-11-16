@@ -144,10 +144,12 @@ run_case(int name, int source, int target, int expire)
         finish.completed == finish.released && finish.errors == 0,
         "all slots/descriptors drained");
   check(finish.trace_overflow == 0, "short trace must be complete");
-  printk("IO-REAL: case=%d END tick=%d S=%d C=%d E=%d R=%d F=%d fd=%d ovf=%d n=%d fail=%d\n",
+  printk("IO-REAL: case=%d END tick=%d S=%d C=%d E=%d R=%d F=%d fd=%d ovf=%d n=%d fail=%d samples=%d zero_total=%d wait_sum=%d service_sum=%d total_sum=%d\n",
          name, finish.ticks_now, finish.submitted, finish.completed,
          finish.errors, finish.released, finish.free_req, finish.desc.free_desc,
-         finish.trace_overflow, ntrace, failures - before);
+         finish.trace_overflow, ntrace, failures - before,
+         finish.latency.samples, finish.latency.zero_total, finish.latency.wait_sum,
+         finish.latency.service_sum, finish.latency.total_sum);
 }
 
 int

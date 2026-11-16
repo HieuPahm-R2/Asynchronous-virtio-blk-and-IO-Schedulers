@@ -55,6 +55,18 @@ def check_switch_stress(text):
         errors.append('missing unique controller completion')
     if 'IO-SWITCH: FAIL' in text:
         errors.append('controller failed')
+    snapshots = re.findall(r'^IO-STRESS-SNAP: (.+)$', text, re.M)
+    if len(snapshots) != 1:
+        errors.append('need one final unified policy/timing snapshot')
+    else:
+        snap = R.values(snapshots[0])
+        if (snap.get('sw'), snap.get('ep'), snap.get('pol'), snap.get('samples')) != (6, 6, 0, 480):
+            errors.append('incorrect final switch epoch or timing sample count')
+        if not 0 <= snap.get('zero_total', -1) <= 480 or snap.get('ovf', -1) < 0:
+            errors.append('missing/invalid trace overflow or zero-tick count')
+        if snap.get('wait_sum', -1) + snap.get('service_sum', -1) != snap.get('total_sum', -3):
+            errors.append('timing sums are inconsistent')
+        stats.update(snap)
     return errors, stats, workers
 
 
