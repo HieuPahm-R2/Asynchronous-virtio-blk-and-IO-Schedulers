@@ -443,7 +443,12 @@ sys_io_selftest(void)
 #ifdef IO_SELFTEST
   return (uint64)io_user_selftest();
 #elif defined(IO_HW_SELFTEST)
+#ifdef IO_POLICY_HW_SELFTEST
+  extern int io_policy_hw_selftest(void);
+  return (uint64)io_policy_hw_selftest();
+#else
   return (uint64)io_hw_selftest();
+#endif
 #elif defined(IO_STRESS_SELFTEST)
   int op = 0;
   argint(0, &op);
