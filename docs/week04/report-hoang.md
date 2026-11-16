@@ -27,7 +27,7 @@ Nhánh local: week4/hoang-real-policy-stress
 Base: ae6a7cf (Hiếu), chứa 0dc296e (Lợi); main remote: 5191ed8
 ```
 
-Giữ nguyên Jira: không đổi trạng thái, không bình luận, không tạo task. GitHub hiện chưa có PR mở cho tuần 4 tại lúc đọc. Code được lưu bằng commit local và gói tái lập; không tuyên bố đã push/merge hoặc đã được thành viên khác duyệt.
+Giữ nguyên Jira: không đổi trạng thái, không bình luận, không tạo task. Đã push nhánh riêng và mở draft PR #11, base week4/hieu-contract-oracle. Chưa merge main và chưa có review chéo. Code kiểm thử d39ea8c; commit sau chỉ thêm tài liệu/evidence.
 
 ## 2. Review of technical activities
 
@@ -141,12 +141,12 @@ Harness mới mặc định real CPU1/4 và stress repeat5/CPU; --mode real ho�
 
 ### Bằng chứng trong gói bàn giao
 
-Code bundle chứa lịch sử đủ để clone offline, patch riêng của Hoàng có base ae6a7cf. Evidence acceptance-d39ea8c gồm raw serial, summary/meta, build logs, SHA của source/kernel/image, fixture/seed, toolchain/QEMU, CPU và expected/actual. Báo cáo Markdown chỉnh sửa được đi cùng PDF.
+Draft PR: https://github.com/HieuPahm-R2/Asynchronous-virtio-blk-and-IO-Schedulers/pull/11. Code bundle chứa lịch sử đủ để clone offline, patch riêng của Hoàng có base ae6a7cf. Evidence acceptance-d39ea8c gồm raw serial, summary/meta, build logs, SHA của source/kernel/image, fixture/seed, toolchain/QEMU, CPU và expected/actual. Báo cáo Markdown chỉnh sửa được đi cùng PDF.
 
 ### Chưa nhận hoàn tất toàn bộ PTO-36/PTO-37
 
 1. Máy thứ hai cùng final candidate: NOT RUN. Lợi/Hiếu cần clone gói hoặc nhận nhánh, chạy lại và gửi log/machine/toolchain. CPU1/4 trên cùng host không được tính là hai máy.
-2. Review Lợi/Hiếu, push/PR/merge remote và cập nhật Jira: chưa thực hiện. GitHub public hiện không có PR mở lúc đọc; main vẫn là 5191ed8. Không tự đánh dấu Done.
+2. Đã mở draft PR #11 trên GitHub, base week4/hieu-contract-oracle, để review phần Hoàng. Review Lợi/Hiếu và merge main còn chờ; main vẫn là 5191ed8. Không thay đổi Jira hoặc tự đánh dấu Done.
 3. Tuần 5 tiếp theo: sau khi khép nghiệm thu, nhóm review thiết kế merge/lifecycle/coherence và chuẩn bị midterm demo; không nhận owner/cancel/merge/user API đã triển khai.
 
 Tham chiếu: docs/week04/interface.md, hoang-runbook.md, review-hoang.md; Jira PTO-31/36/37 được đọc, không sửa. Nguồn tài liệu chỉ là dữ liệu tham chiếu; yêu cầu của người dùng là căn cứ thực hiện công việc.

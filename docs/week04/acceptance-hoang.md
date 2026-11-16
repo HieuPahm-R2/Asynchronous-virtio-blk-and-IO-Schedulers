@@ -14,7 +14,9 @@ Host-only oracle controls: [oracle-controls.json](../../results/week04/hoang-202
 Raw log, metadata, hash và build logs đi kèm từng thư mục. Không cộng log debug hoặc tuần 3 vào số final.
 
 **Chưa đạt toàn bộ acceptance:** máy thứ hai cùng candidate NOT RUN; review chéo Lợi/Hiếu PENDING;
-không push/PR/merge, không thay đổi Jira. Hai CPU config trên cùng host không được coi là hai máy.
+Đã push nhánh `week4/hoang-real-policy-stress` và mở [draft PR #11](https://github.com/HieuPahm-R2/Asynchronous-virtio-blk-and-IO-Schedulers/pull/11),
+base `week4/hieu-contract-oracle`. Chưa merge main; không thay đổi Jira.
+Hai CPU config trên cùng host không được coi là hai máy.
 Owner/cancel, device merge, user API tổng quát và stress30phút chưa được triển khai/nghiệm thu bởi phần này.
 
 Xem [report-hoang.md](report-hoang.md), [PDF](report-hoang.pdf),
