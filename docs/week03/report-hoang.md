@@ -1,5 +1,12 @@
 # Báo cáo công việc cá nhân Tuần 03 — Nguyễn Văn Hoàng (`20233413`)
 
+> **Đính chính 16/11/2026:** Đây là snapshot lịch sử. Source thật dùng fixture
+> `1968..1999`, window5, `IO_STRESS_SELFTEST=1`/`EXTRA_CFLAGS`; host negative lật
+> byte đầu block `FSSIZE-32` trên ảnh sao tạm. API thực là `aio_*`; owner/orphan/
+> cancel khi kill **chưa được triển khai**. Các mô tả khác ở dưới không được coi
+> là bằng chứng code hoặc thông số hiện tại. Xem [runbook tuần 4](../week04/hoang-runbook.md)
+> và [review source](../week04/review-hoang.md) để đối chiếu.
+
 - **Đề tài:** `26128` — *Asynchronous `virtio-blk` and I/O schedulers on `xv6-riscv`*
 - **Học phần:** `ET4290` — Hệ điều hành (Học kỳ `2026.1`)
 - **Nhóm:** Nhóm 3 (`Phạm Trung Hiếu — 20233402`, `Nguyễn Văn Hoàng — 20233413`, `Phạm Quý Lợi — 20233501`)

@@ -1,0 +1,15 @@
+real-policy CPU1: PASS
+real-policy CPU4: PASS
+real-negative CPU4: EXPECTED_FAIL
+switch-stress-01 CPU1: PASS
+switch-stress-02 CPU1: PASS
+switch-stress-03 CPU1: PASS
+switch-stress-04 CPU1: PASS
+switch-stress-05 CPU1: PASS
+switch-stress-01 CPU4: PASS
+switch-stress-02 CPU4: PASS
+switch-stress-03 CPU4: PASS
+switch-stress-04 CPU4: PASS
+switch-stress-05 CPU4: PASS
+stress-negative CPU4: EXPECTED_FAIL
+PASS: /home/ubuntu/Documents/Codex/2026-10-23/t/work/hoang-execution-2026-11-16/acceptance-d39ea8c/real-and-switch

@@ -1,3 +1,15 @@
+# Tuần 4 - hồ sơ nhóm, cập nhật phần Hoàng ngày 16/11/2026
+
+- [Báo cáo Hoàng](report-hoang.md) / [PDF](report-hoang.pdf)
+- [Nghiệm thu local và evidence](acceptance-hoang.md)
+- [Lệnh tái lập](hoang-runbook.md) / [Review driver/API](review-hoang.md)
+
+Code candidate `d39ea8c` đã kiểm real policy/switch, stress 10 boot,
+FCFS20boot và production6case. **Máy thứ hai và review chéo còn thiếu**;
+không coi toàn bộ PTO-36/37 đã Done. Phần bên dưới là snapshot hồ sơ Hiếu ngày 15/11.
+
+---
+
 # Tuần 4 — Hồ sơ phần việc của Hiếu (W4-G01, W4-I01, W4-I02)
 
 Thư mục này chứa đầu ra tuần 4 do **Phạm Trung Hiếu (20233402)** thực hiện theo kế
