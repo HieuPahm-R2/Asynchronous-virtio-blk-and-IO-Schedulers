@@ -61,7 +61,7 @@ static struct disk {
     uint gen;
   } last_async[NUM];
   struct io_desc_stats stats;
-#ifdef IO_HW_SELFTEST
+#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST)
   int hold_used;
   int reverse_pair;
   uint reversed;
@@ -411,7 +411,7 @@ reap_head_locked(uint head)
     if (req == 0 || req->gen != disk.info[head].gen ||
         req->state != IO_INFLIGHT || req->head != (int)head)
       panic("virtio async mapping");
-#ifdef IO_HW_SELFTEST
+#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST)
     if (disk.override_valid[head]) {
       status = disk.override_status[head];
       disk.override_valid[head] = 0;
@@ -436,7 +436,7 @@ drain_used_locked(void)
 {
   while (disk.used_idx != disk.used->idx) {
     io_fence();
-#ifdef IO_HW_SELFTEST
+#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST)
     // Test-only: reverse consumption of TWO REAL used entries after DMA. This
     // tests mapping, not a claim that QEMU itself completed out of order.
     if (disk.reverse_pair && (uint16)(disk.used->idx - disk.used_idx) >= 2) {
@@ -471,7 +471,7 @@ virtio_disk_intr()
   *R(VIRTIO_MMIO_INTERRUPT_ACK) = *R(VIRTIO_MMIO_INTERRUPT_STATUS) & 0x3;
 
   io_fence();
-#ifdef IO_HW_SELFTEST
+#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST)
   if (!disk.hold_used)
 #endif
     drain_used_locked();
@@ -502,7 +502,7 @@ virtio_disk_get_stats(struct io_desc_stats *out)
   release(&disk.vdisk_lock);
 }
 
-#ifdef IO_HW_SELFTEST
+#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST)
 void
 virtio_test_hold_used(int hold)
 {

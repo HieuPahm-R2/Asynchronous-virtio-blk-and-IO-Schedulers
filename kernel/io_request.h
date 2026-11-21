@@ -529,7 +529,7 @@ void io_async_completed_locked(struct io_request *req, int dev_status);
 // max_inflight while simultaneous INFLIGHT states are still observable.
 void io_started_locked(struct io_request *req, int head);
 
-#ifdef IO_HW_SELFTEST
+#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST)
 // Test-only controls over real device completions. Holding used processing
 // does not prevent DMA: buffers/chains stay live until actual reaping.
 void virtio_test_hold_used(int hold);

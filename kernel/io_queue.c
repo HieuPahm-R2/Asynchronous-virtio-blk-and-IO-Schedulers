@@ -285,6 +285,16 @@ trace_add_locked(struct ioq_trace_ev *ev)
     q.cnt.trace_overflow++;
 }
 
+#ifdef IO_POLICY_HW_SELFTEST
+void
+ioq_hw_trace_reset_locked_for_test(void)
+{
+  if (q.count != 0)
+    panic("real trace reset: queued");
+  q.ntrace = 0;
+}
+#endif
+
 // Gửi xuống driver càng nhiều càng tốt theo policy.
 // Gặp IO_EAGAIN đầu tiên thì dừng và KHÔNG commit gì: request ở nguyên chỗ,
 // giữ enqueue_seq, vẫn QUEUED; head/direction/trace/boundary giữ nguyên.
