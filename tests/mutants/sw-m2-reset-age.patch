@@ -1,0 +1,11 @@
+--- a/kernel/io_queue.c
++++ b/kernel/io_queue.c
+@@ -467,6 +467,8 @@
+   }
+   if (policy == IO_POLICY_DEADLINE)
+     q.batch_count = 0;
++  for (int id = q.head; id != IO_NIL; id = q.by_id[id]->next)
++    q.by_id[id]->t_enqueue = now_locked(); // MUTANT: trẻ hóa tuổi khi switch
+   q.policy = policy;
+   q.epoch++;
+   q.cnt.policy_switches++;

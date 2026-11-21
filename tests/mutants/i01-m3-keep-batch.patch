@@ -1,0 +1,12 @@
+--- a/kernel/io_queue.c
++++ b/kernel/io_queue.c
+@@ -465,8 +465,8 @@
+     q.logical_head = q.has_last ? q.last_block : 0;
+     q.direction = IO_DIR_UP;
+   }
+   if (policy == IO_POLICY_DEADLINE)
+-    q.batch_count = 0;
++    q.batch_count += 0; // MUTANT (I01): không reset batch khi vào DEADLINE
+   q.policy = policy;
+   q.epoch++;
+   q.cnt.policy_switches++;

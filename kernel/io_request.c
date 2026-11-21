@@ -18,6 +18,10 @@ static struct io_request io_pool[IO_NREQ];
 // on demand so they cannot drift from the pool.
 static struct io_stats io_counters;
 
+// W4-I01: latency aggregates of terminal async reads (ticks, D24). Written only
+// from io_async_completed_locked() under io_lock.
+static struct io_latency_stats io_latency;
+
 #ifdef IO_HW_SELFTEST
 static void (*io_hw_wait_hook)(void);
 
@@ -63,6 +67,7 @@ io_init(void)
 
   acquire(lk);
   memset(&io_counters, 0, sizeof(io_counters));
+  memset(&io_latency, 0, sizeof(io_latency));
   for (int i = 0; i < IO_NREQ; i++) {
     struct io_request *req = &io_pool[i];
     memset(req, 0, sizeof(*req));
@@ -218,18 +223,33 @@ aio_release(struct io_handle h)
   return rc;
 }
 
-// Snapshot of the request-layer counters for tests T02/T11. queued/inflight/
-// free_req are derived from the slot states so accounting cannot drift.
-void
-io_get_stats(struct io_stats *out)
+// W4-L02 (D22): runtime policy switch for kernel control code (no syscall yet).
+// Takes io_lock itself, so it serialises with submit, dispatch and the IRQ
+// completion path on every CPU. Process context; never call with io_lock held.
+int
+io_set_policy(enum io_policy policy)
 {
   struct spinlock *lk = virtio_disk_io_lock();
+  int rc;
+
+  acquire(lk);
+  rc = io_queue_set_policy_locked(policy);
+  release(lk);
+  return rc;
+}
+
+// Snapshot of the request-layer counters for tests T02/T11. queued/inflight/
+// free_req are derived from the slot states so accounting cannot drift.
+// W4-I01: body moved to io_get_stats_locked() so the unified snapshot can read
+// these counters without acquiring io_lock a second time (D23).
+void
+io_get_stats_locked(struct io_stats *out)
+{
   struct io_stats s;
 
   if (out == 0)
     return;
 
-  acquire(lk);
   s = io_counters;
   s.queued = 0;
   s.inflight = 0;
@@ -257,9 +277,86 @@ io_get_stats(struct io_stats *out)
       break;
     }
   }
-  release(lk);
-
   *out = s;
+}
+
+// Public wrapper: process context, takes io_lock itself.
+void
+io_get_stats(struct io_stats *out)
+{
+  struct spinlock *lk = virtio_disk_io_lock();
+
+  if (out == 0)
+    return;
+
+  acquire(lk);
+  io_get_stats_locked(out);
+  release(lk);
+}
+
+// W4-I01 (D23): one consistent snapshot of request + queue/policy + driver +
+// latency. Requires io_lock held; makes exactly one lock domain observation, so
+// a caller never mixes counters from two different instants. In a test build the
+// queue selftest may hold its private test_lock while calling the public
+// io_get_snapshot(); the lock order test_lock -> io_lock is safe because no
+// io_lock path ever takes test_lock (reviewed by Hoàng for the driver side).
+void
+io_snapshot_locked(struct io_snapshot *out)
+{
+  struct io_stats st;
+  struct ioq_counters qc;
+  struct ioq_policy_state ps;
+
+  if (out == 0)
+    return;
+
+  memset(out, 0, sizeof(*out));
+  io_get_stats_locked(&st);
+  io_queue_get_counters_locked(&qc);
+  io_queue_get_policy_state_locked(&ps);
+  virtio_disk_get_stats_locked(&out->desc);
+
+  out->ticks_now = ticks;
+  out->submitted = st.submitted;
+  out->completed = st.completed;
+  out->errors = st.errors;
+  out->released = st.released;
+  out->max_inflight = st.max_inflight;
+  out->eagain_pool = st.eagain_pool;
+  out->stale_handle = st.stale_handle;
+  out->queued = st.queued;
+  out->inflight = st.inflight;
+  out->done = st.done;
+  out->error = st.error;
+  out->free_req = st.free_req;
+  out->enqueued = qc.enqueued;
+  out->dispatched = qc.dispatched;
+  out->eagain = qc.eagain;
+  out->boundary_events = qc.boundary_events;
+  out->policy_switches = qc.policy_switches;
+  out->dl_expired = qc.dl_expired;
+  out->dl_fifo = qc.dl_fifo;
+  out->trace_overflow = qc.trace_overflow;
+  out->policy = ps.policy;
+  out->epoch = ps.epoch;
+  out->batch_count = ps.batch_count;
+  out->last_block = ps.last_block;
+  out->has_last = ps.has_last;
+  out->latency = io_latency;
+}
+
+// Public wrapper: process context; takes io_lock exactly once.
+void
+io_get_snapshot(struct io_snapshot *out)
+{
+  struct spinlock *lk = virtio_disk_io_lock();
+
+  if (out == 0)
+    return;
+
+  acquire(lk);
+  io_snapshot_locked(out);
+  release(lk);
 }
 
 // Non-blocking status check (W2-I02, T05). Never sleeps, never frees the slot:
@@ -358,6 +455,31 @@ aio_data(struct io_handle h)
   return data;
 }
 
+// W4-I01 (D24): aggregate one terminal request. Caller holds io_lock; the three
+// intervals are well-defined because t_enqueue is set in io_queue_enqueue_locked,
+// t_dispatch in io_started_locked (driver publish) and t_complete just above.
+// uint subtraction is wrap-safe in the D21 age domain (< 2^31 ticks).
+static void
+io_latency_record_locked(struct io_request *req)
+{
+  uint wait = req->t_dispatch - req->t_enqueue;   // QUEUED -> published
+  uint service = req->t_complete - req->t_dispatch; // published -> terminal
+  uint total = req->t_complete - req->t_enqueue;  // end-to-end
+
+  io_latency.samples++;
+  io_latency.wait_sum += wait;
+  if (wait > io_latency.wait_max)
+    io_latency.wait_max = wait;
+  io_latency.service_sum += service;
+  if (service > io_latency.service_max)
+    io_latency.service_max = service;
+  io_latency.total_sum += total;
+  if (total > io_latency.total_max)
+    io_latency.total_max = total;
+  if (total == 0)
+    io_latency.zero_total++; // same-tick sample: resolution lower bound, not 0 ms
+}
+
 // Canonical request completion transition (contract D7). The driver (W2-H02)
 // calls this from virtio_disk_intr() after validating the head mapping and
 // copying the 1-byte device status; the test hook calls it from the gap/timer
@@ -378,6 +500,7 @@ io_async_completed_locked(struct io_request *req, int dev_status)
     io_counters.errors++;
   }
   req->t_complete = ticks;
+  io_latency_record_locked(req);
   wakeup(req);
 }
 

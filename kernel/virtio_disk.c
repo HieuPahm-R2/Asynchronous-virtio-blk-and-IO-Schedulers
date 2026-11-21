@@ -478,16 +478,27 @@ virtio_disk_intr()
   release(&disk.vdisk_lock);
 }
 
+// W4-I01: locked form used by io_snapshot_locked() so the unified snapshot sees
+// descriptors and request/queue counters under ONE io_lock acquisition. The
+// caller must hold io_lock (== &disk.vdisk_lock); this helper does not acquire.
+void
+virtio_disk_get_stats_locked(struct io_desc_stats *out)
+{
+  if (out == 0)
+    return;
+  *out = disk.stats;
+  out->free_desc = 0;
+  for (int i = 0; i < NUM; i++)
+    out->free_desc += disk.free[i] != 0;
+}
+
 void
 virtio_disk_get_stats(struct io_desc_stats *out)
 {
   if (out == 0)
     return;
   acquire(&disk.vdisk_lock);
-  *out = disk.stats;
-  out->free_desc = 0;
-  for (int i = 0; i < NUM; i++)
-    out->free_desc += disk.free[i] != 0;
+  virtio_disk_get_stats_locked(out);
   release(&disk.vdisk_lock);
 }
 

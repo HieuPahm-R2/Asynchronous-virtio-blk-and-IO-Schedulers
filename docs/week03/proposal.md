@@ -109,7 +109,7 @@ test. Kiểm nhanh sau merge ngày 07/11 trên base này:
 | SCAN | ≥ 8 nhóm oracle độc lập; boundary/tie/unlink; 2 mutant phải bị bắt | L02; **NOT RUN** ở G01 |
 | READ thật + regression | FCFS/SCAN × CPU1/4 chạy lại máy hai; boot/shell/`usertests -q`/`grind 60s` = 6 case | G02 |
 | Tài nguyên + âm bản | Drain `free_req=16`, `free_desc=8`, `Q=I=D=X=0`; fixture sai byte/mutant/timeout = FAIL | Hiếu review |
-| Bất biến kế toán | `submitted = Q+I+D+X`; `C+E = R+D+X`; `16 = F+Q+I+D+X`; snapshot một khóa | Hiếu review |
+| Bất biến kế toán | `S = Q+I+C+E`; `C+E = R+D+X`; `16 = F+Q+I+D+X`; snapshot một khóa (đính chính 2026-11-15: `S/C/E/R` tích luỹ, `Q/I/D/X/F` hiện tại — xem `docs/week04/interface.md` D23) | Hiếu review |
 
 Instrumentation: `t_enqueue/t_dispatch/t_complete` (tick), counters request-layer +
 driver, `max_inflight`; snapshot dưới `io_lock`, in ngoài IRQ. Tick hẹp hơn thời gian

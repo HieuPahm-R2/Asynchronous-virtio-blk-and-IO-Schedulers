@@ -1,0 +1,11 @@
+--- a/kernel/io_queue.c
++++ b/kernel/io_queue.c
+@@ -452,7 +452,7 @@
+   if (!policy_valid(policy))
+     return IO_EINVAL; // kiểm enum TRƯỚC mọi thay đổi
+   if (policy == q.policy)
+-    return 0; // no-op: không tăng epoch/counter, không ghi event
++    return (q.epoch++, 0); // MUTANT (I01): no-op cùng policy vẫn tăng epoch
+ 
+   memset(&ev, 0, sizeof(ev));
+   ev.kind = IOQ_EV_SWITCH;

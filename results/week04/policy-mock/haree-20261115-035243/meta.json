@@ -1,0 +1,91 @@
+{
+  "started_at": "2026-11-15T03:52:43.139675+07:00",
+  "host": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "head": "5191ed8beda658120bf08667b87657fa45ed1861",
+  "branch": "week4/loi-deadline-switch",
+  "dirty": "M .gitattributes\n M kernel/io_queue.c\n M kernel/io_queue_test.c\n M kernel/io_queue_test.h\n M kernel/io_request.c\n M kernel/io_request.h\n M tests/mutants/scan-m1-no-reverse.patch\n?? scripts/check-week04-policy.py\n?? tests/cases/ioq_policy.py\n?? tests/mutants/dl-m1-no-expired.patch\n?? tests/mutants/dl-m3-eagain-batch.patch\n?? tests/mutants/sw-m2-reset-age.patch",
+  "versions": {
+    "riscv64-linux-gnu-gcc": "riscv64-linux-gnu-gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "qemu-system-riscv64": "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)"
+  },
+  "runs": [
+    {
+      "mode": "policy-mock",
+      "cpus": 1,
+      "status": "PASS",
+      "errors": [],
+      "log": "policy-cpus1.log"
+    },
+    {
+      "mode": "policy-mock",
+      "cpus": 4,
+      "status": "PASS",
+      "errors": [],
+      "log": "policy-cpus4.log"
+    }
+  ],
+  "mutants": [
+    {
+      "name": "dl-m1-no-expired",
+      "caught": true,
+      "first_errors": [
+        "dl-expired-first: trace sai\n  expected=['D pol=2 rsn=1 seq=1 blk=500 hb=0 ha=0 db=1 da=1 bat=0 ep=0', 'D pol=2 rsn=2 seq=2 blk=10 hb=0 ha=0 db=1 da=1 bat=1 ep=0', 'D pol=2 rsn=2 seq=3 blk=20 hb=0 ha=0 db=1 da=1 bat=2 ep=0']\n  actual  =['D pol=2 rsn=2 seq=2 blk=10 hb=0 ha=0 db=1 da=1 bat=1 ep=0', 'D pol=2 rsn=2 seq=3 blk=20 hb=0 ha=0 db=1 da=1 bat=2 ep=0', 'D pol=2 rsn=2 seq=1 blk=500 hb=0 ha=0 db=1 da=1 bat=3 ep=0']",
+        "dl-tie-expiry: trace sai\n  expected=['D pol=2 rsn=1 seq=1 blk=300 hb=0 ha=0 db=1 da=1 bat=0 ep=0', 'D pol=2 rsn=1 seq=2 blk=200 hb=0 ha=0 db=1 da=1 bat=0 ep=0', 'D pol=2 rsn=2 seq=3 blk=5 hb=0 ha=0 db=1 da=1 bat=1 ep=0']\n  actual  =['D pol=2 rsn=2 seq=3 blk=5 hb=0 ha=0 db=1 da=1 bat=1 ep=0', 'D pol=2 rsn=2 seq=2 blk=200 hb=0 ha=0 db=1 da=1 bat=2 ep=0', 'D pol=2 rsn=2 seq=1 blk=300 hb=0 ha=0 db=1 da=1 bat=3 ep=0']",
+        "dl-old-vs-stream: trace sai\n  expected=['D pol=2 rsn=2 seq=1 blk=1 hb=0 ha=0 db=1 da=1 bat=1 ep=0', 'D pol=2 rsn=2 seq=3 blk=2 hb=0 ha=0 db=1 da=1 bat=2 ep=0', 'D pol=2 rsn=1 seq=2 blk=900 hb=0 ha=0 db=1 da=1 bat=0 ep=0', 'D pol=2 rsn=2 seq=4 blk=3 hb=0 ha=0 db=1 da=1 bat=1 ep=0', 'D pol=2 rsn=2 seq=5 blk=4 hb=0 ha=0 db=1 da=1 bat=2 ep=0', 'D pol=2 rsn=2 seq=6 blk=5 hb=0 ha=0 db=1 da=1 bat=3 ep=0', 'D pol=2 rsn=2 seq=7 blk=6 hb=0 ha=0 db=1 da=1 bat=4 ep=0']\n  actual  =['D pol=2 rsn=2 seq=1 blk=1 hb=0 ha=0 db=1 da=1 bat=1 ep=0', 'D pol=2 rsn=2 seq=3 blk=2 hb=0 ha=0 db=1 da=1 bat=2 ep=0', 'D pol=2 rsn=2 seq=4 blk=3 hb=0 ha=0 db=1 da=1 bat=3 ep=0', 'D pol=2 rsn=2 seq=5 blk=4 hb=0 ha=0 db=1 da=1 bat=4 ep=0', 'D pol=2 rsn=3 seq=2 blk=900 hb=0 ha=0 db=1 da=1 bat=0 ep=0', 'D pol=2 rsn=2 seq=6 blk=5 hb=0 ha=0 db=1 da=1 bat=1 ep=0', 'D pol=2 rsn=2 seq=7 blk=6 hb=0 ha=0 db=1 da=1 bat=2 ep=0']"
+      ],
+      "log": "dl-m1-no-expired-cpus1.log"
+    },
+    {
+      "name": "dl-m3-eagain-batch",
+      "caught": true,
+      "first_errors": [
+        "kernel báo 8 check FAIL",
+        "dl-position: thiếu CHK commit-matches-trace PASS",
+        "dl-position: trace sai\n  expected=['D pol=2 rsn=2 seq=4 blk=10 hb=0 ha=0 db=1 da=1 bat=1 ep=0', 'D pol=2 rsn=2 seq=2 blk=20 hb=0 ha=0 db=1 da=1 bat=2 ep=0', 'D pol=2 rsn=2 seq=6 blk=30 hb=0 ha=0 db=1 da=1 bat=3 ep=0', 'D pol=2 rsn=2 seq=5 blk=50 hb=0 ha=0 db=1 da=1 bat=4 ep=0', 'D pol=2 rsn=3 seq=1 blk=70 hb=0 ha=0 db=1 da=1 bat=0 ep=0', 'D pol=2 rsn=2 seq=3 blk=90 hb=0 ha=0 db=1 da=1 bat=1 ep=0']\n  actual  =['D pol=2 rsn=3 seq=1 blk=70 hb=0 ha=0 db=1 da=1 bat=0 ep=0', 'D pol=2 rsn=2 seq=4 blk=10 hb=0 ha=0 db=1 da=1 bat=2 ep=0', 'D pol=2 rsn=2 seq=2 blk=20 hb=0 ha=0 db=1 da=1 bat=4 ep=0', 'D pol=2 rsn=3 seq=3 blk=90 hb=0 ha=0 db=1 da=1 bat=0 ep=0', 'D pol=2 rsn=2 seq=6 blk=30 hb=0 ha=0 db=1 da=1 bat=2 ep=0', 'D pol=2 rsn=2 seq=5 blk=50 hb=0 ha=0 db=1 da=1 bat=4 ep=0']"
+      ],
+      "log": "dl-m3-eagain-batch-cpus1.log"
+    },
+    {
+      "name": "sw-m2-reset-age",
+      "caught": true,
+      "first_errors": [
+        "kernel báo 2 check FAIL",
+        "sw-all6: thiếu CHK age-seq-gen-kept PASS",
+        "sw-all6: trace sai\n  expected=['D pol=0 rsn=0 seq=1 blk=300 hb=0 ha=0 db=1 da=1 bat=0 ep=0', 'D pol=0 rsn=0 seq=2 blk=100 hb=0 ha=0 db=1 da=1 bat=0 ep=0', 'S old=0 new=1 hb=0 ha=100 da=1 bat=0 ep=1', 'D pol=1 rsn=0 seq=4 blk=200 hb=100 ha=200 db=1 da=1 bat=0 ep=1', 'S old=1 new=2 hb=200 ha=200 da=1 bat=0 ep=2', 'D pol=2 rsn=1 seq=3 blk=700 hb=200 ha=200 db=1 da=1 bat=0 ep=2', 'S old=2 new=1 hb=200 ha=700 da=1 bat=0 ep=3', 'D pol=1 rsn=0 seq=7 blk=800 hb=700 ha=800 db=1 da=1 bat=0 ep=3', 'S old=1 new=0 hb=800 ha=800 da=1 bat=0 ep=4', 'D pol=0 rsn=0 seq=5 blk=600 hb=800 ha=800 db=1 da=1 bat=0 ep=4', 'S old=0 new=2 hb=800 ha=800 da=1 bat=0 ep=5', 'D pol=2 rsn=1 seq=6 blk=50 hb=800 ha=800 db=1 da=1 bat=0 ep=5', 'S old=2 new=0 hb=800 ha=800 da=1 bat=0 ep=6', 'D pol=0 rsn=0 seq=8 blk=400 hb=800 ha=800 db=1 da=1 bat=0 ep=6']\n  actual  =['D pol=0 rsn=0 seq=1 blk=300 hb=0 ha=0 db=1 da=1 bat=0 ep=0', 'D pol=0 rsn=0 seq=2 blk=100 hb=0 ha=0 db=1 da=1 bat=0 ep=0', 'S old=0 new=1 hb=0 ha=100 da=1 bat=0 ep=1', 'D pol=1 rsn=0 seq=4 blk=200 hb=100 ha=200 db=1 da=1 bat=0 ep=1', 'S old=1 new=2 hb=200 ha=200 da=1 bat=0 ep=2', 'D pol=2 rsn=1 seq=3 blk=700 hb=200 ha=200 db=1 da=1 bat=0 ep=2', 'S old=2 new=1 hb=200 ha=700 da=1 bat=0 ep=3', 'D pol=1 rsn=0 seq=7 blk=800 hb=700 ha=800 db=1 da=1 bat=0 ep=3', 'S old=1 new=0 hb=800 ha=800 da=1 bat=0 ep=4', 'D pol=0 rsn=0 seq=5 blk=600 hb=800 ha=800 db=1 da=1 bat=0 ep=4', 'S old=0 new=2 hb=800 ha=800 da=1 bat=0 ep=5', 'D pol=2 rsn=2 seq=6 blk=50 hb=800 ha=800 db=1 da=1 bat=1 ep=5', 'S old=2 new=0 hb=800 ha=800 da=1 bat=1 ep=6', 'D pol=0 rsn=0 seq=8 blk=400 hb=800 ha=800 db=1 da=1 bat=1 ep=6']"
+      ],
+      "log": "sw-m2-reset-age-cpus1.log"
+    },
+    {
+      "name": "scan-m1-no-reverse",
+      "caught": true,
+      "first_errors": [
+        "scan-up: trace sai\n  expected=['D seq=5 blk=50 hb=40 ha=50 db=1 da=1', 'D seq=1 blk=70 hb=50 ha=70 db=1 da=1', 'D seq=3 blk=90 hb=70 ha=90 db=1 da=1', 'B bnd=1999 hb=90 ha=90 db=1 da=-1', 'D seq=2 blk=20 hb=90 ha=20 db=-1 da=-1', 'D seq=4 blk=10 hb=20 ha=10 db=-1 da=-1']\n  actual  =['D seq=5 blk=50 hb=40 ha=50 db=1 da=1', 'D seq=1 blk=70 hb=50 ha=70 db=1 da=1', 'D seq=3 blk=90 hb=70 ha=90 db=1 da=1', 'B bnd=1999 hb=90 ha=90 db=1 da=-1', 'D seq=2 blk=20 hb=90 ha=20 db=1 da=1', 'B bnd=1999 hb=20 ha=20 db=1 da=-1', 'D seq=4 blk=10 hb=20 ha=10 db=1 da=1']",
+        "scan-up: END n khác 6",
+        "scan-down: trace sai\n  expected=['D seq=2 blk=20 hb=40 ha=20 db=-1 da=-1', 'D seq=4 blk=10 hb=20 ha=10 db=-1 da=-1', 'B bnd=0 hb=10 ha=10 db=-1 da=1', 'D seq=5 blk=50 hb=10 ha=50 db=1 da=1', 'D seq=1 blk=70 hb=50 ha=70 db=1 da=1', 'D seq=3 blk=90 hb=70 ha=90 db=1 da=1']\n  actual  =['D seq=2 blk=20 hb=40 ha=20 db=-1 da=-1', 'D seq=4 blk=10 hb=20 ha=10 db=-1 da=-1', 'B bnd=0 hb=10 ha=10 db=-1 da=1', 'D seq=5 blk=50 hb=10 ha=50 db=-1 da=-1', 'B bnd=0 hb=50 ha=50 db=-1 da=1', 'D seq=1 blk=70 hb=50 ha=70 db=-1 da=-1', 'B bnd=0 hb=70 ha=70 db=-1 da=1', 'D seq=3 blk=90 hb=70 ha=90 db=-1 da=-1']"
+      ],
+      "log": "scan-m1-no-reverse-cpus1.log"
+    },
+    {
+      "name": "scan-m2-tie-latest",
+      "caught": true,
+      "first_errors": [
+        "tie-head: trace sai\n  expected=['D seq=2 blk=40 hb=40 ha=40 db=1 da=1', 'D seq=4 blk=40 hb=40 ha=40 db=1 da=1', 'D seq=1 blk=60 hb=40 ha=60 db=1 da=1', 'D seq=3 blk=60 hb=60 ha=60 db=1 da=1']\n  actual  =['D seq=2 blk=40 hb=40 ha=40 db=1 da=1', 'D seq=4 blk=40 hb=40 ha=40 db=1 da=1', 'D seq=3 blk=60 hb=40 ha=60 db=1 da=1', 'D seq=1 blk=60 hb=60 ha=60 db=1 da=1']"
+      ],
+      "log": "scan-m2-tie-latest-cpus1.log"
+    },
+    {
+      "name": "scan-m3-unlink-tail",
+      "caught": true,
+      "first_errors": [
+        "panic",
+        "thiếu marker IOQSCAN DONE (timeout/không chạy)",
+        "fcfs: thiếu CHK closed-no-commit PASS"
+      ],
+      "log": "scan-m3-unlink-tail-cpus1.log"
+    }
+  ],
+  "production_hooks_absent": true,
+  "finished_at": "2026-11-15T03:53:43.410761+07:00",
+  "status": "PASS",
+  "errors": []
+}

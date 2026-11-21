@@ -316,6 +316,35 @@ io_hw_selftest(void)
          st.submitted, st.completed, st.errors, st.released, st.max_inflight,
          st.free_req, ds.free_desc, ds.eagain_desc, ds.completed_stock,
          ds.completed_async, ds.head_reuse);
+
+  // W4-I01: unified single-lock snapshot on the real READ path + latency
+  // aggregates (D23/D24). This selftest only checks the accounting invariants
+  // and that timing was actually sampled; analysis belongs to the host oracle.
+  struct io_snapshot snap;
+  io_get_snapshot(&snap);
+  check(snap.submitted == snap.queued + snap.inflight + snap.completed + snap.errors,
+        "snapshot S=Q+I+C+E");
+  check(snap.completed + snap.errors == snap.released + snap.done + snap.error,
+        "snapshot C+E=R+D+X");
+  check(IO_NREQ == snap.free_req + snap.queued + snap.inflight + snap.done + snap.error,
+        "snapshot pool balance");
+  check(snap.queued == 0 && snap.inflight == 0 && snap.done == 0 && snap.error == 0,
+        "snapshot drained after T11");
+  check(snap.latency.samples > 0, "latency samples recorded");
+  check(snap.latency.wait_sum <= snap.latency.total_sum &&
+        snap.latency.service_sum <= snap.latency.total_sum,
+        "latency wait/service <= total");
+  printk("IO-SNAP: S=%d C=%d E=%d R=%d Q=%d I=%d D=%d X=%d F=%d fdesc=%d "
+         "sw=%d ep=%d eq=%d dlx=%d dlf=%d bnd=%d ovf=%d lat_samples=%d "
+         "wait_sum=%d wait_max=%d service_sum=%d service_max=%d total_sum=%d "
+         "total_max=%d zero_total=%d ticks=%d\n",
+         snap.submitted, snap.completed, snap.errors, snap.released, snap.queued,
+         snap.inflight, snap.done, snap.error, snap.free_req, snap.desc.free_desc,
+         snap.policy_switches, snap.epoch, snap.eagain, snap.dl_expired, snap.dl_fifo,
+         snap.boundary_events, snap.trace_overflow, snap.latency.samples,
+         snap.latency.wait_sum, snap.latency.wait_max, snap.latency.service_sum,
+         snap.latency.service_max, snap.latency.total_sum, snap.latency.total_max,
+         snap.latency.zero_total, snap.ticks_now);
   end_case("T11 accounting-10-cycles", before);
 
   printk("IO-HWTEST: %s failures=%d\n", failures == 0 ? "PASS" : "FAIL", failures);

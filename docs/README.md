@@ -10,13 +10,16 @@
 | [`architecture.md`](architecture.md) | Đường I/O stock xv6, thiết kế async + scheduler + merging |
 | [`testing.md`](testing.md) | Chiến lược test, ma trận CPUS, oracle, benchmark, stress |
 | [`baseline.md`](baseline.md) | Giao thức và kết quả baseline stock |
-| [`upstream.md`](upstream.md) | Pin xv6-riscv, manifest, cách cập nhật tag |
+| [`environment.md`](environment.md) | Môi trường, pin xv6-riscv và cách cập nhật (thay link `upstream.md` đã xoá) |
 | [`week1.md`](week1.md) | Việc tuần 1: môi trường, baseline, thiết kế, phân công |
-| [`week01/README.md`](week01/README.md) | **Hồ sơ tuần 1** + hướng dẫn từng bước cho Hiếu/Hoàng/Lợi, template điền dần |
+| [`week01/README.md`](week01/) | **Hồ sơ tuần 1** (thư mục; file README cũ đã xoá, xem `week01/kickoff.md`) |
 | [`week02/interface.md`](week02/interface.md) | **Contract W2-G01** (30/10): interface async READ, buffer ownership, lock domain, state machine, 3 kịch bản review, câu hỏi GV/PTO |
 | [`week02/progress-i01.md`](week02/progress-i01.md) | **Tiến độ W2-I01** (30/10): request pool hữu hạn, handle + generation, kernel selftest `make test-io`, bằng chứng PASS/negative-control |
 | [`week02/progress-i02.md`](week02/progress-i02.md) | **Tiến độ W2-I02** (30/10): `aio_poll`/`aio_wait`/`aio_release` + harness test process-context (T05/T06a/T06b, negative control lost-wakeup) |
 | [`week02/report-hieu.md`](week02/report-hieu.md) | **Báo cáo phần việc của Hiếu** (01/11): W2-G01/I01/I02, bằng chứng/test, việc tuần 1, blocker và kế hoạch tiếp theo |
+| [`week03/README.md`](week03/README.md) | **Hồ sơ tuần 3**: contract SCAN D11–D20, lifecycle owner/cancel, proposal (Hiếu) |
+| [`week04/README.md`](week04/README.md) | **Hồ sơ tuần 4**: contract D21–D27, oracle độc lập + snapshot, evidence index, thiết kế merge/owner, báo cáo Hiếu |
+| [`week04/report-hieu.md`](week04/report-hieu.md) | **Báo cáo hoàn thiện tuần 4 của Hiếu**: W4-G01/I01/I02, kết quả PASS/EXPECTED_FAIL/NOT RUN, giới hạn, cách tái lập |
 
 ## Quy ước
 
