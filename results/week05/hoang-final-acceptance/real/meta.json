@@ -1,0 +1,2164 @@
+{
+  "started_at": "2026-11-22T20:27:02.012900+07:00",
+  "machine": "nguyen-van-hoang-20233413",
+  "host": "Linux-7.2.6-x86_64-with-glibc2.39",
+  "arguments": {
+    "mode": "all",
+    "repeat": 5,
+    "cpus": [
+      1,
+      4
+    ],
+    "toolprefix": null,
+    "results_dir": "/home/ubuntu/Documents/Codex/2026-10-23/t/outputs/hoang-week02/tmp/week5-h02-run/real"
+  },
+  "toolchain": {
+    "toolprefix": "riscv64-unknown-elf-",
+    "cc": "riscv64-unknown-elf-gcc",
+    "cc_path": "/usr/bin/riscv64-unknown-elf-gcc",
+    "cc_realpath": "/usr/bin/riscv64-unknown-elf-gcc",
+    "nm": "riscv64-unknown-elf-nm",
+    "nm_path": "/usr/bin/riscv64-unknown-elf-nm",
+    "nm_realpath": "/usr/bin/riscv64-unknown-elf-nm",
+    "objdump": "riscv64-unknown-elf-objdump",
+    "objdump_path": "/usr/bin/riscv64-unknown-elf-objdump",
+    "ld": "riscv64-unknown-elf-ld",
+    "ld_path": "/usr/bin/riscv64-unknown-elf-ld"
+  },
+  "versions": {
+    "riscv64-unknown-elf-gcc": "riscv64-unknown-elf-gcc (13.2.0-11ubuntu1+12) 13.2.0",
+    "riscv64-unknown-elf-nm": "GNU nm (2.42-1ubuntu1+6) 2.42",
+    "qemu-system-riscv64": "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)",
+    "make": "GNU Make 4.3"
+  },
+  "expiry_ticks": 50,
+  "batch_limit": 4,
+  "seed": "0x26128003",
+  "builds": {
+    "real": {
+      "kernel_sha256": "dd6af2240c1f62caf7cabadff6d3bd5dc1cebef04d0c93529c920b8ec51d0781",
+      "fs_sha256": "de48923655de991a5a1ca60aa2376635e79a81233c35246f04adf4247befa33e"
+    },
+    "stress": {
+      "kernel_sha256": "8325803e5e4ab2108d148513b58429fe6942389a9d4e4d330aaf338245aee7b5",
+      "fs_sha256": "1fbc42ce5363104c3adfb1f7d793b409903c10d87f3c304a5cfef0f9cd5fe821"
+    },
+    "production": {
+      "kernel_sha256": "93e10bee8d5f694c045fa7dab547891ded87c12ea97340567902a6dc6b62c179",
+      "fs_sha256": "8a6bc5efa90b578ad6659318acff55b84b557370a0c4651fe92a0030229e025b"
+    }
+  },
+  "runs": [
+    {
+      "cpus": 1,
+      "duration_s": 5.472,
+      "command": [
+        "qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-bios",
+        "none",
+        "-kernel",
+        "kernel/kernel",
+        "-m",
+        "128M",
+        "-smp",
+        "1",
+        "-nographic",
+        "-global",
+        "virtio-mmio.force-legacy=false",
+        "-drive",
+        "file=/tmp/hoang-virtio-62x5nwq3/fs.img,if=none,format=raw,id=x0",
+        "-device",
+        "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+      ],
+      "fixture": {
+        "blocks": [
+          1968,
+          1999
+        ],
+        "block_size": 1024,
+        "verified_free": true,
+        "corrupt_first_byte": false,
+        "image_sha256": "f7cfc7a87eacdc035364e071428b7fe58477843a7ccbe17cba9fe86d2f7dd0d1"
+      },
+      "log": "real-policy-cpus1.log",
+      "mode": "real-policy",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "cpus": 4,
+      "duration_s": 5.476,
+      "command": [
+        "qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-bios",
+        "none",
+        "-kernel",
+        "kernel/kernel",
+        "-m",
+        "128M",
+        "-smp",
+        "4",
+        "-nographic",
+        "-global",
+        "virtio-mmio.force-legacy=false",
+        "-drive",
+        "file=/tmp/hoang-virtio-_o92vgy9/fs.img,if=none,format=raw,id=x0",
+        "-device",
+        "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+      ],
+      "fixture": {
+        "blocks": [
+          1968,
+          1999
+        ],
+        "block_size": 1024,
+        "verified_free": true,
+        "corrupt_first_byte": false,
+        "image_sha256": "f7cfc7a87eacdc035364e071428b7fe58477843a7ccbe17cba9fe86d2f7dd0d1"
+      },
+      "log": "real-policy-cpus4.log",
+      "mode": "real-policy",
+      "status": "PASS",
+      "errors": []
+    },
+    {
+      "cpus": 4,
+      "duration_s": 5.515,
+      "command": [
+        "qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-bios",
+        "none",
+        "-kernel",
+        "kernel/kernel",
+        "-m",
+        "128M",
+        "-smp",
+        "4",
+        "-nographic",
+        "-global",
+        "virtio-mmio.force-legacy=false",
+        "-drive",
+        "file=/tmp/hoang-virtio-kyjwdxao/fs.img,if=none,format=raw,id=x0",
+        "-device",
+        "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+      ],
+      "fixture": {
+        "blocks": [
+          1968,
+          1999
+        ],
+        "block_size": 1024,
+        "verified_free": true,
+        "corrupt_first_byte": true,
+        "image_sha256": "0e2c9be75a9a1fd1fd06b7ccc3aa30f66db9dcd24502afbf16a552f72c38bac1"
+      },
+      "log": "real-negative-cpus4.log",
+      "mode": "real-negative",
+      "status": "EXPECTED_FAIL",
+      "errors": [
+        "missing unique successful DONE marker",
+        "failure/panic/missing user PASS",
+        "case 0: fail=1, expected 0",
+        "case 1: fail=1, expected 0",
+        "case 2: fail=1, expected 0",
+        "case 3: fail=1, expected 0",
+        "case 4: fail=1, expected 0",
+        "case 5: fail=1, expected 0",
+        "case 6: fail=1, expected 0",
+        "case 7: fail=1, expected 0",
+        "case 8: fail=1, expected 0",
+        "case 9: fail=1, expected 0"
+      ]
+    },
+    {
+      "cpus": 1,
+      "duration_s": 0.536,
+      "command": [
+        "qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-bios",
+        "none",
+        "-kernel",
+        "kernel/kernel",
+        "-m",
+        "128M",
+        "-smp",
+        "1",
+        "-nographic",
+        "-global",
+        "virtio-mmio.force-legacy=false",
+        "-drive",
+        "file=/tmp/hoang-virtio-twah1hds/fs.img,if=none,format=raw,id=x0",
+        "-device",
+        "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+      ],
+      "fixture": {
+        "blocks": [
+          1968,
+          1999
+        ],
+        "block_size": 1024,
+        "verified_free": true,
+        "corrupt_first_byte": false,
+        "image_sha256": "5dcaaef2ba51c8a938682577fa7db0e3ba9a75f56d7e3651889fd56cb7aecb05"
+      },
+      "log": "switch-stress-01-cpus1.log",
+      "mode": "switch-stress-01",
+      "status": "PASS",
+      "errors": [],
+      "stats": {
+        "workers": 4,
+        "total_reads": 480,
+        "submitted": 480,
+        "completed": 480,
+        "errors": 0,
+        "released": 480,
+        "max_inflight": 2,
+        "free_req": 16,
+        "free_desc": 8,
+        "queued": 0,
+        "inflight": 0,
+        "done": 0,
+        "error": 0,
+        "eagain_pool": 97,
+        "eagain_desc": 117,
+        "q_enqueued": 480,
+        "q_dispatched": 480,
+        "q_eagain": 117,
+        "head_reuse": 452,
+        "data_errors": 0,
+        "sw": 6,
+        "ep": 6,
+        "pol": 0,
+        "ovf": 516,
+        "samples": 480,
+        "zero_total": 480,
+        "wait_sum": 0,
+        "service_sum": 0,
+        "total_sum": 0
+      },
+      "workers": {
+        "0": {
+          "worker": 0,
+          "pid": 2,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 0,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 0,
+            "id": 5,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 0,
+            "id": 0,
+            "gen": 102,
+            "block": 1986
+          },
+          "hash": "0x3026e198"
+        },
+        "1": {
+          "worker": 1,
+          "pid": 3,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 0,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 1,
+            "id": 10,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 1,
+            "id": 5,
+            "gen": 101,
+            "block": 1997
+          },
+          "hash": "0xa543d021"
+        },
+        "2": {
+          "worker": 2,
+          "pid": 4,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 16,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 2,
+            "id": 15,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 2,
+            "id": 10,
+            "gen": 100,
+            "block": 1974
+          },
+          "hash": "0x78c894e4"
+        },
+        "3": {
+          "worker": 3,
+          "pid": 5,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 81,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 3,
+            "id": 0,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 3,
+            "id": 15,
+            "gen": 102,
+            "block": 1994
+          },
+          "hash": "0xa5054ea5"
+        }
+      }
+    },
+    {
+      "cpus": 1,
+      "duration_s": 0.622,
+      "command": [
+        "qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-bios",
+        "none",
+        "-kernel",
+        "kernel/kernel",
+        "-m",
+        "128M",
+        "-smp",
+        "1",
+        "-nographic",
+        "-global",
+        "virtio-mmio.force-legacy=false",
+        "-drive",
+        "file=/tmp/hoang-virtio-iwnnn5tx/fs.img,if=none,format=raw,id=x0",
+        "-device",
+        "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+      ],
+      "fixture": {
+        "blocks": [
+          1968,
+          1999
+        ],
+        "block_size": 1024,
+        "verified_free": true,
+        "corrupt_first_byte": false,
+        "image_sha256": "5dcaaef2ba51c8a938682577fa7db0e3ba9a75f56d7e3651889fd56cb7aecb05"
+      },
+      "log": "switch-stress-02-cpus1.log",
+      "mode": "switch-stress-02",
+      "status": "PASS",
+      "errors": [],
+      "stats": {
+        "workers": 4,
+        "total_reads": 480,
+        "submitted": 480,
+        "completed": 480,
+        "errors": 0,
+        "released": 480,
+        "max_inflight": 2,
+        "free_req": 16,
+        "free_desc": 8,
+        "queued": 0,
+        "inflight": 0,
+        "done": 0,
+        "error": 0,
+        "eagain_pool": 96,
+        "eagain_desc": 115,
+        "q_enqueued": 480,
+        "q_dispatched": 480,
+        "q_eagain": 115,
+        "head_reuse": 416,
+        "data_errors": 0,
+        "sw": 6,
+        "ep": 6,
+        "pol": 0,
+        "ovf": 516,
+        "samples": 480,
+        "zero_total": 479,
+        "wait_sum": 0,
+        "service_sum": 1,
+        "total_sum": 1
+      },
+      "workers": {
+        "0": {
+          "worker": 0,
+          "pid": 2,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 0,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 0,
+            "id": 5,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 0,
+            "id": 0,
+            "gen": 101,
+            "block": 1986
+          },
+          "hash": "0x76af05c"
+        },
+        "1": {
+          "worker": 1,
+          "pid": 3,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 0,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 1,
+            "id": 10,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 1,
+            "id": 5,
+            "gen": 101,
+            "block": 1997
+          },
+          "hash": "0xa543d021"
+        },
+        "2": {
+          "worker": 2,
+          "pid": 4,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 16,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 2,
+            "id": 15,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 2,
+            "id": 10,
+            "gen": 101,
+            "block": 1974
+          },
+          "hash": "0x7fd0f8c9"
+        },
+        "3": {
+          "worker": 3,
+          "pid": 5,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 80,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 3,
+            "id": 0,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 3,
+            "id": 15,
+            "gen": 101,
+            "block": 1994
+          },
+          "hash": "0xba1a8138"
+        }
+      }
+    },
+    {
+      "cpus": 1,
+      "duration_s": 0.539,
+      "command": [
+        "qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-bios",
+        "none",
+        "-kernel",
+        "kernel/kernel",
+        "-m",
+        "128M",
+        "-smp",
+        "1",
+        "-nographic",
+        "-global",
+        "virtio-mmio.force-legacy=false",
+        "-drive",
+        "file=/tmp/hoang-virtio-ps_j3dc1/fs.img,if=none,format=raw,id=x0",
+        "-device",
+        "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+      ],
+      "fixture": {
+        "blocks": [
+          1968,
+          1999
+        ],
+        "block_size": 1024,
+        "verified_free": true,
+        "corrupt_first_byte": false,
+        "image_sha256": "5dcaaef2ba51c8a938682577fa7db0e3ba9a75f56d7e3651889fd56cb7aecb05"
+      },
+      "log": "switch-stress-03-cpus1.log",
+      "mode": "switch-stress-03",
+      "status": "PASS",
+      "errors": [],
+      "stats": {
+        "workers": 4,
+        "total_reads": 480,
+        "submitted": 480,
+        "completed": 480,
+        "errors": 0,
+        "released": 480,
+        "max_inflight": 2,
+        "free_req": 16,
+        "free_desc": 8,
+        "queued": 0,
+        "inflight": 0,
+        "done": 0,
+        "error": 0,
+        "eagain_pool": 97,
+        "eagain_desc": 126,
+        "q_enqueued": 480,
+        "q_dispatched": 480,
+        "q_eagain": 126,
+        "head_reuse": 444,
+        "data_errors": 0,
+        "sw": 6,
+        "ep": 6,
+        "pol": 0,
+        "ovf": 510,
+        "samples": 480,
+        "zero_total": 480,
+        "wait_sum": 0,
+        "service_sum": 0,
+        "total_sum": 0
+      },
+      "workers": {
+        "0": {
+          "worker": 0,
+          "pid": 2,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 0,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 0,
+            "id": 5,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 0,
+            "id": 0,
+            "gen": 101,
+            "block": 1986
+          },
+          "hash": "0xb0f4c19c"
+        },
+        "1": {
+          "worker": 1,
+          "pid": 3,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 0,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 1,
+            "id": 10,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 1,
+            "id": 5,
+            "gen": 101,
+            "block": 1997
+          },
+          "hash": "0x9f00509d"
+        },
+        "2": {
+          "worker": 2,
+          "pid": 4,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 16,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 2,
+            "id": 15,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 2,
+            "id": 10,
+            "gen": 100,
+            "block": 1974
+          },
+          "hash": "0x50dc4fb9"
+        },
+        "3": {
+          "worker": 3,
+          "pid": 5,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 81,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 3,
+            "id": 0,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 3,
+            "id": 15,
+            "gen": 102,
+            "block": 1994
+          },
+          "hash": "0x114c110"
+        }
+      }
+    },
+    {
+      "cpus": 1,
+      "duration_s": 0.524,
+      "command": [
+        "qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-bios",
+        "none",
+        "-kernel",
+        "kernel/kernel",
+        "-m",
+        "128M",
+        "-smp",
+        "1",
+        "-nographic",
+        "-global",
+        "virtio-mmio.force-legacy=false",
+        "-drive",
+        "file=/tmp/hoang-virtio-cqpfaphx/fs.img,if=none,format=raw,id=x0",
+        "-device",
+        "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+      ],
+      "fixture": {
+        "blocks": [
+          1968,
+          1999
+        ],
+        "block_size": 1024,
+        "verified_free": true,
+        "corrupt_first_byte": false,
+        "image_sha256": "5dcaaef2ba51c8a938682577fa7db0e3ba9a75f56d7e3651889fd56cb7aecb05"
+      },
+      "log": "switch-stress-04-cpus1.log",
+      "mode": "switch-stress-04",
+      "status": "PASS",
+      "errors": [],
+      "stats": {
+        "workers": 4,
+        "total_reads": 480,
+        "submitted": 480,
+        "completed": 480,
+        "errors": 0,
+        "released": 480,
+        "max_inflight": 2,
+        "free_req": 16,
+        "free_desc": 8,
+        "queued": 0,
+        "inflight": 0,
+        "done": 0,
+        "error": 0,
+        "eagain_pool": 96,
+        "eagain_desc": 114,
+        "q_enqueued": 480,
+        "q_dispatched": 480,
+        "q_eagain": 114,
+        "head_reuse": 428,
+        "data_errors": 0,
+        "sw": 6,
+        "ep": 6,
+        "pol": 0,
+        "ovf": 516,
+        "samples": 480,
+        "zero_total": 479,
+        "wait_sum": 0,
+        "service_sum": 1,
+        "total_sum": 1
+      },
+      "workers": {
+        "0": {
+          "worker": 0,
+          "pid": 2,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 0,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 0,
+            "id": 5,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 0,
+            "id": 0,
+            "gen": 101,
+            "block": 1986
+          },
+          "hash": "0x76af05c"
+        },
+        "1": {
+          "worker": 1,
+          "pid": 3,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 0,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 1,
+            "id": 10,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 1,
+            "id": 5,
+            "gen": 101,
+            "block": 1997
+          },
+          "hash": "0xa543d021"
+        },
+        "2": {
+          "worker": 2,
+          "pid": 4,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 16,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 2,
+            "id": 15,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 2,
+            "id": 10,
+            "gen": 101,
+            "block": 1974
+          },
+          "hash": "0x7fd0f8c9"
+        },
+        "3": {
+          "worker": 3,
+          "pid": 5,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 80,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 3,
+            "id": 0,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 3,
+            "id": 15,
+            "gen": 101,
+            "block": 1994
+          },
+          "hash": "0xba1a8138"
+        }
+      }
+    },
+    {
+      "cpus": 1,
+      "duration_s": 0.522,
+      "command": [
+        "qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-bios",
+        "none",
+        "-kernel",
+        "kernel/kernel",
+        "-m",
+        "128M",
+        "-smp",
+        "1",
+        "-nographic",
+        "-global",
+        "virtio-mmio.force-legacy=false",
+        "-drive",
+        "file=/tmp/hoang-virtio-6zgo8ehf/fs.img,if=none,format=raw,id=x0",
+        "-device",
+        "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+      ],
+      "fixture": {
+        "blocks": [
+          1968,
+          1999
+        ],
+        "block_size": 1024,
+        "verified_free": true,
+        "corrupt_first_byte": false,
+        "image_sha256": "5dcaaef2ba51c8a938682577fa7db0e3ba9a75f56d7e3651889fd56cb7aecb05"
+      },
+      "log": "switch-stress-05-cpus1.log",
+      "mode": "switch-stress-05",
+      "status": "PASS",
+      "errors": [],
+      "stats": {
+        "workers": 4,
+        "total_reads": 480,
+        "submitted": 480,
+        "completed": 480,
+        "errors": 0,
+        "released": 480,
+        "max_inflight": 2,
+        "free_req": 16,
+        "free_desc": 8,
+        "queued": 0,
+        "inflight": 0,
+        "done": 0,
+        "error": 0,
+        "eagain_pool": 97,
+        "eagain_desc": 116,
+        "q_enqueued": 480,
+        "q_dispatched": 480,
+        "q_eagain": 116,
+        "head_reuse": 445,
+        "data_errors": 0,
+        "sw": 6,
+        "ep": 6,
+        "pol": 0,
+        "ovf": 516,
+        "samples": 480,
+        "zero_total": 480,
+        "wait_sum": 0,
+        "service_sum": 0,
+        "total_sum": 0
+      },
+      "workers": {
+        "0": {
+          "worker": 0,
+          "pid": 2,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 0,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 0,
+            "id": 5,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 0,
+            "id": 0,
+            "gen": 101,
+            "block": 1986
+          },
+          "hash": "0xb0f4c19c"
+        },
+        "1": {
+          "worker": 1,
+          "pid": 3,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 0,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 1,
+            "id": 10,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 1,
+            "id": 5,
+            "gen": 101,
+            "block": 1997
+          },
+          "hash": "0xa543d021"
+        },
+        "2": {
+          "worker": 2,
+          "pid": 4,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 16,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 2,
+            "id": 15,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 2,
+            "id": 10,
+            "gen": 101,
+            "block": 1974
+          },
+          "hash": "0x7fd0f8c9"
+        },
+        "3": {
+          "worker": 3,
+          "pid": 5,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 81,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 3,
+            "id": 0,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 3,
+            "id": 15,
+            "gen": 102,
+            "block": 1994
+          },
+          "hash": "0x5168bdd7"
+        }
+      }
+    },
+    {
+      "cpus": 4,
+      "duration_s": 0.546,
+      "command": [
+        "qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-bios",
+        "none",
+        "-kernel",
+        "kernel/kernel",
+        "-m",
+        "128M",
+        "-smp",
+        "4",
+        "-nographic",
+        "-global",
+        "virtio-mmio.force-legacy=false",
+        "-drive",
+        "file=/tmp/hoang-virtio-iqkp4f0a/fs.img,if=none,format=raw,id=x0",
+        "-device",
+        "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+      ],
+      "fixture": {
+        "blocks": [
+          1968,
+          1999
+        ],
+        "block_size": 1024,
+        "verified_free": true,
+        "corrupt_first_byte": false,
+        "image_sha256": "5dcaaef2ba51c8a938682577fa7db0e3ba9a75f56d7e3651889fd56cb7aecb05"
+      },
+      "log": "switch-stress-01-cpus4.log",
+      "mode": "switch-stress-01",
+      "status": "PASS",
+      "errors": [],
+      "stats": {
+        "workers": 4,
+        "total_reads": 480,
+        "submitted": 480,
+        "completed": 480,
+        "errors": 0,
+        "released": 480,
+        "max_inflight": 2,
+        "free_req": 16,
+        "free_desc": 8,
+        "queued": 0,
+        "inflight": 0,
+        "done": 0,
+        "error": 0,
+        "eagain_pool": 189,
+        "eagain_desc": 190,
+        "q_enqueued": 480,
+        "q_dispatched": 480,
+        "q_eagain": 190,
+        "head_reuse": 431,
+        "data_errors": 0,
+        "sw": 6,
+        "ep": 6,
+        "pol": 0,
+        "ovf": 515,
+        "samples": 480,
+        "zero_total": 480,
+        "wait_sum": 0,
+        "service_sum": 0,
+        "total_sum": 0
+      },
+      "workers": {
+        "0": {
+          "worker": 0,
+          "pid": 2,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 59,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 0,
+            "id": 2,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 0,
+            "id": 3,
+            "gen": 32,
+            "block": 1986
+          },
+          "hash": "0x420cc2cc"
+        },
+        "1": {
+          "worker": 1,
+          "pid": 3,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 48,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 1,
+            "id": 8,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 1,
+            "id": 5,
+            "gen": 23,
+            "block": 1997
+          },
+          "hash": "0x9198cb21"
+        },
+        "2": {
+          "worker": 2,
+          "pid": 4,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 40,
+          "poll_hits": 119,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 2,
+            "id": 13,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 2,
+            "id": 13,
+            "gen": 23,
+            "block": 1974
+          },
+          "hash": "0x5e796914"
+        },
+        "3": {
+          "worker": 3,
+          "pid": 5,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 42,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 3,
+            "id": 0,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 3,
+            "id": 2,
+            "gen": 47,
+            "block": 1994
+          },
+          "hash": "0x9fce5797"
+        }
+      }
+    },
+    {
+      "cpus": 4,
+      "duration_s": 0.572,
+      "command": [
+        "qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-bios",
+        "none",
+        "-kernel",
+        "kernel/kernel",
+        "-m",
+        "128M",
+        "-smp",
+        "4",
+        "-nographic",
+        "-global",
+        "virtio-mmio.force-legacy=false",
+        "-drive",
+        "file=/tmp/hoang-virtio-e8eokbv1/fs.img,if=none,format=raw,id=x0",
+        "-device",
+        "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+      ],
+      "fixture": {
+        "blocks": [
+          1968,
+          1999
+        ],
+        "block_size": 1024,
+        "verified_free": true,
+        "corrupt_first_byte": false,
+        "image_sha256": "5dcaaef2ba51c8a938682577fa7db0e3ba9a75f56d7e3651889fd56cb7aecb05"
+      },
+      "log": "switch-stress-02-cpus4.log",
+      "mode": "switch-stress-02",
+      "status": "PASS",
+      "errors": [],
+      "stats": {
+        "workers": 4,
+        "total_reads": 480,
+        "submitted": 480,
+        "completed": 480,
+        "errors": 0,
+        "released": 480,
+        "max_inflight": 2,
+        "free_req": 16,
+        "free_desc": 8,
+        "queued": 0,
+        "inflight": 0,
+        "done": 0,
+        "error": 0,
+        "eagain_pool": 189,
+        "eagain_desc": 199,
+        "q_enqueued": 480,
+        "q_dispatched": 480,
+        "q_eagain": 199,
+        "head_reuse": 437,
+        "data_errors": 0,
+        "sw": 6,
+        "ep": 6,
+        "pol": 0,
+        "ovf": 506,
+        "samples": 480,
+        "zero_total": 478,
+        "wait_sum": 0,
+        "service_sum": 2,
+        "total_sum": 2
+      },
+      "workers": {
+        "0": {
+          "worker": 0,
+          "pid": 2,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 23,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 0,
+            "id": 1,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 0,
+            "id": 2,
+            "gen": 43,
+            "block": 1986
+          },
+          "hash": "0x5b47316c"
+        },
+        "1": {
+          "worker": 1,
+          "pid": 3,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 52,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 1,
+            "id": 9,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 1,
+            "id": 1,
+            "gen": 61,
+            "block": 1997
+          },
+          "hash": "0x1ca25d6c"
+        },
+        "2": {
+          "worker": 2,
+          "pid": 4,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 71,
+          "poll_hits": 118,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 2,
+            "id": 13,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 2,
+            "id": 6,
+            "gen": 18,
+            "block": 1974
+          },
+          "hash": "0xdd8ab69a"
+        },
+        "3": {
+          "worker": 3,
+          "pid": 5,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 43,
+          "poll_hits": 118,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 3,
+            "id": 0,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 3,
+            "id": 4,
+            "gen": 35,
+            "block": 1994
+          },
+          "hash": "0x4076b8ba"
+        }
+      }
+    },
+    {
+      "cpus": 4,
+      "duration_s": 0.567,
+      "command": [
+        "qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-bios",
+        "none",
+        "-kernel",
+        "kernel/kernel",
+        "-m",
+        "128M",
+        "-smp",
+        "4",
+        "-nographic",
+        "-global",
+        "virtio-mmio.force-legacy=false",
+        "-drive",
+        "file=/tmp/hoang-virtio-o2rga090/fs.img,if=none,format=raw,id=x0",
+        "-device",
+        "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+      ],
+      "fixture": {
+        "blocks": [
+          1968,
+          1999
+        ],
+        "block_size": 1024,
+        "verified_free": true,
+        "corrupt_first_byte": false,
+        "image_sha256": "5dcaaef2ba51c8a938682577fa7db0e3ba9a75f56d7e3651889fd56cb7aecb05"
+      },
+      "log": "switch-stress-03-cpus4.log",
+      "mode": "switch-stress-03",
+      "status": "PASS",
+      "errors": [],
+      "stats": {
+        "workers": 4,
+        "total_reads": 480,
+        "submitted": 480,
+        "completed": 480,
+        "errors": 0,
+        "released": 480,
+        "max_inflight": 2,
+        "free_req": 16,
+        "free_desc": 8,
+        "queued": 0,
+        "inflight": 0,
+        "done": 0,
+        "error": 0,
+        "eagain_pool": 176,
+        "eagain_desc": 228,
+        "q_enqueued": 480,
+        "q_dispatched": 480,
+        "q_eagain": 228,
+        "head_reuse": 443,
+        "data_errors": 0,
+        "sw": 6,
+        "ep": 6,
+        "pol": 0,
+        "ovf": 514,
+        "samples": 480,
+        "zero_total": 480,
+        "wait_sum": 0,
+        "service_sum": 0,
+        "total_sum": 0
+      },
+      "workers": {
+        "0": {
+          "worker": 0,
+          "pid": 2,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 42,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 0,
+            "id": 1,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 0,
+            "id": 2,
+            "gen": 39,
+            "block": 1986
+          },
+          "hash": "0x27063915"
+        },
+        "1": {
+          "worker": 1,
+          "pid": 3,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 27,
+          "poll_hits": 119,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 1,
+            "id": 2,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 1,
+            "id": 2,
+            "gen": 37,
+            "block": 1997
+          },
+          "hash": "0xcd5fa901"
+        },
+        "2": {
+          "worker": 2,
+          "pid": 4,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 54,
+          "poll_hits": 119,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 2,
+            "id": 15,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 2,
+            "id": 13,
+            "gen": 16,
+            "block": 1974
+          },
+          "hash": "0xb7069d8b"
+        },
+        "3": {
+          "worker": 3,
+          "pid": 5,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 53,
+          "poll_hits": 116,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 3,
+            "id": 0,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 3,
+            "id": 3,
+            "gen": 39,
+            "block": 1994
+          },
+          "hash": "0x2b1d1bd1"
+        }
+      }
+    },
+    {
+      "cpus": 4,
+      "duration_s": 0.624,
+      "command": [
+        "qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-bios",
+        "none",
+        "-kernel",
+        "kernel/kernel",
+        "-m",
+        "128M",
+        "-smp",
+        "4",
+        "-nographic",
+        "-global",
+        "virtio-mmio.force-legacy=false",
+        "-drive",
+        "file=/tmp/hoang-virtio-36olk6f6/fs.img,if=none,format=raw,id=x0",
+        "-device",
+        "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+      ],
+      "fixture": {
+        "blocks": [
+          1968,
+          1999
+        ],
+        "block_size": 1024,
+        "verified_free": true,
+        "corrupt_first_byte": false,
+        "image_sha256": "5dcaaef2ba51c8a938682577fa7db0e3ba9a75f56d7e3651889fd56cb7aecb05"
+      },
+      "log": "switch-stress-04-cpus4.log",
+      "mode": "switch-stress-04",
+      "status": "PASS",
+      "errors": [],
+      "stats": {
+        "workers": 4,
+        "total_reads": 480,
+        "submitted": 480,
+        "completed": 480,
+        "errors": 0,
+        "released": 480,
+        "max_inflight": 2,
+        "free_req": 16,
+        "free_desc": 8,
+        "queued": 0,
+        "inflight": 0,
+        "done": 0,
+        "error": 0,
+        "eagain_pool": 197,
+        "eagain_desc": 217,
+        "q_enqueued": 480,
+        "q_dispatched": 480,
+        "q_eagain": 217,
+        "head_reuse": 450,
+        "data_errors": 0,
+        "sw": 6,
+        "ep": 6,
+        "pol": 0,
+        "ovf": 513,
+        "samples": 480,
+        "zero_total": 479,
+        "wait_sum": 0,
+        "service_sum": 1,
+        "total_sum": 1
+      },
+      "workers": {
+        "0": {
+          "worker": 0,
+          "pid": 2,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 37,
+          "poll_hits": 119,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 0,
+            "id": 1,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 0,
+            "id": 9,
+            "gen": 26,
+            "block": 1986
+          },
+          "hash": "0x6ad20ff9"
+        },
+        "1": {
+          "worker": 1,
+          "pid": 3,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 32,
+          "poll_hits": 119,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 1,
+            "id": 4,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 1,
+            "id": 2,
+            "gen": 50,
+            "block": 1997
+          },
+          "hash": "0x3ab5d406"
+        },
+        "2": {
+          "worker": 2,
+          "pid": 4,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 78,
+          "poll_hits": 118,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 2,
+            "id": 15,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 2,
+            "id": 8,
+            "gen": 26,
+            "block": 1974
+          },
+          "hash": "0xcd15fe3e"
+        },
+        "3": {
+          "worker": 3,
+          "pid": 5,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 50,
+          "poll_hits": 120,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 3,
+            "id": 0,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 3,
+            "id": 4,
+            "gen": 53,
+            "block": 1994
+          },
+          "hash": "0x3e59662b"
+        }
+      }
+    },
+    {
+      "cpus": 4,
+      "duration_s": 0.558,
+      "command": [
+        "qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-bios",
+        "none",
+        "-kernel",
+        "kernel/kernel",
+        "-m",
+        "128M",
+        "-smp",
+        "4",
+        "-nographic",
+        "-global",
+        "virtio-mmio.force-legacy=false",
+        "-drive",
+        "file=/tmp/hoang-virtio-qipp6of2/fs.img,if=none,format=raw,id=x0",
+        "-device",
+        "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+      ],
+      "fixture": {
+        "blocks": [
+          1968,
+          1999
+        ],
+        "block_size": 1024,
+        "verified_free": true,
+        "corrupt_first_byte": false,
+        "image_sha256": "5dcaaef2ba51c8a938682577fa7db0e3ba9a75f56d7e3651889fd56cb7aecb05"
+      },
+      "log": "switch-stress-05-cpus4.log",
+      "mode": "switch-stress-05",
+      "status": "PASS",
+      "errors": [],
+      "stats": {
+        "workers": 4,
+        "total_reads": 480,
+        "submitted": 480,
+        "completed": 480,
+        "errors": 0,
+        "released": 480,
+        "max_inflight": 2,
+        "free_req": 16,
+        "free_desc": 8,
+        "queued": 0,
+        "inflight": 0,
+        "done": 0,
+        "error": 0,
+        "eagain_pool": 202,
+        "eagain_desc": 169,
+        "q_enqueued": 480,
+        "q_dispatched": 480,
+        "q_eagain": 169,
+        "head_reuse": 426,
+        "data_errors": 0,
+        "sw": 6,
+        "ep": 6,
+        "pol": 0,
+        "ovf": 507,
+        "samples": 480,
+        "zero_total": 479,
+        "wait_sum": 0,
+        "service_sum": 1,
+        "total_sum": 1
+      },
+      "workers": {
+        "0": {
+          "worker": 0,
+          "pid": 2,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 48,
+          "poll_hits": 117,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 0,
+            "id": 2,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 0,
+            "id": 1,
+            "gen": 57,
+            "block": 1986
+          },
+          "hash": "0x5a0f04bf"
+        },
+        "1": {
+          "worker": 1,
+          "pid": 3,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 71,
+          "poll_hits": 117,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 1,
+            "id": 5,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 1,
+            "id": 2,
+            "gen": 34,
+            "block": 1997
+          },
+          "hash": "0x71d404a3"
+        },
+        "2": {
+          "worker": 2,
+          "pid": 4,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 38,
+          "poll_hits": 119,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 2,
+            "id": 13,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 2,
+            "id": 5,
+            "gen": 41,
+            "block": 1974
+          },
+          "hash": "0x43dd1093"
+        },
+        "3": {
+          "worker": 3,
+          "pid": 5,
+          "submitted": 120,
+          "completed": 120,
+          "eagain_pool": 45,
+          "poll_hits": 118,
+          "data_err": 0,
+          "watchdog": 0,
+          "fail": 0,
+          "first": {
+            "worker": 3,
+            "id": 0,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 3,
+            "id": 3,
+            "gen": 26,
+            "block": 1994
+          },
+          "hash": "0x1a32e3e9"
+        }
+      }
+    },
+    {
+      "cpus": 4,
+      "duration_s": 0.412,
+      "command": [
+        "qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-bios",
+        "none",
+        "-kernel",
+        "kernel/kernel",
+        "-m",
+        "128M",
+        "-smp",
+        "4",
+        "-nographic",
+        "-global",
+        "virtio-mmio.force-legacy=false",
+        "-drive",
+        "file=/tmp/hoang-virtio-x9o7h0w6/fs.img,if=none,format=raw,id=x0",
+        "-device",
+        "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+      ],
+      "fixture": {
+        "blocks": [
+          1968,
+          1999
+        ],
+        "block_size": 1024,
+        "verified_free": true,
+        "corrupt_first_byte": true,
+        "image_sha256": "bc824c4569d1df1331f69b6a17bdee4ab072f8fe9df1930961bcd3536b67d0f6"
+      },
+      "log": "stress-negative-cpus4.log",
+      "mode": "stress-negative",
+      "status": "EXPECTED_FAIL",
+      "errors": [
+        "worker 0 incomplete reads (6/2)",
+        "worker 0 error/watchdog/fail",
+        "worker 1 incomplete reads (3/1)",
+        "worker 1 error/watchdog/fail",
+        "worker 2 incomplete reads (3/1)",
+        "worker 2 error/watchdog/fail",
+        "worker 3 incomplete reads (5/1)",
+        "worker 3 error/watchdog/fail",
+        "data_errors=4 != 0",
+        "missing overall PASS marker",
+        "failure/panic marker present",
+        "need exactly six loaded switch phases and drain records",
+        "missing unique controller completion",
+        "controller failed",
+        "incorrect final switch epoch or timing sample count"
+      ],
+      "stats": {
+        "workers": 4,
+        "total_reads": 5,
+        "submitted": 17,
+        "completed": 17,
+        "errors": 0,
+        "released": 17,
+        "max_inflight": 2,
+        "free_req": 16,
+        "free_desc": 8,
+        "queued": 0,
+        "inflight": 0,
+        "done": 0,
+        "error": 0,
+        "eagain_pool": 2,
+        "eagain_desc": 14,
+        "q_enqueued": 17,
+        "q_dispatched": 17,
+        "q_eagain": 14,
+        "head_reuse": 15,
+        "data_errors": 4,
+        "sw": 1,
+        "ep": 1,
+        "pol": 1,
+        "ovf": 0,
+        "samples": 17,
+        "zero_total": 17,
+        "wait_sum": 0,
+        "service_sum": 0,
+        "total_sum": 0
+      },
+      "workers": {
+        "0": {
+          "worker": 0,
+          "pid": 2,
+          "submitted": 6,
+          "completed": 2,
+          "eagain_pool": 0,
+          "poll_hits": 2,
+          "data_err": 1,
+          "watchdog": 0,
+          "fail": 1,
+          "first": {
+            "worker": 0,
+            "id": 2,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 0,
+            "id": 0,
+            "gen": 2,
+            "block": 1992
+          },
+          "hash": "0x4dd6884"
+        },
+        "1": {
+          "worker": 1,
+          "pid": 3,
+          "submitted": 3,
+          "completed": 1,
+          "eagain_pool": 1,
+          "poll_hits": 1,
+          "data_err": 1,
+          "watchdog": 0,
+          "fail": 1,
+          "first": {
+            "worker": 1,
+            "id": 12,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 1,
+            "id": 15,
+            "gen": 1,
+            "block": 1976
+          },
+          "hash": "0xb86aafa3"
+        },
+        "2": {
+          "worker": 2,
+          "pid": 4,
+          "submitted": 3,
+          "completed": 1,
+          "eagain_pool": 1,
+          "poll_hits": 1,
+          "data_err": 1,
+          "watchdog": 0,
+          "fail": 1,
+          "first": {
+            "worker": 2,
+            "id": 10,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 2,
+            "id": 13,
+            "gen": 1,
+            "block": 1999
+          },
+          "hash": "0xabb5b0e3"
+        },
+        "3": {
+          "worker": 3,
+          "pid": 5,
+          "submitted": 5,
+          "completed": 1,
+          "eagain_pool": 0,
+          "poll_hits": 1,
+          "data_err": 1,
+          "watchdog": 0,
+          "fail": 1,
+          "first": {
+            "worker": 3,
+            "id": 0,
+            "gen": 1,
+            "block": 1968
+          },
+          "last": {
+            "worker": 3,
+            "id": 8,
+            "gen": 1,
+            "block": 1995
+          },
+          "hash": "0x98975d4d"
+        }
+      }
+    },
+    {
+      "cpus": 1,
+      "duration_s": 0.373,
+      "command": [
+        "qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-bios",
+        "none",
+        "-kernel",
+        "kernel/kernel",
+        "-m",
+        "128M",
+        "-smp",
+        "1",
+        "-nographic",
+        "-global",
+        "virtio-mmio.force-legacy=false",
+        "-drive",
+        "file=/tmp/hoang-virtio-de06ssi8/fs.img,if=none,format=raw,id=x0",
+        "-device",
+        "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+      ],
+      "fixture": null,
+      "log": "production-smoke.log",
+      "mode": "production-restore-smoke",
+      "status": "PASS"
+    }
+  ],
+  "head": "f5a1c04ebd20c6e69ff124b2c1f13301f87b1d68",
+  "branch": "week5/hoang-final-acceptance",
+  "dirty": "",
+  "xv6_pin": "f780d7850765d74cbdcd1fff4b822d8829f7c9bd 2026-10-15 build with -fno-delete-null-pointer-checks",
+  "source_sha256": {
+    "Makefile": "0c0af32b43db17e171a45d27ed83a65e6ba8087b345597605cdeb33555a1ea48",
+    "kernel/bio.c": "5a0dcfd6266635ba55eaa32611d9e274e3f752402ec0964661bef7a954bd8108",
+    "kernel/buf.h": "00b344a48220ddeaff96b60730ace733c811ea9b33ee1ead76790716c3847614",
+    "kernel/console.c": "d3088059d9591e367b7b15706590e472fe38cc505b22d7d8cf03b8da5de5d699",
+    "kernel/defs.h": "28c72336b820b17ade0d83fb3917bef869205fb013d8169c426c41d23906e8fb",
+    "kernel/elf.h": "f51c9ad3bed12d4047e5b6aa62086685ad1fa8c1ac0709076f6390eda6306ac5",
+    "kernel/exec.c": "b93ef7e97e7c701474ae5d9d7a5f0399e7fcf430c47c9bca15d49f4102ebaad2",
+    "kernel/fcntl.h": "c8c2a7fa8a9c432be55dcd4bd6db9429c88c3a95cec6f79a576968b36048e166",
+    "kernel/file.c": "b31fe01b67f97c8e00c36150cf16ec0ea7d27d2f324b6066d0f62eeddff4a4ac",
+    "kernel/file.h": "8b1d433b0deca07fab07bb9eb4e750d0b7c869b33f3b448447dbfca5f2814826",
+    "kernel/fs.c": "eb2cab16ab4eac8059e022e5c009c14d12fc35b720dd63e147270a1dbc50eed6",
+    "kernel/fs.h": "08118f92377d555b5352579518c26ad5093188c6f88257be70d1f122691545a3",
+    "kernel/io_hw_test.c": "3b6d6f8d2c7060994e7cfc37dd844eaa83cc4c74a0f3b0a6d29a39136df91ce5",
+    "kernel/io_policy_hw_test.c": "de4557caf14b348f976aa31ec8e03db4f1e10b3d809a28f39fbbae119c0dea7f",
+    "kernel/io_queue.c": "6906649e2b74027381e579739b56d135a5440ddcfb1b32e8f6c5ecd171e271ef",
+    "kernel/io_queue_test.c": "56e3a5563b8bd452765d06236a8f1775fec9d56746630787c936baaa11eff925",
+    "kernel/io_queue_test.h": "81d8025cce31b063371e1f5dc20d9be6c634b805a2c57dc2faf07bdb070e6efa",
+    "kernel/io_request.c": "0c7481059f601389bfe98a19871a7ecece933d29e25278885031e240022ea249",
+    "kernel/io_request.h": "b31e531e625ad32e10e38b43a0f8af1818d7541c9ad67e999fecb465620cfa44",
+    "kernel/io_request_test.c": "1021658f62ba8e309bad3611e2a1fb737653d191a5b3a0a9e8caf9fd42c577a2",
+    "kernel/io_stress_test.c": "d4411c81c56e3e7585b8525f9c2ffc6686ea0fa9c97d5ada30359cbe8102c8ed",
+    "kernel/kalloc.c": "090ff45843dadbc4e674f96967a478cea37714a62fe6b723b8ac9c34fdb15983",
+    "kernel/log.c": "62c1a96498b2e345f24ddf13bc81b7bdee89f845d6d8d553f07dbb43ff498f71",
+    "kernel/main.c": "d2cedcf20398874c96e59f07d06167fa159f5588dd58b53e35cde00778730a05",
+    "kernel/memlayout.h": "6d7a9c4f352f0649ce8367f629e718a0fec9703be7baf996576929ac142dc26a",
+    "kernel/param.h": "2e231d4c792da80c39668de92d56c28e9d24fd1bdc190435f7ce4025d24bbb59",
+    "kernel/pipe.c": "c38b2e8b0530d1382d9dc3a957954ab3cf6ae3bb8fd232362d0f908da96ec5bb",
+    "kernel/plic.c": "0c534dd2113284dc6a9f0731c47c36d85786ad3f65ac27cd33f077aa6f1f47e0",
+    "kernel/printk.c": "a4e6d431a3f56250b4962025290e662ddd211db56567cbba95957df0c4e3b2e3",
+    "kernel/proc.c": "eb4db448863ecdfb882f581bd3b068f74a937590bbb9cf69333ddf9ce479c506",
+    "kernel/proc.h": "117f9994f13255bc1422857ff8bcef858ade187881f3f1391d295df237692004",
+    "kernel/riscv.h": "f1fefb95e1f2f10979fb4e79eec44b67975f7c37dcc7754f28d26228c81d9067",
+    "kernel/sleeplock.c": "0ddda91203e2ee48285182e165879f25eaf56dc1ba34118e0d7066a34ff455bd",
+    "kernel/sleeplock.h": "70e71f5e3ac908740add92f74058f2264cb86f800b9d1ab4099ff37ce457e9e3",
+    "kernel/spinlock.c": "9f7911af4c249f5b9af5ea28c7b97b675a3e5daf3285cd84458b66e12f1c4851",
+    "kernel/spinlock.h": "82e59d9f745045042c74892b7e055bc5339f8ae438362e4b6f0ff962eae6ee36",
+    "kernel/start.c": "86529a328bcbb240772ef486152d4cf0f541baae06e4969f24824da575a34d87",
+    "kernel/stat.h": "653da9a25a16140de6733b0fa87d2988d0dee962fe75ab5f17fcb50d19e3f8be",
+    "kernel/string.c": "67a31dd59ee8326c5cd0bd6866209682de1ff6f1bcd6c4dc08641a6e2827f192",
+    "kernel/syscall.c": "908dc0874bdcd3e2c573c7e3f79cf48707c21deada0c46e524e55d11e9d65ef6",
+    "kernel/syscall.h": "364ad0722f9219c5213277bd7487a4dcff29ddcf4d227bbf4dbde1d1e4778e14",
+    "kernel/sysfile.c": "5e18c50913ebc5c007b06bec86511d93b46d0361fac75291c8456867a7fd0b29",
+    "kernel/sysproc.c": "55c1161e4fe5ba7d0094881f0b610b072d0e0e9233f01520226260a79f3ecb98",
+    "kernel/trap.c": "71d3b381acfb471863e2077f1f3cec94433a23b6d0f5a570b0f640b71ac63faf",
+    "kernel/types.h": "2b243b4826114e7b4dfcdb80dd3ce26d50e9f6c3b2acc776d2887ffc1cf19785",
+    "kernel/uart.c": "6c284f94eb8fcca9c723015f366a849a441f462b99d16e3cca5880439df6a493",
+    "kernel/virtio.h": "beb83bae22279e8f0358232139e5e368302e59625b72309ed9a32d7bdcb1f0d8",
+    "kernel/virtio_disk.c": "30abe762f3bb0ac3f23d9d7154562de34b72c73e669c465abb77ce346154d87d",
+    "kernel/vm.c": "7e85b5001ab9282eefd11f13cd10f9d09287f1feaa603be7fd984de75e0e0de6",
+    "kernel/vm.h": "ebd5dfc1a2d28cb16a15dea12ac9467bded6ca4bf652f44b580e4c5bef3fb1a3",
+    "mk/project.mk": "1812f7a662c42ddc90bd3a61846fd6a5be1b054afd46602a85ac2b0f702c3bc1",
+    "scripts/check-week01-hoang.py": "82d4ba58548af1bca8c0e7abc32c44997576619f8a75e05bfe585b13f40ba2be",
+    "scripts/check-week02-hoang.py": "7a1d844b1d4f03b8e70236f7408f612222d7cf2be2ba0d44554c85b6f98bb8c1",
+    "scripts/check-week03-scan.py": "59defb1cfd7b9447be8fdfea7f42af448b184e268481221071527263934ae6bc",
+    "scripts/check-week03-stress.py": "f19f0ee56785e18bf199b77f2cf59e5a2011d575e9ee493fb7266b7ebc1ce859",
+    "scripts/check-week04-hoang.py": "1cdf3d2f59d07116d0c8c63928e19a93c3db50fac1461891475e762065d636ee",
+    "scripts/check-week04-oracle-hieu.py": "ebd9ed530b7791bbb110750f956c47eb00590c8549dc6b5a3f3727baccc946a8",
+    "scripts/check-week04-policy.py": "a5f67f27c998017e0d580f1fca41a5e2f17bdc4ae752a680b8bb056dc0c02547",
+    "scripts/check_mermaid.py": "867e725db7e7f9d75c8f409850f0d10c1b179dfa55506c349da1daa09acb756e",
+    "scripts/check_text.py": "a53bcf3c38093a3f938fef0baf7cf03ac0413ebd7041c4008b98c81afe3759ce",
+    "scripts/verify-second-machine.py": "5f08c86e9e657b4257adc05eaed4368afcd9c0a1f47276e9ba25e9c883b13d70",
+    "tests/cases/io_real_policy.py": "1079349e2f3904ec0854fb120c78486eadfab8660b50daa0581d6524c785cb2c",
+    "tests/cases/ioq_deadline.py": "03dfb340aa5c19b6aa2160eb68950c62ca7fc6ccc34df02cc146defd5c30762d",
+    "tests/cases/ioq_fcfs.py": "90bd9d54b02a17756d8bc40b67fb5a72e62b4d6663080c6e88861194620bc0c4",
+    "tests/cases/ioq_policy.py": "29a000e42ca4e51b394ea3b8e43c156b8781bf5ca7eebf40d836839b41115359",
+    "tests/cases/ioq_policy_switch.py": "f1088d62a117a0e3cc29e59cb85c9192df8e126730ff3a1d2e1135c8d6ec38d1",
+    "tests/cases/ioq_scan.py": "14781b349b111a424344861d8ff3dd54d7606e8e5a180d9cd73505d5e8ad3e12",
+    "tests/cases/ioq_w4_model.py": "dc401b8b95197c88521a097a480977254193c9acf88700200397395e57f90a84",
+    "tests/cases/stock.py": "7bb11e05a46a07e055d4a6c0244d9a907ea3724f9f18d3696adbbb3d0c9f0644",
+    "user/cat.c": "44b0acf6d999a9addc466faa090c8349962a7a51528c8af2e7afae4bf2437df0",
+    "user/dorphan.c": "22b733e653f7e845770266f4c79f0c4be3803aa760b8bbc1d34b841f19288ce5",
+    "user/echo.c": "b51803acf48c2c3e87bebf637c941c4a63d21313f0c6d103cd76753eb72b2145",
+    "user/forktest.c": "2db82f25cd4f248c31744a88b5cd8d332128c7c0e689d6899077dff1f2c08b35",
+    "user/forphan.c": "500755a5f770f8f7385b867119b43fd6f468fb8130a40050258d0b24f08c7eed",
+    "user/grep.c": "691a256810d8cd1ac7033750fae8369aac58a9412461c2c03e19ebcb54f5e787",
+    "user/grind.c": "a40116e15183bf2738980800289db9b93a509d62403e256613212b8126558355",
+    "user/init.c": "b23ba509e0f2b5f819789913e23968ae94e7c1f476adc234024c7849b9ea350d",
+    "user/kill.c": "bed1eb7a8446eb3295f47d07e1c5bf7eeee0473de8ca9a213fe6eb73bf7d3c49",
+    "user/ln.c": "5d797233c2ae45ce210f2d5e7954084fe84c882b7645fba52bb55c6428d768cc",
+    "user/logstress.c": "86adae4bd36a98232d96b3febf7050b1b60153bf377e1a4e4428fe793fc24a21",
+    "user/ls.c": "fde93accc14669a7e69ffbd1ed695608fd7d9b307e1e4662734cc8246454e5d6",
+    "user/mkdir.c": "86c0730a6ae8088a9fa19b0efebf8c59eea9cff20da5a2d4bb3d89f3c1c8c836",
+    "user/printf.c": "8c98780668f6418103de788fa8f2c2d16ed419de95a4484e20fe9531194ccbca",
+    "user/rm.c": "fa81e84bc38dffa25cf4387dcf52781b41822fd65077ab6eb3296fefb14fe551",
+    "user/sh.c": "9f0ea2e437df99f3eecc0adfbf0dd0854f9cb80a8e7a0f636fa73da5b01fc5e3",
+    "user/stressfs.c": "7a88dd1e545ac0207b013430d095e2c45aa692275590d0d997631fa0605f27a1",
+    "user/sync.c": "a3c4a87c18c1da9262524de13c4a7011d0a9d9c456c01098a4c204d4ff3d9734",
+    "user/ulib.c": "0bb30cebbd735f730e335e807742e0d20ddf5779d534714f558a606aac2d7a4b",
+    "user/umalloc.c": "510c0c97dc26156ef758aac9823d2c66f3bfa59b8389d4164c22f16ff968b4c5",
+    "user/user.h": "7bdb892e879d1ef3affc682e3ae9a6c13e965c87b35fb838a413cfa3a48f25d4",
+    "user/usertests.c": "e85e32e55e4fe8a19ebfb307e25d07dff0db264c532392a433871c68a6e6fd3d",
+    "user/wc.c": "89bdbe572fda16deee86b94365754db4e9834f50c7067a8aedac1b5a89edd769",
+    "user/zombie.c": "eae866f906bd4061737c2704e2e50d82cabc9ef7c0aec86fee3472354e752e4a"
+  },
+  "production_hooks_absent": true,
+  "status": "PASS",
+  "errors": [],
+  "finished_at": "2026-11-22T20:27:28.858749+07:00"
+}
