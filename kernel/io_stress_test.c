@@ -64,7 +64,17 @@ static struct {
   struct io_desc_stats before_desc;
   struct ioq_counters before_q;
   struct io_stress_worker_stat w[IO_STRESS_NWORKERS];
+#ifdef IO_POLICY_STRESS_SELFTEST
+  int phase;
+  int aborted;
+  int phase_done[IO_STRESS_NWORKERS];
+#endif
 } stress;
+
+#ifdef IO_POLICY_STRESS_SELFTEST
+#define SWITCH_PHASES 6
+#define READS_PER_PHASE (IO_STRESS_READS_PER_WORKER / SWITCH_PHASES)
+#endif
 
 static uint
 read_ticks(void)
@@ -112,6 +122,11 @@ io_stress_begin(void)
   acquire(lk);
   io_queue_get_counters_locked(&stress.before_q);
   release(lk);
+#ifdef IO_POLICY_STRESS_SELFTEST
+  // Workers fill the real queue before the controller changes policy. Only
+  // software reaping is held; the device still performs the real DMA.
+  virtio_test_hold_used(1);
+#endif
   printk("IO-STRESS: begin workers=%d reads_per_worker=%d window=%d fixture=%d..%d seed=0x%x\n",
          IO_STRESS_NWORKERS, IO_STRESS_READS_PER_WORKER, IO_STRESS_WINDOW,
          FIXTURE, FIXTURE + 31, IO_STRESS_SEED);
@@ -179,11 +194,120 @@ stress_try_submit_slot(int w, int s, struct io_stress_win *win, struct io_stress
 static void
 stress_fill_window(int w, struct io_stress_win *win, struct io_stress_worker_stat *local)
 {
-  for (int s = 0; s < IO_STRESS_WINDOW && local->submitted < IO_STRESS_READS_PER_WORKER; s++) {
+  uint limit = IO_STRESS_READS_PER_WORKER;
+#ifdef IO_POLICY_STRESS_SELFTEST
+  // A producer never publishes requests belonging to the next phase early.
+  limit = ((local->completed / READS_PER_PHASE) + 1) * READS_PER_PHASE;
+#endif
+  for (int s = 0; s < IO_STRESS_WINDOW && local->submitted < limit; s++) {
     if (stress_try_submit_slot(w, s, win, local) != 0)
       break;
   }
 }
+
+#ifdef IO_POLICY_STRESS_SELFTEST
+static int
+stress_wait_phase(int w, uint completed)
+{
+  if (completed == 0 || completed % READS_PER_PHASE != 0)
+    return 0;
+  struct spinlock *lk = virtio_disk_io_lock();
+  int finished_phase = completed / READS_PER_PHASE;
+  for (;;) {
+    acquire(lk);
+    stress.phase_done[w] = finished_phase;
+    int aborted = stress.aborted;
+    int released = stress.phase >= finished_phase;
+    release(lk);
+    if (aborted || released)
+      return aborted;
+    yield();
+  }
+}
+
+static int
+stress_control_abort(char *why)
+{
+  struct spinlock *lk = virtio_disk_io_lock();
+  acquire(lk);
+  stress.aborted = 1;
+  stress.phase = SWITCH_PHASES;
+  release(lk);
+  virtio_test_hold_used(0);
+  printk("IO-SWITCH: FAIL %s\n", why);
+  return 1;
+}
+
+static int
+io_stress_control(void)
+{
+  static enum io_policy targets[SWITCH_PHASES] = {
+    IO_POLICY_SCAN, IO_POLICY_DEADLINE, IO_POLICY_SCAN,
+    IO_POLICY_FCFS, IO_POLICY_DEADLINE, IO_POLICY_FCFS
+  };
+  struct spinlock *lk = virtio_disk_io_lock();
+  for (int phase = 0; phase < SWITCH_PHASES; phase++) {
+    struct io_snapshot before, after;
+    uint start = read_ticks();
+    int loaded = 0;
+    for (int spin = 0; spin < IO_STRESS_MAX_ITERS; spin++) {
+      acquire(lk);
+      io_snapshot_locked(&before);
+      if (before.queued > 0 && before.inflight == 2) {
+        int rc = io_queue_set_policy_locked(targets[phase]);
+        io_snapshot_locked(&after);
+        loaded = rc == 0 && after.policy == targets[phase] &&
+                 after.epoch == before.epoch + 1 &&
+                 after.queued == before.queued && after.inflight == before.inflight;
+        release(lk);
+        break;
+      }
+      release(lk);
+      if (read_ticks() - start > IO_STRESS_WATCHDOG_TICKS)
+        break;
+      yield();
+    }
+    if (!loaded)
+      return stress_control_abort("no loaded switch");
+    printk("IO-SWITCH: phase=%d old=%d new=%d q=%d i=%d ep=%d begin_disp=%d\n",
+           phase, before.policy, after.policy, before.queued, before.inflight,
+           after.epoch, after.dispatched);
+    virtio_test_hold_used(0);
+
+    int completed = 0, failed = 0;
+    start = read_ticks();
+    for (int spin = 0; spin < IO_STRESS_MAX_ITERS; spin++) {
+      acquire(lk);
+      completed = 1;
+      for (int w = 0; w < IO_STRESS_NWORKERS; w++) {
+        completed &= stress.phase_done[w] >= phase + 1;
+        failed |= stress.w[w].finished && stress.w[w].failures;
+      }
+      io_snapshot_locked(&after);
+      release(lk);
+      if (completed || failed || read_ticks() - start > IO_STRESS_WATCHDOG_TICKS)
+        break;
+      yield();
+    }
+    if (!completed || failed || after.queued || after.inflight || after.done ||
+        after.error || after.free_req != IO_NREQ || after.desc.free_desc != NUM)
+      return stress_control_abort("phase failed or did not drain");
+    uint reads = IO_STRESS_NWORKERS * READS_PER_PHASE;
+    uint selected = after.dispatched - before.dispatched;
+    if (selected != reads - 2 || after.submitted != (uint)(phase + 1) * reads)
+      return stress_control_abort("policy did not dispatch this phase");
+    printk("IO-SWITCH: phase=%d END reads=%d selected=%d pol=%d ep=%d\n",
+           phase, reads, selected, after.policy, after.epoch);
+    if (phase + 1 < SWITCH_PHASES)
+      virtio_test_hold_used(1);
+    acquire(lk);
+    stress.phase = phase + 1;
+    release(lk);
+  }
+  printk("IO-SWITCH: DONE phases=%d fail=0\n", SWITCH_PHASES);
+  return 0;
+}
+#endif
 
 static int
 stress_pick_slot_to_reap(const struct io_stress_win *win, struct io_stress_worker_stat *local)
@@ -276,6 +400,12 @@ io_stress_run_worker(int w)
   stress_barrier_wait(lk);
 
   while (local.completed < IO_STRESS_READS_PER_WORKER && local.failures == 0) {
+#ifdef IO_POLICY_STRESS_SELFTEST
+    if (stress_wait_phase(w, local.completed)) {
+      local.failures++;
+      break;
+    }
+#endif
     iters++;
     if (iters > IO_STRESS_MAX_ITERS || read_ticks() - t0 > IO_STRESS_WATCHDOG_TICKS) {
       local.watchdog_tripped = 1;
@@ -298,6 +428,10 @@ io_stress_run_worker(int w)
   local.finished = 1;
   acquire(lk);
   stress.w[w] = local;
+#ifdef IO_POLICY_STRESS_SELFTEST
+  if (local.completed == IO_STRESS_READS_PER_WORKER && local.failures == 0)
+    stress.phase_done[w] = SWITCH_PHASES;
+#endif
   release(lk);
   return local.failures == 0 ? 0 : 1;
 }
@@ -437,12 +571,24 @@ io_stress_finish(void)
          ds.eagain_desc, qc.enqueued, qc.dispatched, qc.eagain,
          ds.head_reuse, total_data_errors);
   printk("IO-STRESS: %s failures=%d\n", failures == 0 ? "PASS" : "FAIL", failures);
+#ifdef IO_POLICY_STRESS_SELFTEST
+  struct io_snapshot snap;
+  io_get_snapshot(&snap);
+  printk("IO-STRESS-SNAP: sw=%d ep=%d pol=%d ovf=%d samples=%d zero_total=%d wait_sum=%d service_sum=%d total_sum=%d unit=tick\n",
+         snap.policy_switches, snap.epoch, snap.policy, snap.trace_overflow,
+         snap.latency.samples, snap.latency.zero_total, snap.latency.wait_sum,
+         snap.latency.service_sum, snap.latency.total_sum);
+#endif
   return failures;
 }
 
 int
 io_stress_selftest(int op)
 {
+#ifdef IO_POLICY_STRESS_SELFTEST
+  if (op == -3)
+    return io_stress_control();
+#endif
   if (op == -1)
     return io_stress_begin();
   if (op == -2)

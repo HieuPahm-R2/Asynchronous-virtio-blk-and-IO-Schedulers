@@ -1,3 +1,8 @@
+> Cập nhật 16/11/2026: Hoàng đã review driver/IRQ/lock và bổ sung READ thật +
+> stress switch/regression trên candidate `d39ea8c`. Xem [review](review-hoang.md)
+> và [acceptance](acceptance-hoang.md). Máy thứ hai/review chéo vẫn PENDING.
+> Bảng trạng thái bên dưới là snapshot ngày 15/11 của nhánh Hiếu, chưa thay bằng chứng mới.
+
 # W4-G01 — Contract tuần 4: deadline, runtime switch, snapshot và evidence index
 
 **Đề tài 26128 · ET4290 · Asynchronous virtio-blk và I/O schedulers trên xv6-riscv**

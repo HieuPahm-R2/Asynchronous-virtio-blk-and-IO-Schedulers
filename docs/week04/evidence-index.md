@@ -1,3 +1,8 @@
+> Cập nhật 16/11/2026: Hoàng đã review driver/IRQ/lock và bổ sung READ thật +
+> stress switch/regression trên candidate `d39ea8c`. Xem [review](review-hoang.md)
+> và [acceptance](acceptance-hoang.md). Máy thứ hai/review chéo vẫn PENDING.
+> Bảng trạng thái bên dưới là snapshot ngày 15/11 của nhánh Hiếu, chưa thay bằng chứng mới.
+
 # W4-G01 — Evidence index tuần 4 (kiểm kê bằng chứng)
 
 Mục đích: một bảng tra **mọi kết quả tuần 4 đang có trong repo**, kèm revision, máy,

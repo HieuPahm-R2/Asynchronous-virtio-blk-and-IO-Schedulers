@@ -37,6 +37,12 @@ run_io_stress_selftest(void)
       exit(io_selftest(w));
     spawned++;
   }
+#ifdef IO_POLICY_STRESS_SELFTEST
+  // Parent is a controller while the four producers are alive, not a fifth
+  // producer. The build keeps this entry inaccessible in production.
+  if (io_selftest(-3) != 0)
+    fail = 1;
+#endif
   for (int w = 0; w < spawned; w++) {
     int st = -1;
     int child_pid = wait(&st);

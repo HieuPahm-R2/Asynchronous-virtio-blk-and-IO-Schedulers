@@ -46,3 +46,15 @@ You will need a RISC-V "newlib" tool chain from
 https://github.com/riscv/riscv-gnu-toolchain, and qemu compiled for
 riscv64-softmmu.  Once they are installed, and in your shell
 search path, you can run "make qemu".
+
+ET4290 PROJECT (branch checkpoint, 2026-11-16)
+
+This project branch includes asynchronous one-block READ, a finite request
+pool, FCFS/SCAN/deadline scheduling, kernel policy switching and unified
+snapshots. Stock bread/bwrite remain synchronous. It is not an unmodified
+stock kernel, and there is no general user asynchronous syscall API yet.
+
+Hoang's real-DMA policy and loaded-switch stress tests:
+  make test-week04-hoang
+Runbook and limits: docs/week04/hoang-runbook.md
+Production defaults to FCFS; test controllers are compiled out by default.

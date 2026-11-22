@@ -34,6 +34,7 @@ OBJS = \
   $K/io_queue.o \
   $K/io_queue_test.o \
   $K/io_hw_test.o \
+  $K/io_policy_hw_test.o \
   $K/io_stress_test.o
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin

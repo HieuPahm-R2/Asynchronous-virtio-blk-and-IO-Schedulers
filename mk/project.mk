@@ -91,3 +91,8 @@ test-week02:
 
 test-week03-stress:
 	$(PYTHON) scripts/check-week03-stress.py $(STRESS_ARGS)
+
+# W4-H01/H02: real FCFS/SCAN/deadline + loaded switch stress. Serial builds.
+.PHONY: test-week04-hoang
+test-week04-hoang:
+	$(PYTHON) scripts/check-week04-hoang.py $(HOANG_W4_ARGS)
