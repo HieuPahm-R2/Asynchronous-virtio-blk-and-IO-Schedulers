@@ -1,0 +1,27 @@
+{
+  "sha": "f5a1c04ebd20c6e69ff124b2c1f13301f87b1d68",
+  "counts": {
+    "real": {
+      "PASS": 13,
+      "EXPECTED_FAIL": 2
+    },
+    "oracle": {
+      "PASS": 3,
+      "EXPECTED_FAIL": 6
+    },
+    "fcfs": {
+      "PASS": 24,
+      "EXPECTED_FAIL": 1
+    },
+    "production": {
+      "PASS": 6
+    }
+  },
+  "stress_boots": 10,
+  "reads": 4800,
+  "loaded_switches": 60,
+  "final_free_req": 16,
+  "final_free_desc": 8,
+  "repo_checks": "PASS",
+  "checked_at": "2026-11-22T20:34:04+07:00"
+}

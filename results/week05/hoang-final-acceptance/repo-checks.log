@@ -1,0 +1,7 @@
+f5a1c04ebd20c6e69ff124b2c1f13301f87b1d68
+
+== check-text: PASS — 769 file UTF-8 sạch, không mojibake ==
+
+== check-mermaid: PASS — 3 khối Mermaid, không thấy lỗi cú pháp phổ biến ==
+git diff --check: PASS
+tracked checkout: clean

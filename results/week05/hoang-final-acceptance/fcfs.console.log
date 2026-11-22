@@ -1,0 +1,26 @@
+real-virtio cpus=1 run=1: PASS
+real-virtio cpus=1 run=2: PASS
+real-virtio cpus=1 run=3: PASS
+real-virtio cpus=1 run=4: PASS
+real-virtio cpus=1 run=5: PASS
+real-virtio cpus=1 run=6: PASS
+real-virtio cpus=1 run=7: PASS
+real-virtio cpus=1 run=8: PASS
+real-virtio cpus=1 run=9: PASS
+real-virtio cpus=1 run=10: PASS
+real-virtio cpus=4 run=1: PASS
+real-virtio cpus=4 run=2: PASS
+real-virtio cpus=4 run=3: PASS
+real-virtio cpus=4 run=4: PASS
+real-virtio cpus=4 run=5: PASS
+real-virtio cpus=4 run=6: PASS
+real-virtio cpus=4 run=7: PASS
+real-virtio cpus=4 run=8: PASS
+real-virtio cpus=4 run=9: PASS
+real-virtio cpus=4 run=10: PASS
+corrupt-fixture oracle: EXPECTED_FAIL
+pool mock/timer cpus=1: PASS
+pool mock/timer cpus=4: PASS
+queue mock cpus=1: PASS
+queue mock cpus=4: PASS
+PASS: /home/ubuntu/Documents/Codex/2026-10-23/t/outputs/hoang-week02/tmp/week5-h02-run/fcfs
