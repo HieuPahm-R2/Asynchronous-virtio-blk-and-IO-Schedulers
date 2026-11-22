@@ -1,0 +1,135 @@
+
+xv6 kernel is booting
+
+IO-REAL: case=0 INIT src=0 dst=0 expired=0 pol=0 ep=0 head=0 dir=1 bat=0 last=1979 has=1 tick=3 q=5 i=2
+IO-REAL: case=0 INPUT seq=3 blk=1996 tick=3
+IO-REAL: case=0 INPUT seq=4 blk=1970 tick=3
+IO-REAL: case=0 INPUT seq=5 blk=1988 tick=3
+IO-REAL: case=0 INPUT seq=6 blk=1968 tick=3
+IO-REAL: case=0 INPUT seq=7 blk=1983 tick=3
+IO-REAL: case=0 EV D pol=0 rsn=0 seq=3 blk=1996 hb=0 ha=0 db=1 da=1 bat=0 ep=0
+IO-REAL: case=0 EV D pol=0 rsn=0 seq=4 blk=1970 hb=0 ha=0 db=1 da=1 bat=0 ep=0
+IO-REAL: case=0 EV D pol=0 rsn=0 seq=5 blk=1988 hb=0 ha=0 db=1 da=1 bat=0 ep=0
+IO-REAL: case=0 EV D pol=0 rsn=0 seq=6 blk=1968 hb=0 ha=0 db=1 da=1 bat=0 ep=0
+IO-REAL: case=0 EV D pol=0 rsn=0 seq=7 blk=1983 hb=0 ha=0 db=1 da=1 bat=0 ep=0
+IO-REAL: case=0 END tick=3 S=7 C=7 E=0 R=7 F=16 fd=8 ovf=0 n=5 fail=0 samples=7 zero_total=7 wait_sum=0 service_sum=0 total_sum=0
+IO-REAL: case=1 INIT src=1 dst=1 expired=0 pol=1 ep=1 head=1979 dir=1 bat=0 last=1979 has=1 tick=3 q=5 i=2
+IO-REAL: case=1 INPUT seq=10 blk=1996 tick=3
+IO-REAL: case=1 INPUT seq=11 blk=1970 tick=3
+IO-REAL: case=1 INPUT seq=12 blk=1988 tick=3
+IO-REAL: case=1 INPUT seq=13 blk=1968 tick=3
+IO-REAL: case=1 INPUT seq=14 blk=1983 tick=3
+IO-REAL: case=1 EV D pol=1 rsn=0 seq=14 blk=1983 hb=1979 ha=1983 db=1 da=1 bat=0 ep=1
+IO-REAL: case=1 EV D pol=1 rsn=0 seq=12 blk=1988 hb=1983 ha=1988 db=1 da=1 bat=0 ep=1
+IO-REAL: case=1 EV D pol=1 rsn=0 seq=10 blk=1996 hb=1988 ha=1996 db=1 da=1 bat=0 ep=1
+IO-REAL: case=1 EV B bnd=1999 hb=1996 ha=1996 db=1 da=-1 ep=1
+IO-REAL: case=1 EV D pol=1 rsn=0 seq=11 blk=1970 hb=1996 ha=1970 db=-1 da=-1 bat=0 ep=1
+IO-REAL: case=1 EV D pol=1 rsn=0 seq=13 blk=1968 hb=1970 ha=1968 db=-1 da=-1 bat=0 ep=1
+IO-REAL: case=1 END tick=4 S=14 C=14 E=0 R=14 F=16 fd=8 ovf=0 n=6 fail=0 samples=14 zero_total=9 wait_sum=3 service_sum=2 total_sum=5
+IO-REAL: case=2 INIT src=2 dst=2 expired=0 pol=2 ep=2 head=1968 dir=-1 bat=2 last=1979 has=1 tick=4 q=5 i=2
+IO-REAL: case=2 INPUT seq=17 blk=1996 tick=4
+IO-REAL: case=2 INPUT seq=18 blk=1970 tick=4
+IO-REAL: case=2 INPUT seq=19 blk=1988 tick=4
+IO-REAL: case=2 INPUT seq=20 blk=1968 tick=4
+IO-REAL: case=2 INPUT seq=21 blk=1983 tick=4
+IO-REAL: case=2 EV D pol=2 rsn=2 seq=20 blk=1968 hb=1968 ha=1968 db=-1 da=-1 bat=3 ep=2
+IO-REAL: case=2 EV D pol=2 rsn=2 seq=18 blk=1970 hb=1968 ha=1968 db=-1 da=-1 bat=4 ep=2
+IO-REAL: case=2 EV D pol=2 rsn=3 seq=17 blk=1996 hb=1968 ha=1968 db=-1 da=-1 bat=0 ep=2
+IO-REAL: case=2 EV D pol=2 rsn=2 seq=21 blk=1983 hb=1968 ha=1968 db=-1 da=-1 bat=1 ep=2
+IO-REAL: case=2 EV D pol=2 rsn=2 seq=19 blk=1988 hb=1968 ha=1968 db=-1 da=-1 bat=2 ep=2
+IO-REAL: case=2 END tick=4 S=21 C=21 E=0 R=21 F=16 fd=8 ovf=0 n=5 fail=0 samples=21 zero_total=16 wait_sum=3 service_sum=2 total_sum=5
+IO-REAL: case=3 INIT src=0 dst=1 expired=0 pol=0 ep=3 head=1968 dir=-1 bat=2 last=1979 has=1 tick=4 q=5 i=2
+IO-REAL: case=3 INPUT seq=24 blk=1996 tick=4
+IO-REAL: case=3 INPUT seq=25 blk=1970 tick=4
+IO-REAL: case=3 INPUT seq=26 blk=1988 tick=4
+IO-REAL: case=3 INPUT seq=27 blk=1968 tick=4
+IO-REAL: case=3 INPUT seq=28 blk=1983 tick=4
+IO-REAL: case=3 EV S old=0 new=1 hb=1968 ha=1979 da=1 bat=2 ep=4
+IO-REAL: case=3 EV D pol=1 rsn=0 seq=28 blk=1983 hb=1979 ha=1983 db=1 da=1 bat=2 ep=4
+IO-REAL: case=3 EV D pol=1 rsn=0 seq=26 blk=1988 hb=1983 ha=1988 db=1 da=1 bat=2 ep=4
+IO-REAL: case=3 EV D pol=1 rsn=0 seq=24 blk=1996 hb=1988 ha=1996 db=1 da=1 bat=2 ep=4
+IO-REAL: case=3 EV B bnd=1999 hb=1996 ha=1996 db=1 da=-1 ep=4
+IO-REAL: case=3 EV D pol=1 rsn=0 seq=25 blk=1970 hb=1996 ha=1970 db=-1 da=-1 bat=2 ep=4
+IO-REAL: case=3 EV D pol=1 rsn=0 seq=27 blk=1968 hb=1970 ha=1968 db=-1 da=-1 bat=2 ep=4
+IO-REAL: case=3 END tick=4 S=28 C=28 E=0 R=28 F=16 fd=8 ovf=0 n=7 fail=0 samples=28 zero_total=23 wait_sum=3 service_sum=2 total_sum=5
+IO-REAL: case=4 INIT src=0 dst=2 expired=0 pol=0 ep=5 head=1968 dir=-1 bat=2 last=1979 has=1 tick=4 q=5 i=2
+IO-REAL: case=4 INPUT seq=31 blk=1996 tick=4
+IO-REAL: case=4 INPUT seq=32 blk=1970 tick=4
+IO-REAL: case=4 INPUT seq=33 blk=1988 tick=4
+IO-REAL: case=4 INPUT seq=34 blk=1968 tick=4
+IO-REAL: case=4 INPUT seq=35 blk=1983 tick=4
+IO-REAL: case=4 EV S old=0 new=2 hb=1968 ha=1968 da=-1 bat=0 ep=6
+IO-REAL: case=4 EV D pol=2 rsn=2 seq=34 blk=1968 hb=1968 ha=1968 db=-1 da=-1 bat=1 ep=6
+IO-REAL: case=4 EV D pol=2 rsn=2 seq=32 blk=1970 hb=1968 ha=1968 db=-1 da=-1 bat=2 ep=6
+IO-REAL: case=4 EV D pol=2 rsn=2 seq=35 blk=1983 hb=1968 ha=1968 db=-1 da=-1 bat=3 ep=6
+IO-REAL: case=4 EV D pol=2 rsn=2 seq=33 blk=1988 hb=1968 ha=1968 db=-1 da=-1 bat=4 ep=6
+IO-REAL: case=4 EV D pol=2 rsn=3 seq=31 blk=1996 hb=1968 ha=1968 db=-1 da=-1 bat=0 ep=6
+IO-REAL: case=4 END tick=4 S=35 C=35 E=0 R=35 F=16 fd=8 ovf=0 n=6 fail=0 samples=35 zero_total=30 wait_sum=3 service_sum=2 total_sum=5
+IO-REAL: case=5 INIT src=1 dst=0 expired=0 pol=1 ep=7 head=1979 dir=1 bat=0 last=1979 has=1 tick=4 q=5 i=2
+IO-REAL: case=5 INPUT seq=38 blk=1996 tick=4
+IO-REAL: case=5 INPUT seq=39 blk=1970 tick=4
+IO-REAL: case=5 INPUT seq=40 blk=1988 tick=4
+IO-REAL: case=5 INPUT seq=41 blk=1968 tick=4
+IO-REAL: case=5 INPUT seq=42 blk=1983 tick=4
+IO-REAL: case=5 EV S old=1 new=0 hb=1979 ha=1979 da=1 bat=0 ep=8
+IO-REAL: case=5 EV D pol=0 rsn=0 seq=38 blk=1996 hb=1979 ha=1979 db=1 da=1 bat=0 ep=8
+IO-REAL: case=5 EV D pol=0 rsn=0 seq=39 blk=1970 hb=1979 ha=1979 db=1 da=1 bat=0 ep=8
+IO-REAL: case=5 EV D pol=0 rsn=0 seq=40 blk=1988 hb=1979 ha=1979 db=1 da=1 bat=0 ep=8
+IO-REAL: case=5 EV D pol=0 rsn=0 seq=41 blk=1968 hb=1979 ha=1979 db=1 da=1 bat=0 ep=8
+IO-REAL: case=5 EV D pol=0 rsn=0 seq=42 blk=1983 hb=1979 ha=1979 db=1 da=1 bat=0 ep=8
+IO-REAL: case=5 END tick=4 S=42 C=42 E=0 R=42 F=16 fd=8 ovf=0 n=6 fail=0 samples=42 zero_total=37 wait_sum=3 service_sum=2 total_sum=5
+IO-REAL: case=6 INIT src=1 dst=2 expired=0 pol=1 ep=9 head=1979 dir=1 bat=0 last=1979 has=1 tick=4 q=5 i=2
+IO-REAL: case=6 INPUT seq=45 blk=1996 tick=4
+IO-REAL: case=6 INPUT seq=46 blk=1970 tick=4
+IO-REAL: case=6 INPUT seq=47 blk=1988 tick=4
+IO-REAL: case=6 INPUT seq=48 blk=1968 tick=4
+IO-REAL: case=6 INPUT seq=49 blk=1983 tick=4
+IO-REAL: case=6 EV S old=1 new=2 hb=1979 ha=1979 da=1 bat=0 ep=10
+IO-REAL: case=6 EV D pol=2 rsn=2 seq=48 blk=1968 hb=1979 ha=1979 db=1 da=1 bat=1 ep=10
+IO-REAL: case=6 EV D pol=2 rsn=2 seq=46 blk=1970 hb=1979 ha=1979 db=1 da=1 bat=2 ep=10
+IO-REAL: case=6 EV D pol=2 rsn=2 seq=49 blk=1983 hb=1979 ha=1979 db=1 da=1 bat=3 ep=10
+IO-REAL: case=6 EV D pol=2 rsn=2 seq=47 blk=1988 hb=1979 ha=1979 db=1 da=1 bat=4 ep=10
+IO-REAL: case=6 EV D pol=2 rsn=3 seq=45 blk=1996 hb=1979 ha=1979 db=1 da=1 bat=0 ep=10
+IO-REAL: case=6 END tick=4 S=49 C=49 E=0 R=49 F=16 fd=8 ovf=0 n=6 fail=0 samples=49 zero_total=44 wait_sum=3 service_sum=2 total_sum=5
+IO-REAL: case=7 INIT src=2 dst=0 expired=0 pol=2 ep=10 head=1979 dir=1 bat=2 last=1979 has=1 tick=4 q=5 i=2
+IO-REAL: case=7 INPUT seq=52 blk=1996 tick=4
+IO-REAL: case=7 INPUT seq=53 blk=1970 tick=4
+IO-REAL: case=7 INPUT seq=54 blk=1988 tick=4
+IO-REAL: case=7 INPUT seq=55 blk=1968 tick=4
+IO-REAL: case=7 INPUT seq=56 blk=1983 tick=4
+IO-REAL: case=7 EV S old=2 new=0 hb=1979 ha=1979 da=1 bat=2 ep=11
+IO-REAL: case=7 EV D pol=0 rsn=0 seq=52 blk=1996 hb=1979 ha=1979 db=1 da=1 bat=2 ep=11
+IO-REAL: case=7 EV D pol=0 rsn=0 seq=53 blk=1970 hb=1979 ha=1979 db=1 da=1 bat=2 ep=11
+IO-REAL: case=7 EV D pol=0 rsn=0 seq=54 blk=1988 hb=1979 ha=1979 db=1 da=1 bat=2 ep=11
+IO-REAL: case=7 EV D pol=0 rsn=0 seq=55 blk=1968 hb=1979 ha=1979 db=1 da=1 bat=2 ep=11
+IO-REAL: case=7 EV D pol=0 rsn=0 seq=56 blk=1983 hb=1979 ha=1979 db=1 da=1 bat=2 ep=11
+IO-REAL: case=7 END tick=4 S=56 C=56 E=0 R=56 F=16 fd=8 ovf=0 n=6 fail=0 samples=56 zero_total=51 wait_sum=3 service_sum=2 total_sum=5
+IO-REAL: case=8 INIT src=2 dst=1 expired=0 pol=2 ep=12 head=1979 dir=1 bat=2 last=1979 has=1 tick=4 q=5 i=2
+IO-REAL: case=8 INPUT seq=59 blk=1996 tick=4
+IO-REAL: case=8 INPUT seq=60 blk=1970 tick=4
+IO-REAL: case=8 INPUT seq=61 blk=1988 tick=4
+IO-REAL: case=8 INPUT seq=62 blk=1968 tick=4
+IO-REAL: case=8 INPUT seq=63 blk=1983 tick=4
+IO-REAL: case=8 EV S old=2 new=1 hb=1979 ha=1979 da=1 bat=2 ep=13
+IO-REAL: case=8 EV D pol=1 rsn=0 seq=63 blk=1983 hb=1979 ha=1983 db=1 da=1 bat=2 ep=13
+IO-REAL: case=8 EV D pol=1 rsn=0 seq=61 blk=1988 hb=1983 ha=1988 db=1 da=1 bat=2 ep=13
+IO-REAL: case=8 EV D pol=1 rsn=0 seq=59 blk=1996 hb=1988 ha=1996 db=1 da=1 bat=2 ep=13
+IO-REAL: case=8 EV B bnd=1999 hb=1996 ha=1996 db=1 da=-1 ep=13
+IO-REAL: case=8 EV D pol=1 rsn=0 seq=60 blk=1970 hb=1996 ha=1970 db=-1 da=-1 bat=2 ep=13
+IO-REAL: case=8 EV D pol=1 rsn=0 seq=62 blk=1968 hb=1970 ha=1968 db=-1 da=-1 bat=2 ep=13
+IO-REAL: case=8 END tick=4 S=63 C=63 E=0 R=63 F=16 fd=8 ovf=0 n=7 fail=0 samples=63 zero_total=58 wait_sum=3 service_sum=2 total_sum=5
+IO-REAL: case=9 INIT src=2 dst=2 expired=1 pol=2 ep=14 head=1968 dir=-1 bat=2 last=1979 has=1 tick=54 q=5 i=2
+IO-REAL: case=9 INPUT seq=66 blk=1996 tick=4
+IO-REAL: case=9 INPUT seq=67 blk=1970 tick=4
+IO-REAL: case=9 INPUT seq=68 blk=1988 tick=4
+IO-REAL: case=9 INPUT seq=69 blk=1968 tick=4
+IO-REAL: case=9 INPUT seq=70 blk=1983 tick=4
+IO-REAL: case=9 EV D pol=2 rsn=1 seq=66 blk=1996 hb=1968 ha=1968 db=-1 da=-1 bat=0 ep=14
+IO-REAL: case=9 EV D pol=2 rsn=1 seq=67 blk=1970 hb=1968 ha=1968 db=-1 da=-1 bat=0 ep=14
+IO-REAL: case=9 EV D pol=2 rsn=1 seq=68 blk=1988 hb=1968 ha=1968 db=-1 da=-1 bat=0 ep=14
+IO-REAL: case=9 EV D pol=2 rsn=1 seq=69 blk=1968 hb=1968 ha=1968 db=-1 da=-1 bat=0 ep=14
+IO-REAL: case=9 EV D pol=2 rsn=1 seq=70 blk=1983 hb=1968 ha=1968 db=-1 da=-1 bat=0 ep=14
+IO-REAL: case=9 END tick=54 S=70 C=70 E=0 R=70 F=16 fd=8 ovf=0 n=5 fail=0 samples=70 zero_total=58 wait_sum=253 service_sum=102 total_sum=355
+IO-REAL: DONE cases=10 fail=0
+IO-USER-TEST: PASS (rc=0)
+init: starting sh

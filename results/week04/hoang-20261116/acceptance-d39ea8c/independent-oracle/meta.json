@@ -1,0 +1,144 @@
+{
+  "card": [
+    "W4-G01",
+    "W4-I01"
+  ],
+  "started_at": "2026-11-16T22:58:09.152101+07:00",
+  "host": "Linux-7.2.6-x86_64-with-glibc2.39",
+  "hostname": "nguyen-van-hoang-20233413",
+  "head": "d39ea8cf3500a0fdcf023efeab2c850dd2b767d6",
+  "branch": "week4/hoang-real-policy-stress",
+  "xv6_pin": "f780d7850765d74cbdcd1fff4b822d8829f7c9bd 2026-10-15 build with -fno-delete-null-pointer-checks",
+  "dirty": "",
+  "results_dir": "/home/ubuntu/Documents/Codex/2026-10-23/t/work/hoang-execution-2026-11-16/acceptance-d39ea8c/independent-oracle",
+  "toolchain": {
+    "toolprefix": "riscv64-unknown-elf-",
+    "cc": "/usr/bin/riscv64-unknown-elf-gcc",
+    "nm": "/usr/bin/riscv64-unknown-elf-nm"
+  },
+  "versions": {
+    "cc": "riscv64-unknown-elf-gcc (13.2.0-11ubuntu1+12) 13.2.0",
+    "nm": "GNU nm (2.42-1ubuntu1+6) 2.42",
+    "qemu": "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)",
+    "make": "GNU Make 4.3"
+  },
+  "runs": [
+    {
+      "mode": "I01-oracle-mock",
+      "cpus": 1,
+      "status": "PASS",
+      "errors": [],
+      "log": "policy-cpus1.log"
+    },
+    {
+      "mode": "I01-oracle-mock",
+      "cpus": 4,
+      "status": "PASS",
+      "errors": [],
+      "log": "policy-cpus4.log"
+    },
+    {
+      "mode": "real-read-timing",
+      "cpus": 1,
+      "status": "PASS",
+      "errors": [],
+      "snap": {
+        "S": 83,
+        "C": 81,
+        "E": 2,
+        "R": 83,
+        "Q": 0,
+        "I": 0,
+        "D": 0,
+        "X": 0,
+        "F": 16,
+        "fdesc": 8,
+        "sw": 0,
+        "ep": 0,
+        "eq": 24,
+        "dlx": 0,
+        "dlf": 0,
+        "bnd": 0,
+        "ovf": 19,
+        "lat_samples": 83,
+        "wait_sum": 0,
+        "wait_max": 0,
+        "service_sum": 0,
+        "service_max": 0,
+        "total_sum": 0,
+        "total_max": 0,
+        "zero_total": 83,
+        "ticks": 1
+      },
+      "log": "hw-cpus1-snap.log"
+    }
+  ],
+  "mutants": [
+    {
+      "name": "i01-m1-expired-latest",
+      "oracle": "DEADLINE",
+      "caught": true,
+      "log": "i01-m1-expired-latest-cpus1.log"
+    },
+    {
+      "name": "i01-m2-noop-epoch",
+      "oracle": "SWITCH",
+      "caught": true,
+      "log": "i01-m2-noop-epoch-cpus1.log"
+    },
+    {
+      "name": "i01-m3-keep-batch",
+      "oracle": "SWITCH",
+      "caught": true,
+      "log": "i01-m3-keep-batch-cpus1.log"
+    },
+    {
+      "name": "dl-m1-no-expired",
+      "oracle": "DEADLINE",
+      "caught": true,
+      "log": "dl-m1-no-expired-cpus1.log"
+    },
+    {
+      "name": "dl-m3-eagain-batch",
+      "oracle": "DEADLINE",
+      "caught": true,
+      "log": "dl-m3-eagain-batch-cpus1.log"
+    },
+    {
+      "name": "sw-m2-reset-age",
+      "oracle": "SWITCH",
+      "caught": true,
+      "log": "sw-m2-reset-age-cpus1.log"
+    }
+  ],
+  "repo_checks": {
+    "check-text": {
+      "rc": 0,
+      "tail": [
+        "== check-text: PASS — 576 file UTF-8 sạch, không mojibake =="
+      ]
+    },
+    "git-diff-check": {
+      "rc": 0,
+      "output": ""
+    }
+  },
+  "builds": {
+    "queue": {
+      "kernel_sha256": "b815f5aec665cf62edc7e78a9d62e58b366f51112009e1eae215271eecd723c9",
+      "fs_sha256": "8a6bc5efa90b578ad6659318acff55b84b557370a0c4651fe92a0030229e025b"
+    },
+    "hardware": {
+      "kernel_sha256": "cbbd2456eecdcd120919de492ce100f2c49a406c97fc0750e24ff74283325005",
+      "fs_sha256": "de48923655de991a5a1ca60aa2376635e79a81233c35246f04adf4247befa33e"
+    },
+    "production": {
+      "kernel_sha256": "93e10bee8d5f694c045fa7dab547891ded87c12ea97340567902a6dc6b62c179",
+      "fs_sha256": "8a6bc5efa90b578ad6659318acff55b84b557370a0c4651fe92a0030229e025b"
+    }
+  },
+  "production_hooks_absent": true,
+  "finished_at": "2026-11-16T22:58:25.483304+07:00",
+  "status": "PASS",
+  "errors": []
+}

@@ -1,0 +1,4 @@
+real-policy CPU1: PASS
+real-policy CPU4: PASS
+real-negative CPU4: EXPECTED_FAIL
+PASS: /mnt/e/ET4290/results/week05/post-merge/real-smoke

@@ -1,0 +1,29 @@
+
+xv6 kernel is booting
+
+hart 2 starting
+hart 1 starting
+hart 3 starting
+IO-STRESS: begin workers=4 reads_per_worker=120 window=5 fixture=1968..1999 seed=0x26128003
+IO-SWITCH: phase=0 old=0 new=1 q=4 i=2 ep=1 begin_disp=2
+IO-SWITCH: phase=0 END reads=80 selected=78 pol=1 ep=1
+IO-SWITCH: phase=1 old=1 new=2 q=2 i=2 ep=2 begin_disp=82
+IO-SWITCH: phase=1 END reads=80 selected=78 pol=2 ep=2
+IO-SWITCH: phase=2 old=2 new=1 q=14 i=2 ep=3 begin_disp=162
+IO-SWITCH: phase=2 END reads=80 selected=78 pol=1 ep=3
+IO-SWITCH: phase=3 old=1 new=0 q=1 i=2 ep=4 begin_disp=242
+IO-SWITCH: phase=3 END reads=80 selected=78 pol=0 ep=4
+IO-SWITCH: phase=4 old=0 new=2 q=3 i=2 ep=5 begin_disp=322
+IO-SWITCH: phase=4 END reads=80 selected=78 pol=2 ep=5
+IO-SWITCH: phase=5 old=2 new=0 q=1 i=2 ep=6 begin_disp=402
+IO-SWITCH: phase=5 END reads=80 selected=78 pol=0 ep=6
+IO-SWITCH: DONE phases=6 fail=0
+IO-STRESS: worker=0 pid=2 submitted=120 completed=120 eagain_pool=58 poll_hits=117 data_err=0 watchdog=0 fail=0 first=0/1/1/1968 last=0/3/31/1986 hash=0x4cd925d8
+IO-STRESS: worker=1 pid=3 submitted=120 completed=120 eagain_pool=42 poll_hits=117 data_err=0 watchdog=0 fail=0 first=1/2/1/1968 last=1/8/14/1997 hash=0x48dd3b6a
+IO-STRESS: worker=2 pid=4 submitted=120 completed=120 eagain_pool=60 poll_hits=118 data_err=0 watchdog=0 fail=0 first=2/13/1/1968 last=2/2/29/1974 hash=0xa2bdfa31
+IO-STRESS: worker=3 pid=5 submitted=120 completed=120 eagain_pool=50 poll_hits=118 data_err=0 watchdog=0 fail=0 first=3/0/1/1968 last=3/2/31/1994 hash=0xf73a9fc6
+IO-STRESS: stats workers=4 total_reads=480 submitted=480 completed=480 errors=0 released=480 max_inflight=2 free_req=16 free_desc=8 queued=0 inflight=0 done=0 error=0 eagain_pool=210 eagain_desc=212 q_enqueued=480 q_dispatched=480 q_eagain=212 head_reuse=438 data_errors=0
+IO-STRESS: PASS failures=0
+IO-STRESS-SNAP: sw=6 ep=6 pol=0 ovf=508 samples=480 zero_total=477 wait_sum=1 service_sum=2 total_sum=3 unit=tick
+IO-USER-TEST: PASS (rc=0)
+init: starting sh

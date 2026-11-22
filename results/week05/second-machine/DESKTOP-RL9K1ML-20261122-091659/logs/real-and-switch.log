@@ -1,0 +1,17 @@
+$ /usr/bin/python3 scripts/check-week04-hoang.py --mode all --repeat 5 --cpus 1 4 --toolprefix riscv64-linux-gnu- --results-dir /mnt/e/ET4290/results/week05/second-machine/DESKTOP-RL9K1ML-20261122-091659/real-and-switch
+
+real-policy CPU1: PASS
+real-policy CPU4: PASS
+real-negative CPU4: EXPECTED_FAIL
+switch-stress-01 CPU1: PASS
+switch-stress-02 CPU1: PASS
+switch-stress-03 CPU1: PASS
+switch-stress-04 CPU1: PASS
+switch-stress-05 CPU1: PASS
+switch-stress-01 CPU4: PASS
+switch-stress-02 CPU4: PASS
+switch-stress-03 CPU4: PASS
+switch-stress-04 CPU4: PASS
+switch-stress-05 CPU4: PASS
+stress-negative CPU4: EXPECTED_FAIL
+PASS: /mnt/e/ET4290/results/week05/second-machine/DESKTOP-RL9K1ML-20261122-091659/real-and-switch

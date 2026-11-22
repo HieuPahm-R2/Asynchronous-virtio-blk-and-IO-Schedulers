@@ -20,6 +20,7 @@
 | [`week03/README.md`](week03/README.md) | **Hồ sơ tuần 3**: contract SCAN D11–D20, lifecycle owner/cancel, proposal (Hiếu) |
 | [`week04/README.md`](week04/README.md) | **Hồ sơ tuần 4**: contract D21–D27, oracle độc lập + snapshot, evidence index, thiết kế merge/owner, báo cáo Hiếu |
 | [`week04/report-hieu.md`](week04/report-hieu.md) | **Báo cáo hoàn thiện tuần 4 của Hiếu**: W4-G01/I01/I02, kết quả PASS/EXPECTED_FAIL/NOT RUN, giới hạn, cách tái lập |
+| [`week05/README.md`](week05/README.md) | **Hồ sơ tuần 5 (Hiếu + Lợi)**: rà trạng thái/chốt candidate, máy hai, tích hợp main, chốt merge/owner-cancel, demo |
 
 ## Quy ước
 

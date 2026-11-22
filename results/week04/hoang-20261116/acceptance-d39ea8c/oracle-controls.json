@@ -1,0 +1,10 @@
+{
+  "positive_real": true,
+  "positive_stress": true,
+  "missing_real_done_rejected": true,
+  "wrong_dispatch_policy_rejected": true,
+  "wrong_switch_target_rejected": true,
+  "unloaded_switch_rejected": true,
+  "no_policy_dispatch_rejected": true,
+  "missing_stress_snapshot_rejected": true
+}

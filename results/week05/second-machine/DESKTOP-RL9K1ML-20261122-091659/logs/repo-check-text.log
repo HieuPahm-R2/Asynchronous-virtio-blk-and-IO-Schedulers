@@ -1,0 +1,4 @@
+$ /usr/bin/python3 scripts/check_text.py
+
+
+== check-text: PASS — 667 file UTF-8 sạch, không mojibake ==

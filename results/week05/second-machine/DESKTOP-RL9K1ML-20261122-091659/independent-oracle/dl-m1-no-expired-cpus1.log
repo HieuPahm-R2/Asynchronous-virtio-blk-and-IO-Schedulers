@@ -1,0 +1,403 @@
+
+xv6 kernel is booting
+
+IOQTEST MOCK T07 two-inflight PASS
+IOQTEST MOCK T07 three-queued PASS
+IOQTEST MOCK T07 eagain-seen PASS
+IOQTEST MOCK T07 eagain-keeps-queued PASS
+IOQTEST MOCK T07 progress-after-complete PASS
+IOQTEST MOCK T11 drain-queue-empty PASS
+IOQTEST MOCK T11 drain-no-inflight PASS
+IOQTEST MOCK T11 counters PASS
+IOQTEST MOCK T07 each-dispatched-once PASS
+IOQTEST MOCK T13 seq=1,2,3,4,5
+IOQTEST MOCK T13 blk=7,2,9,1,4
+IOQTEST MOCK DONE fail=0
+IOQSCAN fcfs CHK closed-no-commit PASS
+IOQSCAN fcfs CHK eagain-no-commit PASS
+IOQSCAN fcfs CHK drain-each-once PASS
+IOQSCAN fcfs CHK state-matches-trace PASS
+IOQSCAN fcfs EV D seq=1 blk=70 hb=40 ha=40 db=1 da=1
+IOQSCAN fcfs EV D seq=2 blk=20 hb=40 ha=40 db=1 da=1
+IOQSCAN fcfs EV D seq=3 blk=90 hb=40 ha=40 db=1 da=1
+IOQSCAN fcfs EV D seq=4 blk=10 hb=40 ha=40 db=1 da=1
+IOQSCAN fcfs EV D seq=5 blk=50 hb=40 ha=40 db=1 da=1
+IOQSCAN fcfs END n=5
+IOQSCAN scan-up CHK closed-no-commit PASS
+IOQSCAN scan-up CHK eagain-no-commit PASS
+IOQSCAN scan-up CHK drain-each-once PASS
+IOQSCAN scan-up CHK state-matches-trace PASS
+IOQSCAN scan-up EV D seq=5 blk=50 hb=40 ha=50 db=1 da=1
+IOQSCAN scan-up EV D seq=1 blk=70 hb=50 ha=70 db=1 da=1
+IOQSCAN scan-up EV D seq=3 blk=90 hb=70 ha=90 db=1 da=1
+IOQSCAN scan-up EV B bnd=1999 hb=90 ha=90 db=1 da=-1
+IOQSCAN scan-up EV D seq=2 blk=20 hb=90 ha=20 db=-1 da=-1
+IOQSCAN scan-up EV D seq=4 blk=10 hb=20 ha=10 db=-1 da=-1
+IOQSCAN scan-up END n=6
+IOQSCAN scan-down CHK closed-no-commit PASS
+IOQSCAN scan-down CHK eagain-no-commit PASS
+IOQSCAN scan-down CHK drain-each-once PASS
+IOQSCAN scan-down CHK state-matches-trace PASS
+IOQSCAN scan-down EV D seq=2 blk=20 hb=40 ha=20 db=-1 da=-1
+IOQSCAN scan-down EV D seq=4 blk=10 hb=20 ha=10 db=-1 da=-1
+IOQSCAN scan-down EV B bnd=0 hb=10 ha=10 db=-1 da=1
+IOQSCAN scan-down EV D seq=5 blk=50 hb=10 ha=50 db=1 da=1
+IOQSCAN scan-down EV D seq=1 blk=70 hb=50 ha=70 db=1 da=1
+IOQSCAN scan-down EV D seq=3 blk=90 hb=70 ha=90 db=1 da=1
+IOQSCAN scan-down END n=6
+IOQSCAN opposite CHK closed-no-commit PASS
+IOQSCAN opposite CHK eagain-no-commit PASS
+IOQSCAN opposite CHK drain-each-once PASS
+IOQSCAN opposite CHK state-matches-trace PASS
+IOQSCAN opposite EV B bnd=1999 hb=40 ha=40 db=1 da=-1
+IOQSCAN opposite EV D seq=2 blk=20 hb=40 ha=20 db=-1 da=-1
+IOQSCAN opposite EV D seq=1 blk=10 hb=20 ha=10 db=-1 da=-1
+IOQSCAN opposite END n=3
+IOQSCAN empty CHK closed-no-commit PASS
+IOQSCAN empty CHK eagain-no-commit PASS
+IOQSCAN empty CHK drain-each-once PASS
+IOQSCAN empty CHK state-matches-trace PASS
+IOQSCAN empty END n=0
+IOQSCAN single CHK closed-no-commit PASS
+IOQSCAN single CHK eagain-no-commit PASS
+IOQSCAN single CHK drain-each-once PASS
+IOQSCAN single CHK state-matches-trace PASS
+IOQSCAN single EV D seq=1 blk=5 hb=0 ha=5 db=1 da=1
+IOQSCAN single END n=1
+IOQSCAN tie-head CHK closed-no-commit PASS
+IOQSCAN tie-head CHK eagain-no-commit PASS
+IOQSCAN tie-head CHK drain-each-once PASS
+IOQSCAN tie-head CHK state-matches-trace PASS
+IOQSCAN tie-head EV D seq=2 blk=40 hb=40 ha=40 db=1 da=1
+IOQSCAN tie-head EV D seq=4 blk=40 hb=40 ha=40 db=1 da=1
+IOQSCAN tie-head EV D seq=1 blk=60 hb=40 ha=60 db=1 da=1
+IOQSCAN tie-head EV D seq=3 blk=60 hb=60 ha=60 db=1 da=1
+IOQSCAN tie-head END n=4
+IOQSCAN eagain CHK closed-no-commit PASS
+IOQSCAN eagain CHK eagain-no-commit PASS
+IOQSCAN eagain CHK drain-each-once PASS
+IOQSCAN eagain CHK state-matches-trace PASS
+IOQSCAN eagain EV D seq=1 blk=50 hb=40 ha=50 db=1 da=1
+IOQSCAN eagain EV D seq=2 blk=70 hb=50 ha=70 db=1 da=1
+IOQSCAN eagain EV B bnd=1999 hb=70 ha=70 db=1 da=-1
+IOQSCAN eagain EV D seq=3 blk=20 hb=70 ha=20 db=-1 da=-1
+IOQSCAN eagain END n=4
+IOQSCAN edge-up CHK closed-no-commit PASS
+IOQSCAN edge-up CHK eagain-no-commit PASS
+IOQSCAN edge-up CHK drain-each-once PASS
+IOQSCAN edge-up CHK state-matches-trace PASS
+IOQSCAN edge-up EV D seq=1 blk=70 hb=40 ha=70 db=1 da=1
+IOQSCAN edge-up EV D seq=3 blk=1999 hb=70 ha=1999 db=1 da=1
+IOQSCAN edge-up EV B bnd=1999 hb=1999 ha=1999 db=1 da=-1
+IOQSCAN edge-up EV D seq=2 blk=20 hb=1999 ha=20 db=-1 da=-1
+IOQSCAN edge-up END n=4
+IOQSCAN edge-down CHK closed-no-commit PASS
+IOQSCAN edge-down CHK eagain-no-commit PASS
+IOQSCAN edge-down CHK drain-each-once PASS
+IOQSCAN edge-down CHK state-matches-trace PASS
+IOQSCAN edge-down EV D seq=2 blk=30 hb=40 ha=30 db=-1 da=-1
+IOQSCAN edge-down EV D seq=1 blk=0 hb=30 ha=0 db=-1 da=-1
+IOQSCAN edge-down EV B bnd=0 hb=0 ha=0 db=-1 da=1
+IOQSCAN edge-down EV D seq=3 blk=50 hb=0 ha=50 db=1 da=1
+IOQSCAN edge-down END n=4
+IOQSCAN unlink CHK head-mid-tail PASS
+IOQSCAN unlink EV D seq=2 blk=2 hb=0 ha=0 db=1 da=1
+IOQSCAN unlink EV D seq=4 blk=1 hb=0 ha=0 db=1 da=1
+IOQSCAN unlink EV D seq=6 blk=3 hb=0 ha=0 db=1 da=1
+IOQSCAN unlink END n=3
+IOQDL dl-position CHK commit-matches-trace PASS
+IOQDL dl-position CHK drain-each-once PASS
+IOQDL dl-position CHK age-seq-gen-kept PASS
+IOQDL dl-position CHK no-trace-overflow PASS
+IOQDL dl-position EV D pol=2 rsn=2 seq=4 blk=10 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQDL dl-position EV D pol=2 rsn=2 seq=2 blk=20 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQDL dl-position EV D pol=2 rsn=2 seq=6 blk=30 hb=0 ha=0 db=1 da=1 bat=3 ep=0
+IOQDL dl-position EV D pol=2 rsn=2 seq=5 blk=50 hb=0 ha=0 db=1 da=1 bat=4 ep=0
+IOQDL dl-position EV D pol=2 rsn=3 seq=1 blk=70 hb=0 ha=0 db=1 da=1 bat=0 ep=0
+IOQDL dl-position EV D pol=2 rsn=2 seq=3 blk=90 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQDL dl-position END n=6
+IOQDL dl-expired-first CHK commit-matches-trace PASS
+IOQDL dl-expired-first CHK drain-each-once PASS
+IOQDL dl-expired-first CHK age-seq-gen-kept PASS
+IOQDL dl-expired-first CHK no-trace-overflow PASS
+IOQDL dl-expired-first EV D pol=2 rsn=2 seq=2 blk=10 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQDL dl-expired-first EV D pol=2 rsn=2 seq=3 blk=20 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQDL dl-expired-first EV D pol=2 rsn=2 seq=1 blk=500 hb=0 ha=0 db=1 da=1 bat=3 ep=0
+IOQDL dl-expired-first END n=3
+IOQDL dl-tie-expiry CHK commit-matches-trace PASS
+IOQDL dl-tie-expiry CHK drain-each-once PASS
+IOQDL dl-tie-expiry CHK age-seq-gen-kept PASS
+IOQDL dl-tie-expiry CHK no-trace-overflow PASS
+IOQDL dl-tie-expiry EV D pol=2 rsn=2 seq=3 blk=5 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQDL dl-tie-expiry EV D pol=2 rsn=2 seq=2 blk=200 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQDL dl-tie-expiry EV D pol=2 rsn=2 seq=1 blk=300 hb=0 ha=0 db=1 da=1 bat=3 ep=0
+IOQDL dl-tie-expiry END n=3
+IOQDL dl-batch-boundary CHK commit-matches-trace PASS
+IOQDL dl-batch-boundary CHK drain-each-once PASS
+IOQDL dl-batch-boundary CHK age-seq-gen-kept PASS
+IOQDL dl-batch-boundary CHK no-trace-overflow PASS
+IOQDL dl-batch-boundary EV D pol=2 rsn=2 seq=7 blk=4 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQDL dl-batch-boundary EV D pol=2 rsn=2 seq=6 blk=5 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQDL dl-batch-boundary EV D pol=2 rsn=2 seq=5 blk=6 hb=0 ha=0 db=1 da=1 bat=3 ep=0
+IOQDL dl-batch-boundary EV D pol=2 rsn=2 seq=4 blk=7 hb=0 ha=0 db=1 da=1 bat=4 ep=0
+IOQDL dl-batch-boundary EV D pol=2 rsn=3 seq=1 blk=1000 hb=0 ha=0 db=1 da=1 bat=0 ep=0
+IOQDL dl-batch-boundary EV D pol=2 rsn=2 seq=3 blk=8 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQDL dl-batch-boundary EV D pol=2 rsn=2 seq=2 blk=9 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQDL dl-batch-boundary END n=7
+IOQDL dl-old-vs-stream CHK commit-matches-trace PASS
+IOQDL dl-old-vs-stream CHK drain-each-once PASS
+IOQDL dl-old-vs-stream CHK age-seq-gen-kept PASS
+IOQDL dl-old-vs-stream CHK no-trace-overflow PASS
+IOQDL dl-old-vs-stream EV D pol=2 rsn=2 seq=1 blk=1 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQDL dl-old-vs-stream EV D pol=2 rsn=2 seq=3 blk=2 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQDL dl-old-vs-stream EV D pol=2 rsn=2 seq=4 blk=3 hb=0 ha=0 db=1 da=1 bat=3 ep=0
+IOQDL dl-old-vs-stream EV D pol=2 rsn=2 seq=5 blk=4 hb=0 ha=0 db=1 da=1 bat=4 ep=0
+IOQDL dl-old-vs-stream EV D pol=2 rsn=3 seq=2 blk=900 hb=0 ha=0 db=1 da=1 bat=0 ep=0
+IOQDL dl-old-vs-stream EV D pol=2 rsn=2 seq=6 blk=5 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQDL dl-old-vs-stream EV D pol=2 rsn=2 seq=7 blk=6 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQDL dl-old-vs-stream END n=7
+IOQDL dl-eagain CHK commit-matches-trace PASS
+IOQDL dl-eagain CHK drain-each-once PASS
+IOQDL dl-eagain CHK age-seq-gen-kept PASS
+IOQDL dl-eagain CHK no-trace-overflow PASS
+IOQDL dl-eagain EV D pol=2 rsn=2 seq=4 blk=10 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQDL dl-eagain EV D pol=2 rsn=2 seq=3 blk=20 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQDL dl-eagain EV D pol=2 rsn=2 seq=6 blk=5 hb=0 ha=0 db=1 da=1 bat=3 ep=0
+IOQDL dl-eagain EV D pol=2 rsn=2 seq=7 blk=15 hb=0 ha=0 db=1 da=1 bat=4 ep=0
+IOQDL dl-eagain EV D pol=2 rsn=3 seq=1 blk=40 hb=0 ha=0 db=1 da=1 bat=0 ep=0
+IOQDL dl-eagain EV D pol=2 rsn=2 seq=2 blk=30 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQDL dl-eagain EV D pol=2 rsn=2 seq=5 blk=60 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQDL dl-eagain END n=7
+IOQDL dl-wrap CHK commit-matches-trace PASS
+IOQDL dl-wrap CHK drain-each-once PASS
+IOQDL dl-wrap CHK age-seq-gen-kept PASS
+IOQDL dl-wrap CHK no-trace-overflow PASS
+IOQDL dl-wrap EV D pol=2 rsn=2 seq=2 blk=50 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQDL dl-wrap EV D pol=2 rsn=2 seq=1 blk=100 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQDL dl-wrap END n=2
+IOQDL sw-all6 CHK commit-matches-trace PASS
+IOQDL sw-all6 CHK drain-each-once PASS
+IOQDL sw-all6 CHK age-seq-gen-kept PASS
+IOQDL sw-all6 CHK no-trace-overflow PASS
+IOQDL sw-all6 SW pol=1 rc=0 q=6 i=2 ep=1
+IOQDL sw-all6 SW pol=2 rc=0 q=5 i=2 ep=2
+IOQDL sw-all6 SW pol=1 rc=0 q=4 i=2 ep=3
+IOQDL sw-all6 SW pol=0 rc=0 q=3 i=2 ep=4
+IOQDL sw-all6 SW pol=2 rc=0 q=2 i=2 ep=5
+IOQDL sw-all6 SW pol=0 rc=0 q=1 i=2 ep=6
+IOQDL sw-all6 EV D pol=0 rsn=0 seq=1 blk=300 hb=0 ha=0 db=1 da=1 bat=0 ep=0
+IOQDL sw-all6 EV D pol=0 rsn=0 seq=2 blk=100 hb=0 ha=0 db=1 da=1 bat=0 ep=0
+IOQDL sw-all6 EV S old=0 new=1 hb=0 ha=100 da=1 bat=0 ep=1
+IOQDL sw-all6 EV D pol=1 rsn=0 seq=4 blk=200 hb=100 ha=200 db=1 da=1 bat=0 ep=1
+IOQDL sw-all6 EV S old=1 new=2 hb=200 ha=200 da=1 bat=0 ep=2
+IOQDL sw-all6 EV D pol=2 rsn=2 seq=6 blk=50 hb=200 ha=200 db=1 da=1 bat=1 ep=2
+IOQDL sw-all6 EV S old=2 new=1 hb=200 ha=50 da=1 bat=1 ep=3
+IOQDL sw-all6 EV D pol=1 rsn=0 seq=8 blk=400 hb=50 ha=400 db=1 da=1 bat=1 ep=3
+IOQDL sw-all6 EV S old=1 new=0 hb=400 ha=400 da=1 bat=1 ep=4
+IOQDL sw-all6 EV D pol=0 rsn=0 seq=3 blk=700 hb=400 ha=400 db=1 da=1 bat=1 ep=4
+IOQDL sw-all6 EV S old=0 new=2 hb=400 ha=400 da=1 bat=0 ep=5
+IOQDL sw-all6 EV D pol=2 rsn=2 seq=5 blk=600 hb=400 ha=400 db=1 da=1 bat=1 ep=5
+IOQDL sw-all6 EV S old=2 new=0 hb=400 ha=400 da=1 bat=1 ep=6
+IOQDL sw-all6 EV D pol=0 rsn=0 seq=7 blk=800 hb=400 ha=400 db=1 da=1 bat=1 ep=6
+IOQDL sw-all6 END n=14
+IOQDL sw-noop-invalid CHK commit-matches-trace PASS
+IOQDL sw-noop-invalid CHK drain-each-once PASS
+IOQDL sw-noop-invalid CHK age-seq-gen-kept PASS
+IOQDL sw-noop-invalid CHK no-trace-overflow PASS
+IOQDL sw-noop-invalid SW pol=0 rc=0 q=0 i=0 ep=0
+IOQDL sw-noop-invalid SW pol=7 rc=-22 q=0 i=0 ep=0
+IOQDL sw-noop-invalid SW pol=-1 rc=-22 q=0 i=0 ep=0
+IOQDL sw-noop-invalid SW pol=1 rc=0 q=0 i=0 ep=1
+IOQDL sw-noop-invalid SW pol=1 rc=0 q=0 i=0 ep=1
+IOQDL sw-noop-invalid SW pol=3 rc=-22 q=1 i=1 ep=1
+IOQDL sw-noop-invalid SW pol=2 rc=0 q=1 i=1 ep=2
+IOQDL sw-noop-invalid SW pol=2 rc=0 q=1 i=1 ep=2
+IOQDL sw-noop-invalid EV S old=0 new=1 hb=0 ha=0 da=1 bat=0 ep=1
+IOQDL sw-noop-invalid EV D pol=1 rsn=0 seq=2 blk=10 hb=0 ha=10 db=1 da=1 bat=0 ep=1
+IOQDL sw-noop-invalid EV S old=1 new=2 hb=10 ha=10 da=1 bat=0 ep=2
+IOQDL sw-noop-invalid EV D pol=2 rsn=2 seq=1 blk=30 hb=10 ha=10 db=1 da=1 bat=1 ep=2
+IOQDL sw-noop-invalid END n=4
+IOQDL sw-keep-age CHK commit-matches-trace PASS
+IOQDL sw-keep-age CHK drain-each-once PASS
+IOQDL sw-keep-age CHK age-seq-gen-kept PASS
+IOQDL sw-keep-age CHK no-trace-overflow PASS
+IOQDL sw-keep-age SW pol=2 rc=0 q=1 i=1 ep=1
+IOQDL sw-keep-age EV D pol=0 rsn=0 seq=1 blk=1 hb=0 ha=0 db=1 da=1 bat=0 ep=0
+IOQDL sw-keep-age EV S old=0 new=2 hb=0 ha=0 da=1 bat=0 ep=1
+IOQDL sw-keep-age EV D pol=2 rsn=2 seq=3 blk=5 hb=0 ha=0 db=1 da=1 bat=1 ep=1
+IOQDL sw-keep-age EV D pol=2 rsn=2 seq=4 blk=6 hb=0 ha=0 db=1 da=1 bat=2 ep=1
+IOQDL sw-keep-age EV D pol=2 rsn=2 seq=2 blk=400 hb=0 ha=0 db=1 da=1 bat=3 ep=1
+IOQDL sw-keep-age END n=5
+IOQDL sw-scan-head CHK commit-matches-trace PASS
+IOQDL sw-scan-head CHK drain-each-once PASS
+IOQDL sw-scan-head CHK age-seq-gen-kept PASS
+IOQDL sw-scan-head CHK no-trace-overflow PASS
+IOQDL sw-scan-head SW pol=1 rc=0 q=3 i=1 ep=1
+IOQDL sw-scan-head EV D pol=0 rsn=0 seq=1 blk=300 hb=0 ha=0 db=1 da=1 bat=0 ep=0
+IOQDL sw-scan-head EV S old=0 new=1 hb=0 ha=300 da=1 bat=0 ep=1
+IOQDL sw-scan-head EV D pol=1 rsn=0 seq=5 blk=350 hb=300 ha=350 db=1 da=1 bat=0 ep=1
+IOQDL sw-scan-head EV D pol=1 rsn=0 seq=3 blk=500 hb=350 ha=500 db=1 da=1 bat=0 ep=1
+IOQDL sw-scan-head EV B bnd=1999 hb=500 ha=500 db=1 da=-1 ep=1
+IOQDL sw-scan-head EV D pol=1 rsn=0 seq=4 blk=200 hb=500 ha=200 db=-1 da=-1 bat=0 ep=1
+IOQDL sw-scan-head EV D pol=1 rsn=0 seq=2 blk=100 hb=200 ha=100 db=-1 da=-1 bat=0 ep=1
+IOQDL sw-scan-head END n=7
+IOQDL DONE fail=0
+IOQI01 i01-dl-age-before CHK commit-matches-trace PASS
+IOQI01 i01-dl-age-before CHK drain-each-once PASS
+IOQI01 i01-dl-age-before CHK age-seq-gen-kept PASS
+IOQI01 i01-dl-age-before CHK no-trace-overflow PASS
+IOQI01 i01-dl-age-before CHK snapshot-invariants PASS
+IOQI01 i01-dl-age-before EV D pol=2 rsn=2 seq=2 blk=10 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQI01 i01-dl-age-before EV D pol=2 rsn=2 seq=1 blk=40 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQI01 i01-dl-age-before END n=2
+IOQI01 i01-dl-age-before SNAP ticks=0 S=0 C=0 E=0 R=0 Q=0 I=0 D=0 X=0 F=16 eq=3 dlx=0 dlf=0 sw=0 ep=0 batch=2 last=40 haslast=1 bnd=0 ovf=0 fdesc=8 lat_samples=0 wait_sum=0 wait_max=0 service_sum=0 service_max=0 total_sum=0 total_max=0 zero_total=0
+IOQI01 i01-dl-age-at CHK commit-matches-trace PASS
+IOQI01 i01-dl-age-at CHK drain-each-once PASS
+IOQI01 i01-dl-age-at CHK age-seq-gen-kept PASS
+IOQI01 i01-dl-age-at CHK no-trace-overflow PASS
+IOQI01 i01-dl-age-at CHK snapshot-invariants PASS
+IOQI01 i01-dl-age-at EV D pol=2 rsn=2 seq=2 blk=10 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQI01 i01-dl-age-at EV D pol=2 rsn=2 seq=1 blk=40 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQI01 i01-dl-age-at END n=2
+IOQI01 i01-dl-age-at SNAP ticks=0 S=0 C=0 E=0 R=0 Q=0 I=0 D=0 X=0 F=16 eq=3 dlx=0 dlf=0 sw=0 ep=0 batch=2 last=40 haslast=1 bnd=0 ovf=0 fdesc=8 lat_samples=0 wait_sum=0 wait_max=0 service_sum=0 service_max=0 total_sum=0 total_max=0 zero_total=0
+IOQI01 i01-dl-age-after CHK commit-matches-trace PASS
+IOQI01 i01-dl-age-after CHK drain-each-once PASS
+IOQI01 i01-dl-age-after CHK age-seq-gen-kept PASS
+IOQI01 i01-dl-age-after CHK no-trace-overflow PASS
+IOQI01 i01-dl-age-after CHK snapshot-invariants PASS
+IOQI01 i01-dl-age-after EV D pol=2 rsn=2 seq=2 blk=5 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQI01 i01-dl-age-after EV D pol=2 rsn=2 seq=1 blk=40 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQI01 i01-dl-age-after END n=2
+IOQI01 i01-dl-age-after SNAP ticks=0 S=0 C=0 E=0 R=0 Q=0 I=0 D=0 X=0 F=16 eq=3 dlx=0 dlf=0 sw=0 ep=0 batch=2 last=40 haslast=1 bnd=0 ovf=0 fdesc=8 lat_samples=0 wait_sum=0 wait_max=0 service_sum=0 service_max=0 total_sum=0 total_max=0 zero_total=0
+IOQI01 i01-dl-batch-boundary CHK commit-matches-trace PASS
+IOQI01 i01-dl-batch-boundary CHK drain-each-once PASS
+IOQI01 i01-dl-batch-boundary CHK age-seq-gen-kept PASS
+IOQI01 i01-dl-batch-boundary CHK no-trace-overflow PASS
+IOQI01 i01-dl-batch-boundary CHK snapshot-invariants PASS
+IOQI01 i01-dl-batch-boundary EV D pol=2 rsn=2 seq=6 blk=5 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQI01 i01-dl-batch-boundary EV D pol=2 rsn=2 seq=5 blk=6 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQI01 i01-dl-batch-boundary EV D pol=2 rsn=2 seq=4 blk=7 hb=0 ha=0 db=1 da=1 bat=3 ep=0
+IOQI01 i01-dl-batch-boundary EV D pol=2 rsn=2 seq=3 blk=8 hb=0 ha=0 db=1 da=1 bat=4 ep=0
+IOQI01 i01-dl-batch-boundary EV D pol=2 rsn=3 seq=1 blk=1000 hb=0 ha=0 db=1 da=1 bat=0 ep=0
+IOQI01 i01-dl-batch-boundary EV D pol=2 rsn=2 seq=2 blk=9 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQI01 i01-dl-batch-boundary END n=6
+IOQI01 i01-dl-batch-boundary SNAP ticks=0 S=0 C=0 E=0 R=0 Q=0 I=0 D=0 X=0 F=16 eq=11 dlx=0 dlf=1 sw=0 ep=0 batch=1 last=9 haslast=1 bnd=0 ovf=0 fdesc=8 lat_samples=0 wait_sum=0 wait_max=0 service_sum=0 service_max=0 total_sum=0 total_max=0 zero_total=0
+IOQI01 i01-dl-eagain CHK commit-matches-trace PASS
+IOQI01 i01-dl-eagain CHK drain-each-once PASS
+IOQI01 i01-dl-eagain CHK age-seq-gen-kept PASS
+IOQI01 i01-dl-eagain CHK no-trace-overflow PASS
+IOQI01 i01-dl-eagain CHK snapshot-invariants PASS
+IOQI01 i01-dl-eagain EV D pol=2 rsn=2 seq=2 blk=30 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQI01 i01-dl-eagain EV D pol=2 rsn=2 seq=1 blk=40 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQI01 i01-dl-eagain END n=2
+IOQI01 i01-dl-eagain SNAP ticks=0 S=0 C=0 E=0 R=0 Q=0 I=0 D=0 X=0 F=16 eq=3 dlx=0 dlf=0 sw=0 ep=0 batch=2 last=40 haslast=1 bnd=0 ovf=0 fdesc=8 lat_samples=0 wait_sum=0 wait_max=0 service_sum=0 service_max=0 total_sum=0 total_max=0 zero_total=0
+IOQI01 i01-dl-wrap CHK commit-matches-trace PASS
+IOQI01 i01-dl-wrap CHK drain-each-once PASS
+IOQI01 i01-dl-wrap CHK age-seq-gen-kept PASS
+IOQI01 i01-dl-wrap CHK no-trace-overflow PASS
+IOQI01 i01-dl-wrap CHK snapshot-invariants PASS
+IOQI01 i01-dl-wrap EV D pol=2 rsn=2 seq=2 blk=50 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQI01 i01-dl-wrap EV D pol=2 rsn=2 seq=1 blk=100 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQI01 i01-dl-wrap END n=2
+IOQI01 i01-dl-wrap SNAP ticks=0 S=0 C=0 E=0 R=0 Q=0 I=0 D=0 X=0 F=16 eq=3 dlx=0 dlf=0 sw=0 ep=0 batch=2 last=100 haslast=1 bnd=0 ovf=0 fdesc=8 lat_samples=0 wait_sum=0 wait_max=0 service_sum=0 service_max=0 total_sum=0 total_max=0 zero_total=0
+IOQI01 i01-dl-expired-order CHK commit-matches-trace PASS
+IOQI01 i01-dl-expired-order CHK drain-each-once PASS
+IOQI01 i01-dl-expired-order CHK age-seq-gen-kept PASS
+IOQI01 i01-dl-expired-order CHK no-trace-overflow PASS
+IOQI01 i01-dl-expired-order CHK snapshot-invariants PASS
+IOQI01 i01-dl-expired-order EV D pol=2 rsn=2 seq=2 blk=300 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQI01 i01-dl-expired-order EV D pol=2 rsn=2 seq=1 blk=500 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQI01 i01-dl-expired-order END n=2
+IOQI01 i01-dl-expired-order SNAP ticks=0 S=0 C=0 E=0 R=0 Q=0 I=0 D=0 X=0 F=16 eq=3 dlx=0 dlf=0 sw=0 ep=0 batch=2 last=500 haslast=1 bnd=0 ovf=0 fdesc=8 lat_samples=0 wait_sum=0 wait_max=0 service_sum=0 service_max=0 total_sum=0 total_max=0 zero_total=0
+IOQI01 i01-sw-keep-age CHK commit-matches-trace PASS
+IOQI01 i01-sw-keep-age CHK drain-each-once PASS
+IOQI01 i01-sw-keep-age CHK age-seq-gen-kept PASS
+IOQI01 i01-sw-keep-age CHK no-trace-overflow PASS
+IOQI01 i01-sw-keep-age CHK snapshot-invariants PASS
+IOQI01 i01-sw-keep-age SW pol=2 rc=0 q=1 i=0 ep=1
+IOQI01 i01-sw-keep-age EV S old=0 new=2 hb=0 ha=0 da=1 bat=0 ep=1
+IOQI01 i01-sw-keep-age EV D pol=2 rsn=2 seq=2 blk=5 hb=0 ha=0 db=1 da=1 bat=1 ep=1
+IOQI01 i01-sw-keep-age EV D pol=2 rsn=2 seq=1 blk=40 hb=0 ha=0 db=1 da=1 bat=2 ep=1
+IOQI01 i01-sw-keep-age END n=3
+IOQI01 i01-sw-keep-age SNAP ticks=0 S=0 C=0 E=0 R=0 Q=0 I=0 D=0 X=0 F=16 eq=3 dlx=0 dlf=0 sw=1 ep=1 batch=2 last=40 haslast=1 bnd=0 ovf=0 fdesc=8 lat_samples=0 wait_sum=0 wait_max=0 service_sum=0 service_max=0 total_sum=0 total_max=0 zero_total=0
+IOQI01 i01-sw-noop-invalid CHK commit-matches-trace PASS
+IOQI01 i01-sw-noop-invalid CHK drain-each-once PASS
+IOQI01 i01-sw-noop-invalid CHK age-seq-gen-kept PASS
+IOQI01 i01-sw-noop-invalid CHK no-trace-overflow PASS
+IOQI01 i01-sw-noop-invalid CHK snapshot-invariants PASS
+IOQI01 i01-sw-noop-invalid SW pol=0 rc=0 q=0 i=0 ep=0
+IOQI01 i01-sw-noop-invalid SW pol=9 rc=-22 q=0 i=0 ep=0
+IOQI01 i01-sw-noop-invalid SW pol=-3 rc=-22 q=0 i=0 ep=0
+IOQI01 i01-sw-noop-invalid SW pol=1 rc=0 q=0 i=0 ep=1
+IOQI01 i01-sw-noop-invalid SW pol=1 rc=0 q=0 i=0 ep=1
+IOQI01 i01-sw-noop-invalid SW pol=9 rc=-22 q=1 i=1 ep=1
+IOQI01 i01-sw-noop-invalid SW pol=2 rc=0 q=1 i=1 ep=2
+IOQI01 i01-sw-noop-invalid SW pol=2 rc=0 q=1 i=1 ep=2
+IOQI01 i01-sw-noop-invalid EV S old=0 new=1 hb=0 ha=0 da=1 bat=0 ep=1
+IOQI01 i01-sw-noop-invalid EV D pol=1 rsn=0 seq=2 blk=10 hb=0 ha=10 db=1 da=1 bat=0 ep=1
+IOQI01 i01-sw-noop-invalid EV S old=1 new=2 hb=10 ha=10 da=1 bat=0 ep=2
+IOQI01 i01-sw-noop-invalid EV D pol=2 rsn=2 seq=1 blk=30 hb=10 ha=10 db=1 da=1 bat=1 ep=2
+IOQI01 i01-sw-noop-invalid END n=4
+IOQI01 i01-sw-noop-invalid SNAP ticks=0 S=0 C=0 E=0 R=0 Q=0 I=0 D=0 X=0 F=16 eq=3 dlx=0 dlf=0 sw=2 ep=2 batch=1 last=30 haslast=1 bnd=0 ovf=0 fdesc=8 lat_samples=0 wait_sum=0 wait_max=0 service_sum=0 service_max=0 total_sum=0 total_max=0 zero_total=0
+IOQI01 i01-sw-batch-reset CHK commit-matches-trace PASS
+IOQI01 i01-sw-batch-reset CHK drain-each-once PASS
+IOQI01 i01-sw-batch-reset CHK age-seq-gen-kept PASS
+IOQI01 i01-sw-batch-reset CHK no-trace-overflow PASS
+IOQI01 i01-sw-batch-reset CHK snapshot-invariants PASS
+IOQI01 i01-sw-batch-reset SW pol=0 rc=0 q=2 i=1 ep=1
+IOQI01 i01-sw-batch-reset SW pol=2 rc=0 q=2 i=1 ep=2
+IOQI01 i01-sw-batch-reset EV D pol=2 rsn=2 seq=6 blk=5 hb=0 ha=0 db=1 da=1 bat=1 ep=0
+IOQI01 i01-sw-batch-reset EV D pol=2 rsn=2 seq=5 blk=6 hb=0 ha=0 db=1 da=1 bat=2 ep=0
+IOQI01 i01-sw-batch-reset EV D pol=2 rsn=2 seq=4 blk=7 hb=0 ha=0 db=1 da=1 bat=3 ep=0
+IOQI01 i01-sw-batch-reset EV D pol=2 rsn=2 seq=3 blk=8 hb=0 ha=0 db=1 da=1 bat=4 ep=0
+IOQI01 i01-sw-batch-reset EV S old=2 new=0 hb=0 ha=0 da=1 bat=4 ep=1
+IOQI01 i01-sw-batch-reset EV S old=0 new=2 hb=0 ha=0 da=1 bat=0 ep=2
+IOQI01 i01-sw-batch-reset EV D pol=2 rsn=2 seq=2 blk=9 hb=0 ha=0 db=1 da=1 bat=1 ep=2
+IOQI01 i01-sw-batch-reset EV D pol=2 rsn=2 seq=1 blk=1000 hb=0 ha=0 db=1 da=1 bat=2 ep=2
+IOQI01 i01-sw-batch-reset END n=8
+IOQI01 i01-sw-batch-reset SNAP ticks=0 S=0 C=0 E=0 R=0 Q=0 I=0 D=0 X=0 F=16 eq=11 dlx=0 dlf=0 sw=2 ep=2 batch=2 last=1000 haslast=1 bnd=0 ovf=0 fdesc=8 lat_samples=0 wait_sum=0 wait_max=0 service_sum=0 service_max=0 total_sum=0 total_max=0 zero_total=0
+IOQI01 i01-sw-scan-head CHK commit-matches-trace PASS
+IOQI01 i01-sw-scan-head CHK drain-each-once PASS
+IOQI01 i01-sw-scan-head CHK age-seq-gen-kept PASS
+IOQI01 i01-sw-scan-head CHK no-trace-overflow PASS
+IOQI01 i01-sw-scan-head CHK snapshot-invariants PASS
+IOQI01 i01-sw-scan-head SW pol=1 rc=0 q=3 i=1 ep=1
+IOQI01 i01-sw-scan-head EV D pol=0 rsn=0 seq=1 blk=300 hb=0 ha=0 db=1 da=1 bat=0 ep=0
+IOQI01 i01-sw-scan-head EV S old=0 new=1 hb=0 ha=300 da=1 bat=0 ep=1
+IOQI01 i01-sw-scan-head EV D pol=1 rsn=0 seq=5 blk=350 hb=300 ha=350 db=1 da=1 bat=0 ep=1
+IOQI01 i01-sw-scan-head EV D pol=1 rsn=0 seq=3 blk=500 hb=350 ha=500 db=1 da=1 bat=0 ep=1
+IOQI01 i01-sw-scan-head EV B bnd=1999 hb=500 ha=500 db=1 da=-1 ep=1
+IOQI01 i01-sw-scan-head EV D pol=1 rsn=0 seq=4 blk=200 hb=500 ha=200 db=-1 da=-1 bat=0 ep=1
+IOQI01 i01-sw-scan-head EV D pol=1 rsn=0 seq=2 blk=100 hb=200 ha=100 db=-1 da=-1 bat=0 ep=1
+IOQI01 i01-sw-scan-head END n=7
+IOQI01 i01-sw-scan-head SNAP ticks=0 S=0 C=0 E=0 R=0 Q=0 I=0 D=0 X=0 F=16 eq=9 dlx=0 dlf=0 sw=1 ep=1 batch=0 last=100 haslast=1 bnd=1 ovf=0 fdesc=8 lat_samples=0 wait_sum=0 wait_max=0 service_sum=0 service_max=0 total_sum=0 total_max=0 zero_total=0
+IOQI01 i01-sw-all6 CHK commit-matches-trace PASS
+IOQI01 i01-sw-all6 CHK drain-each-once PASS
+IOQI01 i01-sw-all6 CHK age-seq-gen-kept PASS
+IOQI01 i01-sw-all6 CHK no-trace-overflow PASS
+IOQI01 i01-sw-all6 CHK snapshot-invariants PASS
+IOQI01 i01-sw-all6 SW pol=1 rc=0 q=6 i=2 ep=1
+IOQI01 i01-sw-all6 SW pol=2 rc=0 q=6 i=2 ep=2
+IOQI01 i01-sw-all6 SW pol=0 rc=0 q=6 i=2 ep=3
+IOQI01 i01-sw-all6 SW pol=2 rc=0 q=6 i=2 ep=4
+IOQI01 i01-sw-all6 SW pol=1 rc=0 q=6 i=2 ep=5
+IOQI01 i01-sw-all6 SW pol=0 rc=0 q=6 i=2 ep=6
+IOQI01 i01-sw-all6 EV D pol=0 rsn=0 seq=1 blk=300 hb=0 ha=0 db=1 da=1 bat=0 ep=0
+IOQI01 i01-sw-all6 EV D pol=0 rsn=0 seq=2 blk=100 hb=0 ha=0 db=1 da=1 bat=0 ep=0
+IOQI01 i01-sw-all6 EV S old=0 new=1 hb=0 ha=100 da=1 bat=0 ep=1
+IOQI01 i01-sw-all6 EV S old=1 new=2 hb=100 ha=100 da=1 bat=0 ep=2
+IOQI01 i01-sw-all6 EV S old=2 new=0 hb=100 ha=100 da=1 bat=0 ep=3
+IOQI01 i01-sw-all6 EV S old=0 new=2 hb=100 ha=100 da=1 bat=0 ep=4
+IOQI01 i01-sw-all6 EV S old=2 new=1 hb=100 ha=100 da=1 bat=0 ep=5
+IOQI01 i01-sw-all6 EV S old=1 new=0 hb=100 ha=100 da=1 bat=0 ep=6
+IOQI01 i01-sw-all6 EV D pol=0 rsn=0 seq=3 blk=700 hb=100 ha=100 db=1 da=1 bat=0 ep=6
+IOQI01 i01-sw-all6 EV D pol=0 rsn=0 seq=4 blk=200 hb=100 ha=100 db=1 da=1 bat=0 ep=6
+IOQI01 i01-sw-all6 EV D pol=0 rsn=0 seq=5 blk=600 hb=100 ha=100 db=1 da=1 bat=0 ep=6
+IOQI01 i01-sw-all6 EV D pol=0 rsn=0 seq=6 blk=50 hb=100 ha=100 db=1 da=1 bat=0 ep=6
+IOQI01 i01-sw-all6 EV D pol=0 rsn=0 seq=7 blk=800 hb=100 ha=100 db=1 da=1 bat=0 ep=6
+IOQI01 i01-sw-all6 EV D pol=0 rsn=0 seq=8 blk=400 hb=100 ha=100 db=1 da=1 bat=0 ep=6
+IOQI01 i01-sw-all6 END n=14
+IOQI01 i01-sw-all6 SNAP ticks=0 S=0 C=0 E=0 R=0 Q=0 I=0 D=0 X=0 F=16 eq=12 dlx=0 dlf=0 sw=6 ep=6 batch=0 last=400 haslast=1 bnd=0 ovf=0 fdesc=8 lat_samples=0 wait_sum=0 wait_max=0 service_sum=0 service_max=0 total_sum=0 total_max=0 zero_total=0
+IOQI01 DONE fail=0
+IOQSCAN DONE fail=0
+init: starting sh

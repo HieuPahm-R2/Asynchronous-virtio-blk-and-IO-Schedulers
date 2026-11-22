@@ -1,0 +1,168 @@
+{
+  "card": "W5-H01",
+  "purpose": "verify clean candidate on a second physical host (not Hoang host)",
+  "operator": "Loi (W5-H01; phien thuc thi hoan thien theo yeu cau)",
+  "machine": {
+    "hostname": "DESKTOP-RL9K1ML",
+    "host": "Linux-5.15.167.4-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "os": "Linux 5.15.167.4-microsoft-standard-WSL2",
+    "other_host": "nguyen-van-hoang-20233413",
+    "different_from_other_host": true,
+    "same_host_override": false
+  },
+  "candidate": {
+    "path": "/mnt/e/ET4290-candidate-f5130bb",
+    "sha": "f5130bb9898c4154c3e761e2c85f3038f3a02a86",
+    "branch": "week4/hieu-contract-oracle",
+    "remote": "https://github.com/HieuPahm-R2/Asynchronous-virtio-blk-and-IO-Schedulers.git",
+    "dirty_start": "",
+    "dirty_end": "",
+    "xv6_pin": "f780d7850765d74cbdcd1fff4b822d8829f7c9bd 2026-10-15 build with -fno-delete-null-pointer-checks",
+    "clean": true
+  },
+  "toolchain": {
+    "toolprefix": "riscv64-linux-gnu-",
+    "versions": {
+      "riscv64-linux-gnu-gcc": "riscv64-linux-gnu-gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+      "riscv64-linux-gnu-nm": "GNU nm (GNU Binutils for Ubuntu) 2.42",
+      "qemu-system-riscv64": "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)",
+      "make": "GNU Make 4.3",
+      "python3": "Python 3.12.3"
+    }
+  },
+  "verifier_script_sha256": "5f08c86e9e657b4257adc05eaed4368afcd9c0a1f47276e9ba25e9c883b13d70",
+  "started_at": "2026-11-22T09:16:59.916793+07:00",
+  "arguments": {
+    "target": "/mnt/e/ET4290-candidate-f5130bb",
+    "results_dir": "/mnt/e/ET4290/results/week05/second-machine/DESKTOP-RL9K1ML-20261122-091659",
+    "full": true,
+    "toolprefix": "riscv64-linux-gnu-",
+    "operator": "Loi (W5-H01; phien thuc thi hoan thien theo yeu cau)",
+    "other_host": "nguyen-van-hoang-20233413",
+    "stress_repeat": 5,
+    "allow_same_host": false
+  },
+  "suites": [
+    {
+      "name": "real-and-switch",
+      "command": [
+        "/usr/bin/python3",
+        "scripts/check-week04-hoang.py",
+        "--mode",
+        "all",
+        "--repeat",
+        "5",
+        "--cpus",
+        "1",
+        "4",
+        "--toolprefix",
+        "riscv64-linux-gnu-",
+        "--results-dir",
+        "/mnt/e/ET4290/results/week05/second-machine/DESKTOP-RL9K1ML-20261122-091659/real-and-switch"
+      ],
+      "exit_code": 0,
+      "timeout": false,
+      "duration_s": 44.7,
+      "log": "real-and-switch.log",
+      "status": "PASS",
+      "expected_fail": 2,
+      "pass_runs": 13,
+      "fail_runs": 0,
+      "mutants": [],
+      "suite_meta": "meta.json",
+      "suite_summary": "summary.md",
+      "first_errors": []
+    },
+    {
+      "name": "independent-oracle",
+      "command": [
+        "/usr/bin/python3",
+        "scripts/check-week04-oracle-hieu.py",
+        "--results-dir",
+        "/mnt/e/ET4290/results/week05/second-machine/DESKTOP-RL9K1ML-20261122-091659/independent-oracle"
+      ],
+      "exit_code": 0,
+      "timeout": false,
+      "duration_s": 50.4,
+      "log": "independent-oracle.log",
+      "status": "PASS",
+      "expected_fail": 6,
+      "pass_runs": 3,
+      "fail_runs": 0,
+      "mutants": [
+        {
+          "name": "i01-m1-expired-latest",
+          "caught": true
+        },
+        {
+          "name": "i01-m2-noop-epoch",
+          "caught": true
+        },
+        {
+          "name": "i01-m3-keep-batch",
+          "caught": true
+        },
+        {
+          "name": "dl-m1-no-expired",
+          "caught": true
+        },
+        {
+          "name": "dl-m3-eagain-batch",
+          "caught": true
+        },
+        {
+          "name": "sw-m2-reset-age",
+          "caught": true
+        }
+      ],
+      "suite_meta": "meta.json",
+      "suite_summary": "summary.md",
+      "first_errors": []
+    },
+    {
+      "name": "fcfs-regression",
+      "command": [
+        "/usr/bin/python3",
+        "scripts/check-week02-hoang.py",
+        "--repeat",
+        "10",
+        "--toolprefix",
+        "riscv64-linux-gnu-",
+        "--results-dir",
+        "/mnt/e/ET4290/results/week05/second-machine/DESKTOP-RL9K1ML-20261122-091659/fcfs-regression"
+      ],
+      "exit_code": 0,
+      "timeout": false,
+      "duration_s": 38.0,
+      "log": "fcfs-regression.log",
+      "status": "PASS",
+      "expected_fail": 1,
+      "pass_runs": 24,
+      "fail_runs": 0,
+      "mutants": [],
+      "suite_meta": "meta.json",
+      "suite_summary": "summary.md",
+      "first_errors": []
+    }
+  ],
+  "repo_checks": {
+    "check-text": {
+      "exit_code": 0,
+      "log": "repo-check-text.log"
+    },
+    "git-diff-check": {
+      "exit_code": 0,
+      "log": "repo-git-diff-check.log"
+    }
+  },
+  "expected_fail": 9,
+  "not_run": [],
+  "status": "PASS",
+  "errors": [],
+  "notes": [
+    "CPU1/4 trên cùng host không tính là hai máy; host này khác host đã chạy candidate.",
+    "QEMU virtio-blk không chứng minh seek vật lý; 0 tick nghĩa là dưới 1 tick (≈100 ms), không phải 0 ms.",
+    "Negative control EXPECTED_FAIL báo riêng, không cộng vào PASS."
+  ],
+  "finished_at": "2026-11-22T09:19:22.175602+07:00"
+}

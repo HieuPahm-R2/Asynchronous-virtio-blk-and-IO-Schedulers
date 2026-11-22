@@ -1,0 +1,10 @@
+I01 oracle mock cpus=1 (deadline+switch+snapshot+SCAN+FCFS): PASS
+I01 oracle mock cpus=4 (deadline+switch+snapshot+SCAN+FCFS): PASS
+mutant i01-m1-expired-latest (DEADLINE): EXPECTED_FAIL
+mutant i01-m2-noop-epoch (SWITCH): EXPECTED_FAIL
+mutant i01-m3-keep-batch (SWITCH): EXPECTED_FAIL
+mutant dl-m1-no-expired (DEADLINE): EXPECTED_FAIL
+mutant dl-m3-eagain-batch (DEADLINE): EXPECTED_FAIL
+mutant sw-m2-reset-age (SWITCH): EXPECTED_FAIL
+READ thật cơ bản + IO-SNAP cpus=1: PASS
+PASS: /home/ubuntu/Documents/Codex/2026-10-23/t/work/hoang-execution-2026-11-16/acceptance-d39ea8c/independent-oracle

@@ -11,6 +11,12 @@
 
 struct io_request;
 
+#ifdef IO_POLICY_HW_SELFTEST
+// Test-only: forget the short trace between real scenarios with an empty queue.
+// Does not reset policy, sequence, counters, or the real requests in flight.
+void ioq_hw_trace_reset_locked_for_test(void);
+#endif
+
 #ifdef IOQ_SELFTEST
 void io_queue_set_submit_for_test(int (*fn)(struct io_request *));
 // W3-L02: đặt head/direction ban đầu cho fixture SCAN (chỉ khi queue chưa dùng).
