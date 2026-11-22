@@ -35,8 +35,12 @@ chủ trì, hoàn thiện trên `main` sau khi pull candidate tuần 4. Theo yê
   (`week4/hieu-contract-oracle`, PR #13 = Hiếu + Lợi + Hoàng).
 - Code đã kiểm trên máy Hoàng: `d39ea8c` (docs head `e29e824`).
 - `main` trước tích hợp: `544673d` (PR #12 = Lợi + Hiếu).
-- `main` sau tích hợp: **`efe2849`** (merge candidate `f5130bb`; xem
-  [`integration.md`](integration.md)).
+- `main` sau merge local: **`efe2849`** (merge candidate `f5130bb`; xem
+  [`integration.md`](integration.md)). Các commit tuần 5 (docs/evidence/harness)
+  nằm **sau** merge commit và không đổi code; main remote bị branch protection
+  (phải qua PR), nên phần tuần 5 được đẩy bằng nhánh
+  **`week5/loi-hieu-integration`** + **PR #14** (xem
+  [`integration.md`](integration.md) §2.2).
 
 ## 4. Kết quả ngắn
 

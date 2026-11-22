@@ -58,8 +58,19 @@ git rev-parse HEAD                                          # efe2849...
 | #12 (Hiếu) | `ae6a7cf` | `main` | Đã merge (main cũ `544673d`) |
 | #13 (tích hợp) | `f5130bb` | `main` | **Đã merge local** vào `main` tại `efe2849`; nội dung = PR #11 + nhánh Hiếu |
 
-## 3. Review chéo (theo phạm vi)
+### 2.2 Đẩy nhánh và PR (branch protection)
 
+- Push trực tiếp vào `main` bị remote từ chối: *"Changes must be made through a
+  pull request"* (branch protection). Không cưỡng chế bypass.
+- Đã push nhánh tích hợp **`week5/loi-hieu-integration`** (HEAD `3406d8e`,
+  fast-forward từ `544673d`, chứa merge commit `efe2849` + commit tuần 5 không đổi
+  code) và mở **PR #14**:
+  <https://github.com/HieuPahm-R2/Asynchronous-virtio-blk-and-IO-Schedulers/pull/14>
+  (base `main`, head `week5/loi-hieu-integration`).
+- Trạng thái merge vào `main`: xem kết quả thực tế ở PR #14; nếu chưa merge được
+  (yêu cầu review/approval), ghi **PENDING** thay vì nhận đã tích hợp.
+
+## 3. Review chéo (theo phạm vi)
 | Phần | Reviewer | Kết luận | Trạng thái |
 | :--- | :--- | :--- | :---: |
 | Driver/IRQ/lifetime, test hooks, stress controller (phần Hoàng) | Hoàng (tự review ở tuần 4) | Đã có `docs/week04/review-hoang.md`; không đổi code trong merge | ✅ có sẵn |
@@ -105,7 +116,7 @@ Sau khi commit tuần 5, trạng thái này được ghi lại trong lịch sử
 
 | # | Tiêu chí kế hoạch | Kết quả |
 | :---: | :--- | :--- |
-| 1 | Xử lý nhận xét rồi tích hợp lần lượt Lợi → Hiếu → Hoàng; PR #11 retarget sau upstream và kiểm lại diff | ✅ Lợi/Hiếu có trong main từ PR #12; PR #11 merge qua PR #13 rồi vào main `efe2849`; diff kiểm rỗng so candidate; retarget GitHub **ngoài phiên** (không quyền) |
+| 1 | Xử lý nhận xét rồi tích hợp lần lượt Lợi → Hiếu → Hoàng; PR #11 retarget sau upstream và kiểm lại diff | ✅ Lợi/Hiếu có trong main từ PR #12; PR #11 merge qua PR #13 rồi vào main `efe2849`; diff kiểm rỗng so candidate; retarget GitHub **ngoài phiên** (không quyền API retarget); đã mở **PR #14** cho phần tuần 5 (base main) |
 | 2 | Đầu ra: nhận xét review có người xác nhận khác tác giả; danh sách PR/base/head; SHA main mới; checklist lỗi + phạm vi chạy lại | ✅ §2, §3, §5 (review Hoàng bỏ qua theo yêu cầu, ghi PENDING) |
 | 3 | Không merge khi còn lỗi dữ liệu/deadlock/thiếu review; kiểm diff/build/smoke sau mỗi bước; không dùng Sonar thay nghiệm thu kernel | ✅ không phát hiện lỗi dữ liệu/deadlock trong smoke; diff/build/smoke PASS; không dùng Sonar; **review Hoàng bỏ qua theo yêu cầu** (đánh đổi đã ghi) |
 | 4 | Dù candidate cũ đạt, SHA sau merge vẫn phải qua W5-H02 | ⏳ **H02 NOT RUN** (chủ trì Hoàng, ngoài phạm vi) — bắt buộc trước nghiệm thu cuối |
