@@ -46,6 +46,9 @@ git rev-parse HEAD                                          # efe2849...
   (`main` mới). Thống kê so với `544673d`: **110 file, +13 395 dòng, -7 dòng**
   (toàn bộ là harness/evidence/docs/tests tuần 4 của Hoàng + `user/init.c` thêm chế
   độ test + `mk/project.mk`/`Makefile` target, không đổi selector/pool/driver).
+- Các commit tuần 5 nằm **sau** merge commit (docs/week05, evidence H01,
+  `scripts/verify-second-machine.py`) và **không đổi code**; HEAD cuối của nhánh
+  xem `git log -1` tại thời điểm nghiệm thu.
 
 ### 2.1 PR / base / head
 
