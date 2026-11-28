@@ -56,7 +56,7 @@ struct spinlock; // defined in spinlock.h; only a pointer is used here
 #endif
 
 // Public address unit is blockno (not sector). The only conversion for async
-// requests happens in virtio_disk_try_submit_read(): sector = blockno * 2 on the
+// requests happens in the virtio disk driver: sector = blockno * 2 on the
 // pinned driver. Do not multiply twice: the request layer never stores sector.
 #define IO_SECTORS_PER_BLOCK (BSIZE / 512)
 
@@ -100,6 +100,7 @@ enum io_head_owner {
   IO_HEAD_FREE = 0,
   IO_HEAD_STOCK,
   IO_HEAD_ASYNC,
+  IO_HEAD_ASYNC_MERGED,
 };
 
 // Handle returned to the caller. The caller must present the same (id, gen)
@@ -517,6 +518,16 @@ struct spinlock *virtio_disk_io_lock(void);
 // process or IRQ context (the dispatcher runs from both); never sleeps.
 int virtio_disk_try_submit_read(struct io_request *req);
 
+#ifdef IO_MERGE_READ
+#define IO_MERGE_MAX_CHILDREN 4
+
+// The caller selects QUEUED reads from one contiguous ROOTDEV range and
+// retains the lock across this call and unlinking of accepted INFLIGHT requests
+// from the pending list, as in the single-read dispatcher. Child order may be
+// arbitrary. IO_EINVAL and IO_EAGAIN leave all children queued and unpublished.
+int virtio_disk_try_submit_merged_read(struct io_request *const *children, int count);
+#endif
+
 // Complete one async request that the driver just reaped from the used ring.
 // The driver has already validated the head->request mapping and copied the
 // 1-byte device status into dev_status. Sets DONE (dev_status == 0) or ERROR,
@@ -529,7 +540,7 @@ void io_async_completed_locked(struct io_request *req, int dev_status);
 // max_inflight while simultaneous INFLIGHT states are still observable.
 void io_started_locked(struct io_request *req, int head);
 
-#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST)
+#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST) || defined(IO_MERGE_SELFTEST)
 // Test-only controls over real device completions. Holding used processing
 // does not prevent DMA: buffers/chains stay live until actual reaping.
 void virtio_test_hold_used(int hold);
@@ -540,6 +551,18 @@ void virtio_test_status(struct io_handle h, int status);
 void virtio_test_unhold_locked(void);
 void io_hw_set_wait_hook(void (*fn)(void));
 int io_hw_selftest(void);
+#endif
+
+#ifdef IO_MERGE_SELFTEST
+struct io_merge_test_snapshot {
+  uint16 published;
+  uint16 reaped;
+  uint used_head;
+  int free_bounce;
+};
+void virtio_merge_test_snapshot_locked(struct io_merge_test_snapshot *out);
+struct io_request *io_merge_test_stage_locked(uint blockno);
+int io_merge_selftest(void);
 #endif
 
 // ---------------------------------------------------------------------------

@@ -20,6 +20,20 @@
 // the address of virtio mmio register r.
 #define R(r) ((volatile uint32 *)(VIRTIO0 + (r)))
 
+#ifdef IO_MERGE_READ
+#define MERGE_BUFFERS 2
+struct merged_read {
+  // A nonzero count pins the buffer and its child map until the used head.
+  int count;
+  struct {
+    struct io_request *req;
+    uint gen;
+    uint offset;
+  } child[IO_MERGE_MAX_CHILDREN];
+  uchar data[IO_MERGE_MAX_CHILDREN * BSIZE];
+};
+#endif
+
 static struct disk {
   // a set (not a ring) of DMA descriptors, with which the
   // driver tells the device where to read and write individual
@@ -52,6 +66,9 @@ static struct disk {
     uint gen;
     enum io_head_owner owner;
     uchar status;
+#ifdef IO_MERGE_READ
+    struct merged_read *merge;
+#endif
   } info[NUM];
 
   // A completed request retains its result until release even if its head is
@@ -61,7 +78,10 @@ static struct disk {
     uint gen;
   } last_async[NUM];
   struct io_desc_stats stats;
-#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST)
+#ifdef IO_MERGE_READ
+  struct merged_read merge[MERGE_BUFFERS];
+#endif
+#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST) || defined(IO_MERGE_SELFTEST)
   int hold_used;
   int reverse_pair;
   uint reversed;
@@ -333,6 +353,39 @@ virtio_disk_rw(struct buf *b, int write)
   release(&disk.vdisk_lock);
 }
 
+static void
+prepare_read_chain(int idx[3], uint blockno, void *data, uint length)
+{
+  int head = idx[0];
+  struct virtio_blk_req *op = &disk.ops[head];
+  op->type = VIRTIO_BLK_T_IN;
+  op->reserved = 0;
+  op->sector = (uint64)blockno * IO_SECTORS_PER_BLOCK;
+  disk.desc[head].addr = (uint64)op;
+  disk.desc[head].len = sizeof(*op);
+  disk.desc[head].flags = VRING_DESC_F_NEXT;
+  disk.desc[head].next = idx[1];
+  disk.desc[idx[1]].addr = (uint64)data;
+  disk.desc[idx[1]].len = length;
+  disk.desc[idx[1]].flags = VRING_DESC_F_WRITE | VRING_DESC_F_NEXT;
+  disk.desc[idx[1]].next = idx[2];
+  disk.info[head].status = 0xff;
+  disk.desc[idx[2]].addr = (uint64)&disk.info[head].status;
+  disk.desc[idx[2]].len = 1;
+  disk.desc[idx[2]].flags = VRING_DESC_F_WRITE;
+  disk.desc[idx[2]].next = 0;
+}
+
+static void
+publish_read(int head)
+{
+  disk.avail->ring[disk.avail->idx % NUM] = head;
+  io_fence();
+  disk.avail->idx++;
+  io_fence();
+  *R(VIRTIO_MMIO_QUEUE_NOTIFY) = 0;
+}
+
 // PTO-12: publish exactly one READ without waiting. The same allocator and
 // lock are shared with stock; alloc3_desc rolls back a partial reservation.
 int
@@ -357,23 +410,7 @@ virtio_disk_try_submit_read(struct io_request *req)
       (old->state == IO_DONE || old->state == IO_ERROR))
     disk.stats.head_reuse++;
 
-  struct virtio_blk_req *op = &disk.ops[head];
-  op->type = VIRTIO_BLK_T_IN;
-  op->reserved = 0;
-  op->sector = (uint64)req->blockno * IO_SECTORS_PER_BLOCK;
-  disk.desc[head].addr = (uint64)op;
-  disk.desc[head].len = sizeof(*op);
-  disk.desc[head].flags = VRING_DESC_F_NEXT;
-  disk.desc[head].next = idx[1];
-  disk.desc[idx[1]].addr = (uint64)req->data;
-  disk.desc[idx[1]].len = BSIZE;
-  disk.desc[idx[1]].flags = VRING_DESC_F_WRITE | VRING_DESC_F_NEXT;
-  disk.desc[idx[1]].next = idx[2];
-  disk.info[head].status = 0xff;
-  disk.desc[idx[2]].addr = (uint64)&disk.info[head].status;
-  disk.desc[idx[2]].len = 1;
-  disk.desc[idx[2]].flags = VRING_DESC_F_WRITE;
-  disk.desc[idx[2]].next = 0;
+  prepare_read_chain(idx, req->blockno, req->data, BSIZE);
 
   // Publish the owner and state first: the device may complete immediately.
   disk.info[head].b = 0;
@@ -381,13 +418,96 @@ virtio_disk_try_submit_read(struct io_request *req)
   disk.info[head].gen = req->gen;
   disk.info[head].owner = IO_HEAD_ASYNC;
   io_started_locked(req, head);
-  disk.avail->ring[disk.avail->idx % NUM] = head;
-  io_fence();
-  disk.avail->idx++;
-  io_fence();
-  *R(VIRTIO_MMIO_QUEUE_NOTIFY) = 0;
+  publish_read(head);
   return 0;
 }
+
+#ifdef IO_MERGE_READ
+int
+virtio_disk_try_submit_merged_read(struct io_request *const *children, int count)
+{
+  if (!holding(&disk.vdisk_lock))
+    panic("virtio merge lock");
+  if (children == 0 || count < 2 || count > IO_MERGE_MAX_CHILDREN)
+    return IO_EINVAL;
+
+  uint first = FSSIZE;
+  for (int i = 0; i < count; i++) {
+    struct io_request *req = children[i];
+    if (req == 0 || req->state != IO_QUEUED || req->op != IO_OP_READ ||
+        req->dev != ROOTDEV || req->blockno >= FSSIZE)
+      return IO_EINVAL;
+    if (req->blockno < first)
+      first = req->blockno;
+  }
+
+  uint seen = 0;
+  for (int i = 0; i < count; i++) {
+    uint block_offset = children[i]->blockno - first;
+    if (block_offset >= (uint)count || (seen & (1U << block_offset)))
+      return IO_EINVAL;
+    seen |= 1U << block_offset;
+  }
+
+  struct merged_read *merge = 0;
+  for (int i = 0; i < MERGE_BUFFERS; i++) {
+    if (disk.merge[i].count == 0) {
+      merge = &disk.merge[i];
+      break;
+    }
+  }
+  if (merge == 0)
+    return IO_EAGAIN;
+
+  int idx[3];
+  if (alloc3_desc(idx) < 0) {
+    disk.stats.eagain_desc++;
+    return IO_EAGAIN;
+  }
+  int head = idx[0];
+  if (disk.info[head].owner != IO_HEAD_FREE)
+    panic("virtio merge owner");
+
+  merge->count = count;
+  for (int i = 0; i < count; i++) {
+    struct io_request *req = children[i];
+    merge->child[i].req = req;
+    merge->child[i].gen = req->gen;
+    merge->child[i].offset = (req->blockno - first) * BSIZE;
+    io_started_locked(req, head);
+  }
+
+  prepare_read_chain(idx, first, merge->data, count * BSIZE);
+  disk.info[head].merge = merge;
+  disk.info[head].owner = IO_HEAD_ASYNC_MERGED;
+  publish_read(head);
+  return 0;
+}
+
+static void
+complete_merged_read(uint head, int status)
+{
+  struct merged_read *merge = disk.info[head].merge;
+  if (merge == 0 || merge->count < 2 || merge->count > IO_MERGE_MAX_CHILDREN)
+    panic("virtio merge completion");
+  for (int i = 0; i < merge->count; i++) {
+    struct io_request *req = merge->child[i].req;
+    if (req == 0 || req->gen != merge->child[i].gen ||
+        req->state != IO_INFLIGHT || req->head != (int)head)
+      panic("virtio merge mapping");
+
+    if (status == 0)
+      memmove(req->data, merge->data + merge->child[i].offset, BSIZE);
+    req->head = IO_NIL;
+    io_async_completed_locked(req, status);
+  }
+  disk.stats.completed_async++;
+  disk.info[head].merge = 0;
+  disk.info[head].owner = IO_HEAD_FREE;
+  free_chain(head);
+  merge->count = 0;
+}
+#endif
 
 // PTO-13: never infer a request from completion order. Only the owner of this
 // exact used head can reclaim its chain. The pool/result lifetime is separate.
@@ -406,17 +526,25 @@ reap_head_locked(uint head)
     b->disk = 0;
     disk.stats.completed_stock++;
     wakeup(b);
-  } else if (disk.info[head].owner == IO_HEAD_ASYNC) {
+    return;
+  }
+#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST) || defined(IO_MERGE_SELFTEST)
+  if (disk.override_valid[head]) {
+    status = disk.override_status[head];
+    disk.override_valid[head] = 0;
+  }
+#endif
+#ifdef IO_MERGE_READ
+  if (disk.info[head].owner == IO_HEAD_ASYNC_MERGED) {
+    complete_merged_read(head, status);
+    return;
+  }
+#endif
+  if (disk.info[head].owner == IO_HEAD_ASYNC) {
     struct io_request *req = disk.info[head].req;
     if (req == 0 || req->gen != disk.info[head].gen ||
         req->state != IO_INFLIGHT || req->head != (int)head)
       panic("virtio async mapping");
-#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST)
-    if (disk.override_valid[head]) {
-      status = disk.override_status[head];
-      disk.override_valid[head] = 0;
-    }
-#endif
     disk.last_async[head].req = req;
     disk.last_async[head].gen = req->gen;
     disk.info[head].req = 0;
@@ -436,7 +564,7 @@ drain_used_locked(void)
 {
   while (disk.used_idx != disk.used->idx) {
     io_fence();
-#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST)
+#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST) || defined(IO_MERGE_SELFTEST)
     // Test-only: reverse consumption of TWO REAL used entries after DMA. This
     // tests mapping, not a claim that QEMU itself completed out of order.
     if (disk.reverse_pair && (uint16)(disk.used->idx - disk.used_idx) >= 2) {
@@ -471,7 +599,7 @@ virtio_disk_intr()
   *R(VIRTIO_MMIO_INTERRUPT_ACK) = *R(VIRTIO_MMIO_INTERRUPT_STATUS) & 0x3;
 
   io_fence();
-#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST)
+#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST) || defined(IO_MERGE_SELFTEST)
   if (!disk.hold_used)
 #endif
     drain_used_locked();
@@ -502,7 +630,7 @@ virtio_disk_get_stats(struct io_desc_stats *out)
   release(&disk.vdisk_lock);
 }
 
-#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST)
+#if defined(IO_HW_SELFTEST) || defined(IO_POLICY_STRESS_SELFTEST) || defined(IO_MERGE_SELFTEST)
 void
 virtio_test_hold_used(int hold)
 {
@@ -564,5 +692,20 @@ virtio_test_status(struct io_handle h, int status)
   disk.override_valid[req->head] = 1;
   disk.override_status[req->head] = status;
   release(&disk.vdisk_lock);
+}
+#endif
+
+#ifdef IO_MERGE_SELFTEST
+void
+virtio_merge_test_snapshot_locked(struct io_merge_test_snapshot *out)
+{
+  if (!holding(&disk.vdisk_lock))
+    panic("virtio merge snapshot lock");
+  out->published = disk.avail->idx;
+  out->reaped = disk.used_idx;
+  out->used_head = disk.used->ring[(disk.used_idx + NUM - 1) % NUM].id;
+  out->free_bounce = 0;
+  for (int i = 0; i < MERGE_BUFFERS; i++)
+    out->free_bounce += disk.merge[i].count == 0;
 }
 #endif

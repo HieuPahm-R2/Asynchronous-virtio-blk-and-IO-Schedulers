@@ -9,10 +9,9 @@
 #include "user/user.h"
 #include "kernel/fcntl.h"
 
-#if defined(IO_SELFTEST) || defined(IO_HW_SELFTEST)
+#if defined(IO_SELFTEST) || defined(IO_HW_SELFTEST) || defined(IO_MERGE_SELFTEST)
 // Test-only syscall (W2-I02): runs the kernel request-layer poll/wait selftest
-// from process context. Only embedded/called when built with `make test-io`
-// (-DIO_SELFTEST); production init never references it.
+// from process context. Production init never calls it.
 int io_selftest(void);
 #elif defined(IO_STRESS_SELFTEST)
 // W3-H02 test-only multi-producer stress entry.
@@ -69,7 +68,7 @@ main(void)
   dup(0); // stdout
   dup(0); // stderr
 
-#if defined(IO_SELFTEST) || defined(IO_HW_SELFTEST)
+#if defined(IO_SELFTEST) || defined(IO_HW_SELFTEST) || defined(IO_MERGE_SELFTEST)
   {
     int rc = io_selftest();
     printf("IO-USER-TEST: %s (rc=%d)\n", rc == 0 ? "PASS" : "FAIL", rc);

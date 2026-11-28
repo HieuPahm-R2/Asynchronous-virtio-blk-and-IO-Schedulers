@@ -179,11 +179,17 @@ def fixture(image, corrupt=False):
             'verified_free': True, 'corrupt_first_byte': corrupt, 'image_sha256': sha(image)}
 
 
-def boot(logpath, cpus, hw=False, negative=False, timeout=60):
+def boot(logpath, cpus, hw=False, negative=False, timeout=60, *, trim_tail_blocks=0):
     with tempfile.TemporaryDirectory(prefix='hoang-virtio-') as temp:
         image = Path(temp) / FS_IMG
         shutil.copyfile(ROOT / FS_IMG, image)
         info = fixture(image, negative) if hw else None
+        if trim_tail_blocks:
+            if not hw or not 0 < trim_tail_blocks < 32:
+                raise ValueError('trimming requires a verified-free fixture tail')
+            with image.open('r+b') as disk:
+                disk.truncate(image.stat().st_size - trim_tail_blocks * info['block_size'])
+            info.update(trim_tail_blocks=trim_tail_blocks, image_sha256=sha(image))
         cmd = ['qemu-system-riscv64', '-machine', 'virt', '-bios', 'none',
                '-kernel', KERNEL_ELF, '-m', '128M', '-smp', str(cpus), '-nographic',
                '-global', 'virtio-mmio.force-legacy=false',

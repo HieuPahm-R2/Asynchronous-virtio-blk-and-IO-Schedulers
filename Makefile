@@ -31,6 +31,7 @@ OBJS = \
   $K/virtio_disk.o \
   $K/io_request.o \
   $K/io_request_test.o \
+  $K/io_merge_test.o \
   $K/io_queue.o \
   $K/io_queue_test.o \
   $K/io_hw_test.o \
@@ -97,6 +98,11 @@ CFLAGS += -DIO_SELFTEST
 endif
 ifdef IO_HW_SELFTEST
 CFLAGS += -DIO_HW_SELFTEST
+endif
+ifdef IO_MERGE_SELFTEST
+CFLAGS += -DIO_MERGE_SELFTEST -DIO_MERGE_READ
+else ifdef IO_MERGE_READ
+CFLAGS += -DIO_MERGE_READ
 endif
 ifdef IO_STRESS_SELFTEST
 CFLAGS += -DIO_STRESS_SELFTEST

@@ -442,6 +442,8 @@ sys_io_selftest(void)
 {
 #ifdef IO_SELFTEST
   return (uint64)io_user_selftest();
+#elif defined(IO_MERGE_SELFTEST)
+  return (uint64)io_merge_selftest();
 #elif defined(IO_HW_SELFTEST)
 #ifdef IO_POLICY_HW_SELFTEST
   extern int io_policy_hw_selftest(void);

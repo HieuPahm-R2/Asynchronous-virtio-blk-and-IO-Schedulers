@@ -113,6 +113,25 @@ aio_read_submit(uint dev, uint blockno, struct io_handle *out)
   return 0;
 }
 
+#ifdef IO_MERGE_SELFTEST
+// The driver selftest stages candidates without a scheduler merge policy.
+struct io_request *
+io_merge_test_stage_locked(uint blockno)
+{
+  if (!holding(virtio_disk_io_lock()))
+    panic("io merge stage lock");
+  struct io_request *req = io_alloc_slot_locked();
+  if (req == 0)
+    panic("io merge test pool full");
+  req->dev = ROOTDEV;
+  req->blockno = blockno;
+  req->t_enqueue = ticks;
+  req->state = IO_QUEUED;
+  io_counters.submitted++;
+  return req;
+}
+#endif
+
 void
 io_started_locked(struct io_request *req, int head)
 {
