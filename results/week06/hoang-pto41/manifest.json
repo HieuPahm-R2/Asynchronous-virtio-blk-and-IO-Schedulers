@@ -1,0 +1,145 @@
+{
+  "source_commit": "c6e0dae62a73f82a572b8d55c38f16bae6bff40d",
+  "source_tree_dirty": false,
+  "qemu": "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)",
+  "gcc": "riscv64-unknown-elf-gcc (13.2.0-11ubuntu1+12) 13.2.0",
+  "boots": [
+    {
+      "cpus": 1,
+      "duration_s": 0.403,
+      "command": [
+        "qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-bios",
+        "none",
+        "-kernel",
+        "kernel/kernel",
+        "-m",
+        "128M",
+        "-smp",
+        "1",
+        "-nographic",
+        "-global",
+        "virtio-mmio.force-legacy=false",
+        "-drive",
+        "file=/tmp/hoang-virtio-hdqpmfyw/fs.img,if=none,format=raw,id=x0",
+        "-device",
+        "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+      ],
+      "fixture": {
+        "blocks": [
+          1968,
+          1999
+        ],
+        "block_size": 1024,
+        "verified_free": true,
+        "corrupt_first_byte": false,
+        "image_sha256": "5cc5daedc3ba0158b9627d7d45347f23a879731e0909e29490b86fe67e73174e",
+        "trim_tail_blocks": 4
+      },
+      "log": "merge-cpu1.log"
+    },
+    {
+      "cpus": 4,
+      "duration_s": 0.42,
+      "command": [
+        "qemu-system-riscv64",
+        "-machine",
+        "virt",
+        "-bios",
+        "none",
+        "-kernel",
+        "kernel/kernel",
+        "-m",
+        "128M",
+        "-smp",
+        "4",
+        "-nographic",
+        "-global",
+        "virtio-mmio.force-legacy=false",
+        "-drive",
+        "file=/tmp/hoang-virtio-ajr_3f6g/fs.img,if=none,format=raw,id=x0",
+        "-device",
+        "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+      ],
+      "fixture": {
+        "blocks": [
+          1968,
+          1999
+        ],
+        "block_size": 1024,
+        "verified_free": true,
+        "corrupt_first_byte": false,
+        "image_sha256": "5cc5daedc3ba0158b9627d7d45347f23a879731e0909e29490b86fe67e73174e",
+        "trim_tail_blocks": 4
+      },
+      "log": "merge-cpu4.log"
+    }
+  ],
+  "test_build": {
+    "kernel_sha256": "aeb6eaeba17bc9cfc7f62939c4b8e6972e758871a0f0f618ad48f0c77d8778b1",
+    "fs_sha256": "4b7ca77d5839dd335046651298831ea47f26b6b9117dedb25c1a3ac7c9e5e678"
+  },
+  "backend_build": {
+    "kernel_sha256": "2a509e7113a5e4a33339afa35230b213264fd86fa523abf33b9754122825f0e6",
+    "fs_sha256": "e4ae7ebdfde5e6328f900931db3f249e1785ee7eedc48cf5a0ffc6f249b56d43"
+  },
+  "backend_boot": {
+    "cpus": 3,
+    "duration_s": 0.41,
+    "command": [
+      "qemu-system-riscv64",
+      "-machine",
+      "virt",
+      "-bios",
+      "none",
+      "-kernel",
+      "kernel/kernel",
+      "-m",
+      "128M",
+      "-smp",
+      "3",
+      "-nographic",
+      "-global",
+      "virtio-mmio.force-legacy=false",
+      "-drive",
+      "file=/tmp/hoang-virtio-kgcuttla/fs.img,if=none,format=raw,id=x0",
+      "-device",
+      "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+    ],
+    "fixture": null,
+    "log": "backend-cpu3.log"
+  },
+  "production_build": {
+    "kernel_sha256": "94041b7d86298f8b289373bfe75bb2bfcf43e384a8a6a6e04d01574e314f3399",
+    "fs_sha256": "e4ae7ebdfde5e6328f900931db3f249e1785ee7eedc48cf5a0ffc6f249b56d43"
+  },
+  "production_boot": {
+    "cpus": 3,
+    "duration_s": 0.393,
+    "command": [
+      "qemu-system-riscv64",
+      "-machine",
+      "virt",
+      "-bios",
+      "none",
+      "-kernel",
+      "kernel/kernel",
+      "-m",
+      "128M",
+      "-smp",
+      "3",
+      "-nographic",
+      "-global",
+      "virtio-mmio.force-legacy=false",
+      "-drive",
+      "file=/tmp/hoang-virtio-dadfm52z/fs.img,if=none,format=raw,id=x0",
+      "-device",
+      "virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0"
+    ],
+    "fixture": null,
+    "log": "production-cpu3.log"
+  },
+  "status": "PASS"
+}

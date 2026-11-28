@@ -1,0 +1,36 @@
+
+xv6 kernel is booting
+
+IO-MERGE: child block=1968 bytes=1024 fnv1a=8a4866c5
+IO-MERGE: child block=1969 bytes=1024 fnv1a=3feb88c5
+IO-MERGE: read children=2 reverse=0 published=1 used=1 head=0 PASS
+IO-MERGE: child block=1972 bytes=1024 fnv1a=ca4c48c5
+IO-MERGE: child block=1971 bytes=1024 fnv1a=2bcef8c5
+IO-MERGE: child block=1970 bytes=1024 fnv1a=b515eac5
+IO-MERGE: read children=3 reverse=1 published=1 used=1 head=0 PASS
+IO-MERGE: child block=1976 bytes=1024 fnv1a=9f6f20c5
+IO-MERGE: child block=1975 bytes=1024 fnv1a=b69e22c5
+IO-MERGE: child block=1974 bytes=1024 fnv1a=765f8ec5
+IO-MERGE: child block=1973 bytes=1024 fnv1a=387356c5
+IO-MERGE: read children=4 reverse=1 published=1 used=1 head=0 PASS
+IO-MERGE: injected-EIO children=4 reverse=0 published=1 used=1 head=0 PASS
+IO-MERGE: device-EIO children=4 reverse=0 published=1 used=1 head=0 PASS
+IO-MERGE: child block=1984 bytes=1024 fnv1a=1302eac5
+IO-MERGE: child block=1985 bytes=1024 fnv1a=67d260c5
+IO-MERGE: child block=1986 bytes=1024 fnv1a=b20442c5
+IO-MERGE: child block=1987 bytes=1024 fnv1a=9ae3dcc5
+IO-MERGE: child block=1989 bytes=1024 fnv1a=6038a0c5
+IO-MERGE: child block=1988 bytes=1024 fnv1a=13684ec5
+IO-MERGE: bounce-pressure EAGAIN retry=OK PASS
+IO-MERGE: child block=1984 bytes=1024 fnv1a=1302eac5
+IO-MERGE: child block=1986 bytes=1024 fnv1a=b20442c5
+IO-MERGE: child block=1989 bytes=1024 fnv1a=6038a0c5
+IO-MERGE: child block=1988 bytes=1024 fnv1a=13684ec5
+IO-MERGE: descriptor-pressure EAGAIN retry=OK PASS
+IO-MERGE: child block=1992 bytes=1024 fnv1a=541394c5
+IO-MERGE: child block=1993 bytes=1024 fnv1a=277d34c5
+IO-MERGE: gap duplicate EINVAL recovery=OK PASS
+IO-MERGE: drain done=21 error=8 released=29 free_req=16 free_desc=8 free_bounce=2
+IO-MERGE: PASS
+IO-USER-TEST: PASS (rc=0)
+init: starting sh
